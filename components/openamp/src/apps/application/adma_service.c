@@ -17,7 +17,6 @@
 #endif
 
 #define RPMSG_SERV_NAME         "adma-service"
-#define RPMSG_LOW_PWR_SERV_NAME         "rcpu-pwr-management-service"
 
 extern int platform_init(int argc, char *argv[], void **platform);
 extern struct  rpmsg_device *
@@ -36,11 +35,8 @@ static rt_thread_t tid;
 static rt_thread_t trigger_tid;
 static rt_sem_t trigger_sem;
 static void *platform;
-static struct rpmsg_device *rpdev;
+struct rpmsg_device *rpdev;
 static struct rpmsg_endpoint lept;
-#ifdef BSP_USING_PM
-static struct rpmsg_endpoint lpwept;
-#endif
 
 static int adma_irq_handler(int irq, void *arg)
 {
@@ -91,39 +87,6 @@ static void rpmsg_service_unbind(struct rpmsg_endpoint *ept)
 	/* do nothing */
 }
 
-#ifdef BSP_USING_PM
-static int rpmsg_lpw_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len, uint32_t src, void *priv)
-{
-	if (strcmp(data, "pwr_management") == 0) {
-		rpmsg_send(ept, "pwr_management_ok", 17);
-		return 0;
-	}
-
-	if (strcmp(data, "enter-low-pwr-mode") == 0) {
-		/* Big-cpu will want us to enter low power mode */
-
-		/* 1. release the DEFAULT_SLEEP_MODE */
-		rt_pm_release(RT_PM_DEFAULT_SLEEP_MODE);
-
-		/* 2. send ack ? */
-		rpmsg_send(ept, "enter-low-pwr-mode-reply", 24);
-	}
-
-	if (strcmp(data, "exit-low-pwr-mode") == 0) {
-		/* the rcpu has wakedup by Big-cpu */
-		/* 1. send ack ? */
-		rpmsg_send(ept, "exit-low-pwr-mode-reply", 23);
-	}
-
-	return 0;
-}
-
-static void rpmsg_lpw_service_unbind(struct rpmsg_endpoint *ept)
-{
-	/* do nothing */
-}
-#endif
-
 static void adma_trigger_irq_thread_entry(void *parameter)
 {
 	while (1) {
@@ -170,17 +133,6 @@ int rpmsg_adma_service_init(void)
 		rt_kprintf("Failed to create endpoint\n");
 		return -1;
 	}
-
-#ifdef BSP_USING_PM
-	/* create lowpower mode endpoint */
-	ret = rpmsg_create_ept(&lpwept, rpdev, RPMSG_LOW_PWR_SERV_NAME,
-			RPMSG_ADDR_ANY, RPMSG_ADDR_ANY,
-			rpmsg_lpw_endpoint_cb, rpmsg_lpw_service_unbind);
-	if (ret) {
-		rt_kprintf("Failed to create endpoint\n");
-		return -1;
-	}
-#endif
 
 	/* create the rpmsg poll thread */
 	tid = rt_thread_create("adma_poll_serivce",

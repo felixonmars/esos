@@ -5,41 +5,64 @@
  */
 
 #include <rthw.h>
+#include <drivers/pm.h>
 #include <rtdevice.h>
 #include <rtthread.h>
 #include <riscv_sleep.h>
 #include <core_feature_base.h>
 #include <spacemit_sdk_soc.h>
 #include <register_defination.h>
+#include <openamp/rpmsg.h>
 #include <platform_info.h>
 
 extern unsigned long __text_start;
 extern unsigned long _end;
+struct rpmsg_endpoint lpwept;
+extern struct rpmsg_device *rpdev;
+
+#define RPMSG_LOW_PWR_SERV_NAME         "rcpu-pwr-management-service"
 
 static int __suspend_asm_finish(rt_ubase_t arg, rt_ubase_t entry, rt_ubase_t context)
 {
+	audio_pmu_vote_t *lpvote = (audio_pmu_vote_t *)AUDIO_PMU_VOTE_REG;
+	audio_vote_for_main_mpu_t *vmp =
+		(audio_vote_for_main_mpu_t *)AUDIO_VOTE_FOR_MAIN_PMU;
+
 	/* for n308 when rcpu resumed from poweroff, it will start to run at 0 address */
 	/* copy the rcpu runtime snapshots */
-	memcpy((void *)RCPU_RUNTIME_MEM_SNAPSHOT_BASE,
+	memcpy((void *)((rt_uint32_t *)RCPU_RUNTIME_MEM_SNAPSHOT_BASE + 1),
 			(void *)&__text_start,
 			(unsigned long)&_end - (unsigned long)&__text_start);
-
-	/* using a alive register to store the context ? */
 
 	/* flush dcache all */
 	MFlushInvalDCache();
 
+	/* tell the Big-cpu that we have complete to store the runtime snapshots */
+	*((rt_uint32_t *)RCPU_RUNTIME_MEM_SNAPSHOT_BASE) = 1;
+
+	MFlushInvalDCache();
+
+	vmp->bits.audio_pmu_vote_vctcxosd = 1;
+	vmp->bits.audio_pmu_vote_ddrsd = 1;
+	vmp->bits.audio_pmu_vote_axisd = 1;
+	vmp->bits.audio_pmu_vote_stben = 1;
+	vmp->bits.audio_pmu_vote_slpen = 1;
+	lpvote->bits.vote_for_lp = 1;
+	lpvote->bits.vote_for_plloff = 1;
+	lpvote->bits.vote_for_pwroff = 1;
+	*((unsigned int *)PWRCTL_LP_WAKEUP_MASK) = 0;
+
 	/* enter wfi */
-	__ISB();
-	__DSB();
 	while (1) {
+		__ISB();
+		__DSB();
 		__WFI();
+		__ISB();
+		__DSB();
 	}
-	__ISB();
-	__DSB();
 
 	/* should never be here */
-	return -RT_EINVAL;
+	return RT_EOK;
 }
 
 static void suspend_save_csrs(struct suspend_context *context)
@@ -113,49 +136,26 @@ extern void rt_hw_eclic_restore(void);
  */
 static void sleep(struct rt_pm *pm, uint8_t mode)
 {
-	audio_pmu_vote_t *lpvote = (audio_pmu_vote_t *)AUDIO_PMU_VOTE_REG;
-	audio_vote_for_main_mpu_t *vmp =
-		(audio_vote_for_main_mpu_t *)AUDIO_VOTE_FOR_MAIN_PMU;
+	audio_pmu_vote_t *lpvote;
+	audio_vote_for_main_mpu_t *vmp;
 
 	switch (mode)
 	{
 	case PM_SLEEP_MODE_NONE:
-		/* enter wfi */
-		lpvote->bits.vote_for_lp = 1;
-		*((unsigned int *)PWRCTL_LP_WAKEUP_MASK) = 1;
-		__ISB();
-		__DSB();
-		__WFI();
-		__ISB();
-		__DSB();
-		lpvote->bits.vote_for_lp = 0;
 	break;
 
 	case PM_SLEEP_MODE_IDLE:
-		/* enter wfi */
-		lpvote->bits.vote_for_lp = 1;
-		*((unsigned int *)PWRCTL_LP_WAKEUP_MASK) = 1;
-		__ISB();
-		__DSB();
-		__WFI();
-		__ISB();
-		__DSB();
-		lpvote->bits.vote_for_lp = 0;
 	break;
 
 	case PM_SLEEP_MODE_LIGHT:
 	break;
 
 	case PM_SLEEP_MODE_DEEP:
-		/* enter lower power mode */
-		vmp->bits.audio_pmu_vote_vctcxosd = 1;
-		vmp->bits.audio_pmu_vote_ddrsd = 1;
-		vmp->bits.audio_pmu_vote_axisd = 1;
-		lpvote->bits.vote_for_lp = 1;
-		lpvote->bits.vote_for_plloff = 1;
-		lpvote->bits.vote_for_pwroff = 1;
-		*((unsigned int *)PWRCTL_LP_WAKEUP_MASK) = 0;
 
+		lpvote = (audio_pmu_vote_t *)AUDIO_PMU_VOTE_REG;
+		vmp = (audio_vote_for_main_mpu_t *)AUDIO_VOTE_FOR_MAIN_PMU;
+
+		/* enter lower power mode */
 		rt_hw_eclic_save();
 
 		cpu_suspend(0, __suspend_asm_finish);
@@ -174,12 +174,20 @@ static void sleep(struct rt_pm *pm, uint8_t mode)
 		vmp->bits.audio_pmu_vote_vctcxosd = 0;
 		vmp->bits.audio_pmu_vote_ddrsd = 0;
 		vmp->bits.audio_pmu_vote_axisd = 0;
+		vmp->bits.audio_pmu_vote_stben = 0;
+		vmp->bits.audio_pmu_vote_slpen = 0;
 		lpvote->bits.vote_for_lp = 0;
 		lpvote->bits.vote_for_plloff = 0;
 		lpvote->bits.vote_for_pwroff = 0;
 
-		/* 1. request the DEFAULT_SLEEP_MODE */
+		*((unsigned int *)PWRCTL_LP_WAKEUP_MASK) = 1;
+
 		rt_pm_request(RT_PM_DEFAULT_SLEEP_MODE);
+
+		/* tell the Big-cpu that we have complete to store the runtime snapshots */
+		*((rt_uint32_t *)RCPU_RUNTIME_MEM_SNAPSHOT_BASE) = 2;
+
+		MFlushInvalDCache();
 	break;
 
 	case PM_SLEEP_MODE_STANDBY:
@@ -232,19 +240,32 @@ static rt_tick_t pm_timer_get_tick(struct rt_pm *pm)
 	return 0;
 }
 
+static int rpmsg_lpw_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len, uint32_t src, void *priv)
+{
+	if (strcmp(data, "pwr_management") == 0) {
+		rpmsg_send(ept, "pwr_management_ok", 17);
+		return 0;
+	}
+
+	/* Enter sleep mode */
+	/* 1. release the DEFAULT_SLEEP_MODE */
+	rt_pm_release(RT_PM_DEFAULT_SLEEP_MODE);
+	
+	return 0;
+}
+
+static void rpmsg_lpw_service_unbind(struct rpmsg_endpoint *ept)
+{
+	/* do nothing */
+}
+
 int rt_hw_k1x_pm_init(void)
 {
+	int ret;
+	rt_uint8_t timer_mask = 0;
 	audio_vote_for_main_mpu_t *vmp =
 		(audio_vote_for_main_mpu_t *)AUDIO_VOTE_FOR_MAIN_PMU;
-
-	vmp->bits.audio_pmu_vote_vctcxosd = 0;
-	vmp->bits.audio_pmu_vote_ddrsd = 0;
-	vmp->bits.audio_pmu_vote_axisd = 0;
-
-	audio_wakeup_en_t *wkup_en = (audio_wakeup_en_t *)AUDIO_WAKEUP_EN_REG;
-
-	wkup_en->bits.timer_wkup_en = 1;
-	wkup_en->bits.ipc_ap_wkup_en = 1;
+	audio_pmu_vote_t *lpvote = (audio_pmu_vote_t *)AUDIO_PMU_VOTE_REG;
 
 	static const struct rt_pm_ops _ops = {
 		sleep,
@@ -254,13 +275,30 @@ int rt_hw_k1x_pm_init(void)
 		pm_timer_get_tick
 	};
 
-	rt_uint8_t timer_mask = 0;
+
+	vmp->bits.audio_pmu_vote_vctcxosd = 0;
+	vmp->bits.audio_pmu_vote_ddrsd = 0;
+	vmp->bits.audio_pmu_vote_axisd = 0;
+	vmp->bits.audio_pmu_vote_stben = 0;
+	vmp->bits.audio_pmu_vote_slpen = 0;
+	lpvote->bits.vote_for_lp = 0;
+	lpvote->bits.vote_for_plloff = 0;
+	lpvote->bits.vote_for_pwroff = 0;
 
 	/* initialize timer mask */
 	/* timer_mask = 1UL << PM_SLEEP_MODE_DEEP; */
 
 	/* initialize system pm module */
 	rt_system_pm_init(&_ops, timer_mask, RT_NULL);
+
+	/* create lowpower mode endpoint */
+	ret = rpmsg_create_ept(&lpwept, rpdev, RPMSG_LOW_PWR_SERV_NAME,
+			RPMSG_ADDR_ANY, RPMSG_ADDR_ANY,
+			rpmsg_lpw_endpoint_cb, rpmsg_lpw_service_unbind);
+	if (ret) {
+		rt_kprintf("Failed to create endpoint\n");
+		return -1;
+	}
 
 	return 0;
 }

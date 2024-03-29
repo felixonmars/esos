@@ -293,6 +293,13 @@ void rt_hw_eclic_save(void)
     {
 	    ecli_save_reg[idx] = ECLIC->CTRL[idx].INTIE;
     }
+
+    /* disable all the irqs */
+    for (idx = 0; idx < SOC_INT_MAX; idx++)
+    {
+	    rt_hw_interrupt_mask(idx);
+	    rt_hw_interrupt_clear_pending(idx);
+    }
 }
 
 void rt_hw_eclic_restore(void)

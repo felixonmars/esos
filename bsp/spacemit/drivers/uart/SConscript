@@ -6,6 +6,6 @@ cwd     = GetCurrentDir()
 src     = Glob('*.c')
 CPPPATH = [cwd]
 
-group   = DefineGroup('drv_uart', src, depend = [''], CPPPATH = CPPPATH)
+group   = DefineGroup('drv_uart', src, depend = ['BSP_USING_UART'], CPPPATH = CPPPATH)
 
 Return('group')

@@ -78,6 +78,12 @@ __cpu_resume_enter:
 	/* Disable Global Interrupt */
 	csrc CSR_MSTATUS, MSTATUS_MIE
 
+	/* invalidate icache */
+	csrw CSR_CCM_MCOMMAND, 0xd
+
+	/* invalidate dcache */
+	csrw CSR_CCM_MCOMMAND, 0x17
+
 	/* get the saved context */
 	la a1, __sleep_sp_store
 	lw a0, 0*REGBYTES(a1)
@@ -117,25 +123,29 @@ __cpu_resume_enter:
         LOAD   s10, (SUSPEND_CONTEXT_REGS + PT_S10)(a0)
         LOAD   s11, (SUSPEND_CONTEXT_REGS + PT_S11)(a0)
 
+	/* Enable mcycle and minstret counter */
+	csrci CSR_MCOUNTINHIBIT, 0x5
+
 #ifdef RT_USING_CACHE
 #if defined(__ICACHE_PRESENT) && (__ICACHE_PRESENT == 1)
-	csrs CSR_MCACHE_CTL MCACHE_CTL_IC_EN
+       csrs CSR_MCACHE_CTL MCACHE_CTL_IC_EN
 #endif
 
 #if defined(__DCACHE_PRESENT) && (__DCACHE_PRESENT == 1)
-	csrs CSR_MCACHE_CTL MCACHE_CTL_DC_EN
+       csrs CSR_MCACHE_CTL MCACHE_CTL_DC_EN
 
 #if defined(RT_USING_OPENAMP)
-	/* set the vring & share memory to non-cacheable */
-	/* base: SHARED_MEM_PA; size SHARED_MEM_SIZE */
-	csrs CSR_MNOCM 0xfff00000
-	csrs CSR_MNOCB SHARED_MEM_PA
-	csrs CSR_MNOCB 0x1
+       /* set the vring & share memory to non-cacheable */
+       /* base: SHARED_MEM_PA; size SHARED_MEM_SIZE */
+       csrs CSR_MNOCM 0xfff00000
+       csrs CSR_MNOCB SHARED_MEM_PA
+       csrs CSR_MNOCB 0x1
 #endif
 #endif
-	fence iorw, iorw
-	fence.i
+       fence iorw, iorw
+       fence.i
 #endif
+
         /* Return zero value */
         add     a0, zero, zero
 
