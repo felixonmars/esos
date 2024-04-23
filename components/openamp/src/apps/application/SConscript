@@ -2,12 +2,12 @@ from building import *
 
 # The set of source files associated with this SConscript file.
 src = Split('''
-adma_service.c
+rpmsg_services.c
 ''')
 cwd = GetCurrentDir()
 CPPPATH = [cwd]
 
-group = DefineGroup('OpenAMPSrcAppsAdmaService', src, depend = ['RT_USING_ADMA_SERVICE'], CPPPATH = CPPPATH)
+group = DefineGroup('OpenAMPSrcAppsRpmsgService', src, depend = ['RT_USING_RPMSG_SERVICE'], CPPPATH = CPPPATH)
 
 Return('group')
 

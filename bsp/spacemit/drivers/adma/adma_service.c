@@ -12,30 +12,15 @@
 #include <metal/irq.h>
 #include <riscv-clic.h>
 
-#ifdef BSP_USING_PM
-#include <drivers/pm.h>
-#endif
-
 #define RPMSG_SERV_NAME         "adma-service"
-
-extern int platform_init(int argc, char *argv[], void **platform);
-extern struct  rpmsg_device *
-platform_create_rpmsg_vdev(void *platform, unsigned int vdev_index,
-			   unsigned int role,
-			   void (*rst_cb)(struct virtio_device *vdev),
-			   rpmsg_ns_bind_cb ns_bind_cb);
 
 extern int rpmsg_create_ept(struct rpmsg_endpoint *ept, struct rpmsg_device *rdev,
 		     const char *name, uint32_t src, uint32_t dest,
 		     rpmsg_ept_cb cb, rpmsg_ns_unbind_cb unbind_cb);
 
-extern int platform_poll(void *priv);
-
-static rt_thread_t tid;
 static rt_thread_t trigger_tid;
 static rt_sem_t trigger_sem;
-static void *platform;
-struct rpmsg_device *rpdev;
+extern struct rpmsg_device *rpdev;
 static struct rpmsg_endpoint lept;
 
 static int adma_irq_handler(int irq, void *arg)
@@ -98,32 +83,9 @@ static void adma_trigger_irq_thread_entry(void *parameter)
 	}
 }
 
-static void adma_poll_thread_entry(void *parameter)
-{
-	/* loop here */
-	while (1) {
-		platform_poll(platform);
-	}
-}
-
 int rpmsg_adma_service_init(void)
 {
 	int ret;
-	int argc = 3;
-	char *argv[] = {"./rpmsg_adma_service_init", 0, 0};
-
-	/* initialize the openamp framework */
-	ret = platform_init(argc, argv, &platform);
-	if (ret) {
-		rt_kprintf("Failed to initialize platform.\n");
-		return -1;
-	}
-
-	rpdev = platform_create_rpmsg_vdev(platform, 0, VIRTIO_DEV_DEVICE, NULL, NULL);
-	if (!rpdev) {
-		rt_kprintf("Failed to create rpmsg virtio device\n");
-		return -1;
-	}
 
 	/* create rpmsg endpoint */
 	ret = rpmsg_create_ept(&lept, rpdev, RPMSG_SERV_NAME,
@@ -133,20 +95,6 @@ int rpmsg_adma_service_init(void)
 		rt_kprintf("Failed to create endpoint\n");
 		return -1;
 	}
-
-	/* create the rpmsg poll thread */
-	tid = rt_thread_create("adma_poll_serivce",
-			adma_poll_thread_entry,
-			NULL,
-			2048,
-			RT_THREAD_PRIORITY_MAX / 3,
-			20);
-	if (!tid) {
-		rt_kprintf("Failed to create adma service\n");
-		return -1;
-	}
-
-	rt_thread_startup(tid);
 
 	trigger_sem = rt_sem_create("adma_trigger_sem", 0, RT_IPC_FLAG_FIFO);
 	if (!trigger_sem) {
@@ -170,5 +118,4 @@ int rpmsg_adma_service_init(void)
 
 	return 0;
 }
-
-INIT_COMPONENT_EXPORT(rpmsg_adma_service_init);
+INIT_APP_EXPORT(rpmsg_adma_service_init);

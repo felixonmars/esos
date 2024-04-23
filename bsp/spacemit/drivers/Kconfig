@@ -16,6 +16,14 @@ menu "On-chip Peripheral Drivers"
         default y
         select RT_USING_SERIAL
 
+    config BSP_USING_ADMA
+        bool "Enable ADMA"
+        default n
+
+    config BSP_USING_CAN
+        bool "Enable CAN"
+        default n
+
     config BSP_USING_PM
 	bool "Enable PM"
 	default n

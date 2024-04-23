@@ -9,8 +9,8 @@ config METAL_INTERNAL
     bool "Using internal metal definations"
     default n
 
-config RT_USING_ADMA_SERVICE
-    bool "Add adma service in openAMP framework"
+config RT_USING_RPMSG_SERVICE
+    bool "Add rpmsg service in openAMP framework"
     select RT_USING_OPENAMP
     depends on SOC_SPACEMIT_K1_X
 
