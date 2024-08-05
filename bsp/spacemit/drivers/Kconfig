@@ -24,6 +24,10 @@ menu "On-chip Peripheral Drivers"
         bool "Enable CAN"
         default n
 
+    config BSP_USING_I2C
+        bool "Enable I2C"
+        default n
+
     config BSP_USING_PM
 	bool "Enable PM"
 	default n
