@@ -28,6 +28,10 @@ menu "On-chip Peripheral Drivers"
         bool "Enable I2C"
         default n
 
+    config BSP_USING_IR
+        bool "Enable IR"
+        default n
+
     config BSP_USING_PM
 	bool "Enable PM"
 	default n
