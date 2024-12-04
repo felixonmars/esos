@@ -35,6 +35,8 @@ extern "C" {
 
 #define RCPU_RUNTIME_MEM_SNAPSHOT_BASE	0x30300000
 
+#define RT_FDT_BASE		0x30340000
+
 struct remoteproc_priv {
 	const char *poll_dev_name;
 	const char *poll_dev_bus_name;

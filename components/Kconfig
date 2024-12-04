@@ -43,4 +43,6 @@ source "$RTT_DIR/components/armscp/Kconfig"
 
 source "$RTT_DIR/components/openamp/Kconfig"
 
+source "$RTT_DIR/components/fdt-main/Kconfig"
+
 endmenu

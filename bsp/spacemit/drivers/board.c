@@ -9,10 +9,13 @@
 #ifdef RT_USING_ARMSCP_MODULE
 #include <fwk_arch.h>
 #endif
+#ifdef RT_USING_FDT
+#include <dtb_head.h>
+#endif
 
 extern unsigned char __bss_end__[];
 
-#if defined(SOC_SPACEMIT_K1_X) && defined(RT_USING_OPENAMP)
+#if defined(SOC_SPACEMIT_K1_X) && (defined(RT_USING_OPENAMP) || defined(RT_USING_FDT))
 #include <platform_info.h>
 #endif
 
@@ -29,6 +32,10 @@ void rt_hw_board_init(void)
     rt_system_heap_init((void *)__bss_end__, (void *)(0x40000));
 #endif
 #endif
+#endif
+
+#if defined(SOC_SPACEMIT_K1_X) && defined(RT_USING_FDT)
+    device_tree_setup((void *)RT_FDT_BASE);
 #endif
 
     /* uart must be initialize here */
