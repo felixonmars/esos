@@ -6,7 +6,7 @@ list    = os.listdir(cwd)
 CPPPATH = [cwd + '/../inc' , cwd + '/libfdt']
 objs    = []
 
-group = DefineGroup('FDT', src, depend = ['PKG_USING_FDT'], CPPPATH = CPPPATH)
+group = DefineGroup('FDT', src, depend = ['RT_USING_FDT'], CPPPATH = CPPPATH)
 
 for d in list:
     path = os.path.join(cwd, d)

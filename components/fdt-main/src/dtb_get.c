@@ -11,9 +11,10 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <rtthread.h>
 
-#define RT_TRUE     true
-#define RT_FALSE    false
+// #define RT_TRUE     true
+// #define RT_FALSE    false
 
 static struct
 {
@@ -383,10 +384,10 @@ static void _dtb_node_printf_dtb_node_info(struct dtb_node *dtb_node)
 
     while (dtb_node != NULL)
     {
-        puts("\n");
+        rt_kputs("\n");
         _dtb_node_printf_depth(depth);
         puts(dtb_node->name);
-        puts(" {\n");
+        rt_kputs(" {\n");
         ++depth;
 
         dtb_property = dtb_node->properties;
@@ -394,25 +395,25 @@ static void _dtb_node_printf_dtb_node_info(struct dtb_node *dtb_node)
         {
             _dtb_node_printf_depth(depth);
 
-            puts(dtb_property->name);
+            rt_kputs(dtb_property->name);
 
             if (dtb_property->size > 0)
             {
                 int size = dtb_property->size;
                 char *value = dtb_property->value;
 
-                puts(" = ");
+                rt_kputs(" = ");
                 if (_dtb_node_test_string_list(value, size) == RT_TRUE)
                 {
                     /* print string list */
                     char *str = value;
                     do
                     {
-                        printf("\"%s\"", str);
+                        rt_kprintf("\"%s\"", str);
                         str += strlen(str) + 1;
-                        puts(", ");
+                        rt_kputs(", ");
                     } while (str < value + size);
-                    puts("\b\b");
+                    rt_kputs("\b\b");
                 }
                 else if ((size % 4) == 0)
                 {
@@ -420,12 +421,12 @@ static void _dtb_node_printf_dtb_node_info(struct dtb_node *dtb_node)
                     int i;
                     fdt32_t *cell = (fdt32_t *)value;
 
-                    puts("<");
+                    rt_kputs("<");
                     for (i = 0, size /= 4; i < size; ++i)
                     {
-                        printf("0x%x ", fdt32_to_cpu(cell[i]));
+                        rt_kprintf("0x%x ", fdt32_to_cpu(cell[i]));
                     }
-                    puts("\b>");
+                    rt_kputs("\b>");
                 }
                 else
                 {
@@ -433,15 +434,15 @@ static void _dtb_node_printf_dtb_node_info(struct dtb_node *dtb_node)
                     int i;
                     uint8_t *byte = (uint8_t *)value;
 
-                    puts("[");
+                    rt_kputs("[");
                     for (i = 0; i < size; ++i)
                     {
-                       printf("%02x ", *byte++);
+                       rt_kprintf("%02x ", *byte++);
                     }
-                    puts("\b]");
+                    rt_kputs("\b]");
                 }
             }
-            puts(";\n");
+            rt_kputs(";\n");
             dtb_property = dtb_property->next;
         }
 
@@ -450,7 +451,7 @@ static void _dtb_node_printf_dtb_node_info(struct dtb_node *dtb_node)
 
         --depth;
         _dtb_node_printf_depth(depth);
-        puts("};\n");
+        rt_kputs("};\n");
     }
 }
 
@@ -460,10 +461,10 @@ void dtb_node_get_dts_dump(struct dtb_node *dtb_node_head)
     {
         int i = dtb_node_head->header->memreserve_sz;
 
-        puts("/dts-v1/;\n");
+        rt_kputs("/dts-v1/;\n");
         while (i --> 0)
         {
-            printf("\n/memreserve/\t0x%lx 0x%zx;", dtb_node_head->header->memreserve[i].address, dtb_node_head->header->memreserve[i].size);
+            rt_kprintf("\n/memreserve/\t0x%lx 0x%zx;", dtb_node_head->header->memreserve[i].address, dtb_node_head->header->memreserve[i].size);
         }
 
         _dtb_node_printf_dtb_node_info(dtb_node_head);
