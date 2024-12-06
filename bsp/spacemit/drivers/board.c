@@ -17,6 +17,12 @@ extern unsigned char __bss_end__[];
 #include <platform_info.h>
 #endif
 
+#if defined(RT_USING_CLK) && defined(RT_USING_MUTEX)
+struct rt_mutex clk_prepare_mutex;
+struct rt_mutex of_clk_mutex;
+struct rt_mutex clocks_mutex;
+#endif
+
 /**
  * This function will initial smart-evb board.
  */
@@ -33,6 +39,12 @@ void rt_hw_board_init(void)
 #endif
 
     device_tree_setup((void *)RT_FDT_BASE);
+
+#if defined(RT_USING_CLK) && defined(RT_USING_MUTEX)
+    rt_mutex_init(&clk_prepare_mutex, "clk_prepare_mutex", RT_IPC_FLAG_PRIO);
+    rt_mutex_init(&of_clk_mutex, "of_clk_mutex", RT_IPC_FLAG_PRIO);
+    rt_mutex_init(&clocks_mutex, "clk_mutex", RT_IPC_FLAG_PRIO);
+#endif
 
     /* uart must be initialize here */
 #ifdef RT_USING_COMPONENTS_INIT

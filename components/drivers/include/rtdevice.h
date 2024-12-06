@@ -153,6 +153,15 @@ extern "C" {
 #include "drivers/rt_inputcapture.h"
 #endif /* RT_USING_INPUT_CAPTURE */
 
+#include "drivers/dtb_node.h"
+#include "drivers/dtb_head.h"
+#include "drivers/hlist.h"
+
+#ifdef RT_USING_CLK
+#include "drivers/clk-provider.h"
+#include "drivers/clkdev.h"
+#endif
+
 #ifdef __cplusplus
 }
 #endif
