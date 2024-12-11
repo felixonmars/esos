@@ -10,6 +10,11 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+struct dtb_compatible_array {
+	char compatible[128];
+	const void *data;
+};
+
 void *get_fdt_blob(void);
 struct dtb_node *get_dtb_node_head(void);
 bool dtb_node_active(void);

@@ -21,6 +21,8 @@ extern unsigned char __bss_end__[];
 struct rt_mutex clk_prepare_mutex;
 struct rt_mutex of_clk_mutex;
 struct rt_mutex clocks_mutex;
+extern int of_fixed_clk_setup(void);
+extern int spacemit_ccu_init(void);
 #endif
 
 /**
@@ -44,6 +46,8 @@ void rt_hw_board_init(void)
     rt_mutex_init(&clk_prepare_mutex, "clk_prepare_mutex", RT_IPC_FLAG_PRIO);
     rt_mutex_init(&of_clk_mutex, "of_clk_mutex", RT_IPC_FLAG_PRIO);
     rt_mutex_init(&clocks_mutex, "clk_mutex", RT_IPC_FLAG_PRIO);
+    of_fixed_clk_setup();
+    spacemit_ccu_init();
 #endif
 
     /* uart must be initialize here */

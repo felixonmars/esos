@@ -4,21 +4,20 @@
 
 #define EPROBE_DEFER    517     /* Driver requests probe retry */
 #define ESHUTDOWN       58      /* Cannot send after transport endpoint shutdown */
+#define EBUSY           16      /* Device or resource busy */
 
 extern struct rt_mutex clk_prepare_mutex;
 extern struct rt_mutex of_clk_mutex;
-extern struct rt_mutex clocks_mutex;
 
 static HLIST_HEAD(clk_root_list);
 static HLIST_HEAD(clk_orphan_list);
 static rt_list_t of_clk_providers = RT_LIST_OBJECT_INIT(of_clk_providers);
-static rt_list_t clocks = RT_LIST_OBJECT_INIT(clocks);
 
 struct clk {
 	struct clk_core *core;
 	/* struct device *dev; */
 	/* const char *dev_id; */
-	/* const char *con_id; */
+	const char *con_id;
 	unsigned long min_rate;
 	unsigned long max_rate;
 	unsigned int exclusive_count;
@@ -133,7 +132,7 @@ static struct clk *alloc_clk(struct clk_core *core, const char *dev_id,
 
 	clk->core = core;
 	/* clk->dev_id = dev_id; */
-	/* clk->con_id = kstrdup_const(con_id, GFP_KERNEL); */
+	clk->con_id = con_id;
 	clk->max_rate = ULONG_MAX;
 
 	return clk;
@@ -188,7 +187,6 @@ static int clk_core_populate_parent_map(struct clk_core *core,
 			}
 
 			ret = clk_cpy_name(&parent->name, parent_names[i], true);
-
 		} else if (parent_data) {
 
 			parent->hw = parent_data[i].hw;
@@ -196,7 +194,6 @@ static int clk_core_populate_parent_map(struct clk_core *core,
 			ret = clk_cpy_name(&parent->fw_name, parent_data[i].fw_name, false);
 			if (!ret)
 				ret = clk_cpy_name(&parent->name, parent_data[i].name, false);
-
 		} else if (parent_hws) {
 			parent->hw = parent_hws[i];
 		} else {
@@ -330,9 +327,19 @@ static int of_parse_clkspec(const struct dtb_node *np, int index,
         return ret;
 }
 
+const char *__clk_get_name(const struct clk *clk)
+{
+	return !clk ? NULL : clk->core->name;
+}
+
 struct clk_hw *__clk_get_hw(struct clk *clk)
 {
 	return !clk ? NULL : clk->core->hw;
+}
+
+const char *clk_hw_get_name(const struct clk_hw *hw)
+{
+	return hw->core->name;
 }
 
 static struct clk_hw *
@@ -370,64 +377,6 @@ of_clk_get_hw_from_clkspec(struct fdt_phandle_args *clkspec)
         rt_mutex_release(&of_clk_mutex);
 
         return hw;
-}
-
-/*
- * Find the correct struct clk for the device and connection ID.
- * We do slightly fuzzy matching here:
- *  An entry with a NULL ID is assumed to be a wildcard.
- *  If an entry has a device ID, it must match
- *  If an entry has a connection ID, it must match
- * Then we take the most specific entry - with the following
- * order of precedence: dev+con > dev only > con only.
- */
-static struct clk_lookup *clk_find(const char *dev_id, const char *con_id)
-{
-        struct clk_lookup *p, *cl = NULL;
-        int match, best_found = 0, best_possible = 0;
-
-        if (dev_id)
-                best_possible += 2;
-        if (con_id)
-                best_possible += 1;
-
-        rt_list_for_each_entry(p, &clocks, node) {
-                match = 0;
-                if (p->dev_id) {
-                        if (!dev_id || rt_strcmp(p->dev_id, dev_id))
-                                continue;
-                        match += 2;
-                }
-                if (p->con_id) {
-                        if (!con_id || rt_strcmp(p->con_id, con_id))
-                                continue;
-                        match += 1;
-                }
-
-                if (match > best_found) {
-                        cl = p;
-                        if (match != best_possible)
-                                best_found = match;
-                        else
-                                break;
-                }
-        }
-
-        return cl;
-}
-
-struct clk_hw *clk_find_hw(const char *dev_id, const char *con_id)
-{
-	struct clk_lookup *cl;
-	struct clk_hw *hw = ERR_PTR(-RT_ETIMEOUT);
-
-	rt_mutex_take(&clocks_mutex, RT_WAITING_FOREVER);
-	cl = clk_find(dev_id, con_id);
-	if (cl)
-		hw = cl->clk_hw;
-	rt_mutex_release(&clocks_mutex);
-
-	return hw;
 }
 
 /**
@@ -468,7 +417,9 @@ struct clk_hw *clk_find_hw(const char *dev_id, const char *con_id)
  */
 static struct clk_core *clk_core_get(struct clk_core *core, unsigned char p_index)
 {
-	const char *name = core->parents[p_index].fw_name;
+	const char *fw_name = core->parents[p_index].fw_name;
+	const char *name = core->parents[p_index].name;
+
 	int index = core->parents[p_index].index;
 	struct clk_hw *hw = ERR_PTR(-RT_ETIMEOUT);
 	/* struct device *dev = core->dev; */
@@ -476,8 +427,8 @@ static struct clk_core *clk_core_get(struct clk_core *core, unsigned char p_inde
 	struct dtb_node *np = core->of_node;
 	struct fdt_phandle_args clkspec;
 
-	if (np && (name || index >= 0) &&
-			!of_parse_clkspec(np, index, name, &clkspec)) {
+	if (np && (fw_name || index >= 0) &&
+			!of_parse_clkspec(np, index, fw_name, &clkspec)) {
 		hw = of_clk_get_hw_from_clkspec(&clkspec);
 		dtb_node_put(clkspec.np);
 	} else if (name) {
@@ -486,6 +437,7 @@ static struct clk_core *clk_core_get(struct clk_core *core, unsigned char p_inde
 		 * looking up via clkdev based clk_lookups.
 		 */
 		hw = clk_find_hw(/* dev_id */ NULL, name);
+
 	}
 
 	if (IS_ERR(hw))
@@ -511,6 +463,11 @@ static unsigned long clk_core_get_rate_nolock(struct clk_core *core)
 	 * properly recalc the rate based on the parent's rate.
 	 */
 	return 0;
+}
+
+unsigned long clk_hw_get_rate(const struct clk_hw *hw)
+{
+        return clk_core_get_rate_nolock(hw->core);
 }
 
 static void clk_core_rate_protect(struct clk_core *core)
@@ -721,6 +678,16 @@ static struct clk_core *clk_core_get_parent_by_index(struct clk_core *core,
 		clk_core_fill_parent_index(core, index);
 
 	return core->parents[index].core;
+}
+
+struct clk_hw *
+clk_hw_get_parent_by_index(const struct clk_hw *hw, unsigned int index)
+{
+        struct clk_core *parent;
+
+        parent = clk_core_get_parent_by_index(hw->core, index);
+
+        return !parent ? NULL : parent->hw;
 }
 
 static struct clk_core *__clk_init_parent(struct clk_core *core)
@@ -978,7 +945,7 @@ static void clk_core_reparent_orphans_nolock(void)
  */
 static int __clk_core_init(struct clk_core *core)
 {
-	int ret;
+	int ret = 0;
 	struct clk_core *parent;
 	unsigned long rate;
 
@@ -1277,7 +1244,7 @@ int of_clk_add_hw_provider(struct dtb_node *np,
 	rt_mutex_take(&of_clk_mutex, RT_WAITING_FOREVER);
 	rt_list_insert_after(&of_clk_providers, &cp->link);
 	rt_mutex_release(&of_clk_mutex);
-	rt_kprintf("Added clk_hw provider from %pOF\n", np);
+	debug("Added clk_hw provider from %pOF\n", np);
 
         clk_core_reparent_orphans();
 
@@ -1321,6 +1288,24 @@ static struct clk *clk_hw_create_clk(struct clk_hw *hw, const char *dev_id, cons
         clk_core_link_consumer(core, clk);
 
         return clk;
+}
+
+/**
+ * clk_hw_get_clk - get clk consumer given an clk_hw
+ * @hw: clk_hw associated with the clk being consumed
+ * @con_id: connection ID string on device
+ *
+ * Returns: new clk consumer
+ * This is the function to be used by providers which need
+ * to get a consumer clk and act on the clock element
+ * Calls to this function must be balanced with calls clk_put()
+ */
+struct clk *clk_hw_get_clk(struct clk_hw *hw, const char *con_id)
+{
+//	struct device *dev = hw->core->dev;
+//	const char *name = dev ? dev_name(dev) : NULL;
+
+        return clk_hw_create_clk(/*dev, */hw, RT_NULL, con_id);
 }
 
 static struct clk_hw *of_clk_get_hw(struct dtb_node *np, int index,
@@ -2046,3 +2031,110 @@ int clk_set_rate(struct clk *clk, unsigned long rate)
 	return ret;
 }
 
+static unsigned long clk_core_get_rate_recalc(struct clk_core *core)
+{
+	if (core && (core->flags & CLK_GET_RATE_NOCACHE))
+		__clk_recalc_rates(core, false, 0);
+
+	return clk_core_get_rate_nolock(core);
+}
+
+unsigned long clk_get_rate(struct clk *clk)
+{
+	unsigned long rate;
+
+	if (!clk)
+		return 0;
+
+	clk_prepare_lock();
+	rate = clk_core_get_rate_recalc(clk->core);
+	clk_prepare_unlock();
+
+	return rate;
+}
+
+static int __clk_set_parent(struct clk_core *core, struct clk_core *parent,
+                            unsigned char p_index)
+{
+	unsigned long flags;
+	int ret = 0;
+	struct clk_core *old_parent;
+
+	old_parent = __clk_set_parent_before(core, parent);
+
+	/* change clock input source */
+	if (parent && core->ops->set_parent)
+		ret = core->ops->set_parent(core->hw, p_index);
+
+	if (ret) {
+		flags = rt_hw_interrupt_disable();
+		clk_reparent(core, old_parent);
+		rt_hw_interrupt_enable(flags);
+		
+		__clk_set_parent_after(core, old_parent, parent);
+
+		return ret;
+	}
+
+	__clk_set_parent_after(core, parent, old_parent);
+
+        return 0;
+}
+
+static int clk_core_set_parent_nolock(struct clk_core *core,
+                                      struct clk_core *parent)
+{
+	int ret = 0;
+	int p_index = 0;
+	unsigned long p_rate = 0;
+
+	if (!core)
+		return 0;
+
+	if (core->parent == parent)
+		return 0;
+
+	/* verify ops for multi-parent clks */
+	if (core->num_parents > 1 && !core->ops->set_parent)
+		return -RT_ERROR;
+
+	/* check that we are allowed to re-parent if the clock is in use */
+	if ((core->flags & CLK_SET_PARENT_GATE) && core->prepare_count)
+		return -EBUSY;
+
+	if (clk_core_rate_is_protected(core))
+		return -EBUSY;
+
+	/* try finding the new parent index */
+	if (parent) {
+		p_index = clk_fetch_parent_index(core, parent);
+		if (p_index < 0) {
+			rt_kprintf("%s: clk %s can not be parent of clk %s\n",
+					__func__, parent->name, core->name);
+			return p_index;
+		}
+		p_rate = parent->rate;
+	}
+
+	/* do the re-parent */
+	ret = __clk_set_parent(core, parent, p_index);
+
+	/* propagate rate an accuracy recalculation accordingly */
+	if (ret) {
+	       	__clk_recalc_rates(core, true, /* ABORT_RATE_CHANGE */0);
+	} else {
+		__clk_recalc_rates(core, true, /* POST_RATE_CHANGE */0);
+	}
+
+	return ret;
+}
+
+int clk_hw_set_parent(struct clk_hw *hw, struct clk_hw *parent)
+{
+	return clk_core_set_parent_nolock(hw->core, parent->core);
+}
+
+unsigned int clk_hw_get_num_parents(const struct clk_hw *hw)
+{
+	return hw->core->num_parents;
+}

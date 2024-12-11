@@ -3,6 +3,9 @@
 
 #include <rtdevice.h>
 
+#undef ARRAY_SIZE
+#define ARRAY_SIZE(ar)     (sizeof(ar)/sizeof(ar[0]))
+
 /*
  * flags used across common struct clk.  these flags should only affect the
  * top-level framework.  custom flags for dealing with hardware specifics
@@ -38,7 +41,7 @@ struct clk_onecell_data {
 
 struct clk_hw_onecell_data {
 	unsigned int num;
-	struct clk_hw *hws[];
+	struct clk_hw *hws[128];
 };
 
 /**
@@ -127,6 +130,138 @@ struct clk_hw {
 	struct clk *clk;
 	const struct clk_init_data *init;
 };
+
+struct clk_div_table {
+	unsigned int    val;
+	unsigned int    div;
+};
+
+/**
+ * struct clk_divider - adjustable divider clock
+ *
+ * @hw:         handle between common and hardware-specific interfaces
+ * @reg:        register containing the divider
+ * @shift:      shift to the divider bit field
+ * @width:      width of the divider bit field
+ * @table:      array of value/divider pairs, last entry should have div = 0
+ * @lock:       register lock
+ *
+ * Clock with an adjustable divider affecting its output frequency.  Implements
+ * .recalc_rate, .set_rate and .round_rate
+ *
+ * @flags:
+ * CLK_DIVIDER_ONE_BASED - by default the divisor is the value read from the
+ *      register plus one.  If CLK_DIVIDER_ONE_BASED is set then the divider is
+ *      the raw value read from the register, with the value of zero considered
+ *      invalid, unless CLK_DIVIDER_ALLOW_ZERO is set.
+ * CLK_DIVIDER_POWER_OF_TWO - clock divisor is 2 raised to the value read from
+ *      the hardware register
+ * CLK_DIVIDER_ALLOW_ZERO - Allow zero divisors.  For dividers which have
+ *      CLK_DIVIDER_ONE_BASED set, it is possible to end up with a zero divisor.
+ *      Some hardware implementations gracefully handle this case and allow a
+ *      zero divisor by not modifying their input clock
+ *      (divide by one / bypass).
+ * CLK_DIVIDER_HIWORD_MASK - The divider settings are only in lower 16-bit
+ *      of this register, and mask of divider bits are in higher 16-bit of this
+ *      register.  While setting the divider bits, higher 16-bit should also be
+ *      updated to indicate changing divider bits.
+ * CLK_DIVIDER_ROUND_CLOSEST - Makes the best calculated divider to be rounded
+ *      to the closest integer instead of the up one.
+ * CLK_DIVIDER_READ_ONLY - The divider settings are preconfigured and should
+ *      not be changed by the clock framework.
+ * CLK_DIVIDER_MAX_AT_ZERO - For dividers which are like CLK_DIVIDER_ONE_BASED
+ *      except when the value read from the register is zero, the divisor is
+ *      2^width of the field.
+ * CLK_DIVIDER_BIG_ENDIAN - By default little endian register accesses are used
+ *      for the divider register.  Setting this flag makes the register accesses
+ *      big endian.
+ */
+struct clk_divider {
+        struct clk_hw   hw;
+        void		*reg;
+        unsigned char	shift;
+        unsigned char	width;
+        unsigned char	flags;
+        const struct clk_div_table	*table;
+	rt_base_t	*lock;
+};
+
+/*
+ * DOC: Basic clock implementations common to many platforms
+ *
+ * Each basic clock hardware type is comprised of a structure describing the
+ * clock hardware, implementations of the relevant callbacks in struct clk_ops,
+ * unique flags for that hardware type, a registration function and an
+ * alternative macro for static initialization
+ */
+
+/**
+ * struct clk_fixed_rate - fixed-rate clock
+ * @hw:         handle between common and hardware-specific interfaces
+ * @fixed_rate: constant frequency of clock
+ * @fixed_accuracy: constant accuracy of clock in ppb (parts per billion)
+ * @flags:      hardware specific flags
+ *
+ * Flags:
+ * * CLK_FIXED_RATE_PARENT_ACCURACY - Use the accuracy of the parent clk
+ *                                    instead of what's set in @fixed_accuracy.
+ */
+struct clk_fixed_rate {
+	struct          clk_hw hw;
+	unsigned long   fixed_rate;
+	/* unsigned long   fixed_accuracy; */
+	unsigned long   flags;
+};
+
+#define BITS_PER_LONG 32
+
+#ifndef GENMASK
+#define GENMASK(h, l) \
+        (((~0UL) - (1UL << (l)) + 1) & (~0UL >> (BITS_PER_LONG - 1 - (h))))
+#endif
+
+#define __KERNEL_DIV_ROUND_UP(n, d) (((n) + (d) - 1) / (d))
+#define DIV_ROUND_UP __KERNEL_DIV_ROUND_UP
+
+/**
+ * do_div - returns 2 values: calculate remainder and update new dividend
+ * @n: uint64_t dividend (will be updated)
+ * @base: uint32_t divisor
+ *
+ * Summary:
+ * ``uint32_t remainder = n % base;``
+ * ``n = n / base;``
+ *
+ * Return: (uint32_t)remainder
+ *
+ * NOTE: macro parameter @n is evaluated multiple times,
+ * beware of side effects!
+ */
+# define do_div(n,base) ({                                      \
+        rt_uint32_t __base = (base);                               \
+        rt_uint32_t __rem;                                         \
+        __rem = ((rt_uint64_t)(n)) % __base;                       \
+        (n) = ((rt_uint64_t)(n)) / __base;                         \
+        __rem;                                                  \
+ })
+
+#define DIV_ROUND_DOWN_ULL(ll, d) \
+        ({ unsigned long long _tmp = (ll); do_div(_tmp, d); _tmp; })
+
+#define DIV_ROUND_UP_ULL(ll, d) \
+        DIV_ROUND_DOWN_ULL((unsigned long long)(ll) + (d) - 1, (d))
+
+#define clk_div_mask(width)     ((1 << (width)) - 1)
+#define to_clk_divider(_hw) rt_container_of(_hw, struct clk_divider, hw)
+
+#define CLK_DIVIDER_ONE_BASED           (1 << 0)
+#define CLK_DIVIDER_POWER_OF_TWO        (1 << 1)
+#define CLK_DIVIDER_ALLOW_ZERO          (1 << 2)
+#define CLK_DIVIDER_HIWORD_MASK         (1 << 3)
+#define CLK_DIVIDER_ROUND_CLOSEST       (1 << 4)
+#define CLK_DIVIDER_READ_ONLY           (1 << 5)
+#define CLK_DIVIDER_MAX_AT_ZERO         (1 << 6)
+#define CLK_DIVIDER_BIG_ENDIAN          (1 << 7)
 
 /**
  * struct clk_ops -  Callback operations for hardware clocks; these are to
@@ -281,15 +416,65 @@ struct clk_ops {
         void            (*terminate)(struct clk_hw *hw);
 };
 
+
+#define CLK_HW_INIT_NO_PARENT(_name, _ops, _flags)      \
+        (&(struct clk_init_data) {                      \
+                .flags          = _flags,               \
+                .name           = _name,                \
+                .parent_names   = NULL,                 \
+                .num_parents    = 0,                    \
+                .ops            = _ops,                 \
+        })
+
+#define CLK_HW_INIT(_name, _parent, _ops, _flags)               \
+        (&(struct clk_init_data) {                              \
+                .flags          = _flags,                       \
+                .name           = _name,                        \
+                .parent_names   = (const char *[]) { _parent }, \
+                .num_parents    = 1,                            \
+                .ops            = _ops,                         \
+        })
+
+#define CLK_HW_INIT_PARENTS(_name, _parents, _ops, _flags)      \
+        (&(struct clk_init_data) {                              \
+                .flags          = _flags,                       \
+                .name           = _name,                        \
+                .parent_names   = _parents,                     \
+                .num_parents    = ARRAY_SIZE(_parents),         \
+                .ops            = _ops,                         \
+        })
+
+const char *__clk_get_name(const struct clk *clk);
+struct clk_hw *__clk_get_hw(struct clk *clk);
+const char *clk_hw_get_name(const struct clk_hw *hw);
+unsigned long clk_hw_get_rate(const struct clk_hw *hw);
 void clk_disable_unprepare(struct clk *clk);
 int clk_prepare_enable(struct clk *clk);
 struct clk *of_clk_get_by_name(struct dtb_node *np, const char *name);
 struct clk *of_clk_get(struct dtb_node *np, int index);
 int of_clk_add_hw_provider(struct dtb_node *np,
-                           struct clk_hw *(*get)(struct fdt_phandle_args *clkspec, void *data),
-                           void *data);
+		struct clk_hw *(*get)(struct fdt_phandle_args *clkspec, void *data),
+		void *data);
 struct clk_hw *
 of_clk_hw_onecell_get(struct fdt_phandle_args *clkspec, void *data);
 struct clk * of_clk_hw_register(struct dtb_node *node, struct clk_hw *hw);
+unsigned long divider_recalc_rate(struct clk_hw *hw, unsigned long parent_rate,
+				unsigned int val,
+				const struct clk_div_table *table,
+				unsigned long flags, unsigned long width);
+struct clk_hw *
+clk_hw_get_parent_by_index(const struct clk_hw *hw, unsigned int index);
+unsigned long clk_get_rate(struct clk *clk);
+int clk_set_rate(struct clk *clk, unsigned long rate);
+struct clk *clk_hw_get_clk(struct clk_hw *hw, const char *con_id);
+int clk_hw_set_parent(struct clk_hw *hw, struct clk_hw *parent);
+unsigned int clk_hw_get_num_parents(const struct clk_hw *hw);
+
+struct clk_hw *__clk_hw_register_fixed_rate(/*struct device *dev, */
+		struct dtb_node *np, const char *name,
+		const char *parent_name, const struct clk_hw *parent_hw,
+		const struct clk_parent_data *parent_data, unsigned long flags,
+		unsigned long fixed_rate/*, unsigned long fixed_accuracy */,
+		unsigned long clk_fixed_flags/*, bool devm */);
 
 #endif /* __RT_THREAD_CLK_PROVIDER_H__ */

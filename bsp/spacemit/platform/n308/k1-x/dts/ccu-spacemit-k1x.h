@@ -1,0 +1,83 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * Copyright (c) 2023, spacemit Corporation.
+ *
+ */
+
+#ifndef _CCU_SPACEMIT_K1X_DTS_H_
+#define _CCU_SPACEMIT_K1X_DTS_H_
+
+#define CLK_PLL3     0
+#define CLK_PLL1_D2  1
+#define CLK_PLL1_D3  2
+#define CLK_PLL1_D4  3
+#define CLK_PLL1_D5  4
+#define CLK_PLL1_D6  5
+#define CLK_PLL1_D7  6
+#define CLK_PLL1_D8  7
+#define CLK_PLL1_D11 8
+#define CLK_PLL1_D13 9
+#define CLK_PLL1_D23 10
+#define CLK_PLL1_D64 11
+#define CLK_PLL1_D10_AUD  12
+#define CLK_PLL1_D100_AUD 13
+
+#define CLK_PLL3_D1  14
+#define CLK_PLL3_D2  15
+#define CLK_PLL3_D3  16
+#define CLK_PLL3_D4  17
+#define CLK_PLL3_D5  18
+#define CLK_PLL3_D6  19
+#define CLK_PLL3_D7  20
+#define CLK_PLL3_D8  21
+
+#define CLK_PLL3_80	22
+#define CLK_PLL3_40	23
+#define CLK_PLL3_20	24
+
+#define CLK_PLL1_307P2	25
+#define CLK_PLL1_76P8	26
+#define CLK_PLL1_61P44	27
+#define CLK_PLL1_153P6	28
+#define CLK_PLL1_102P4	29
+#define CLK_PLL1_51P2	30
+#define CLK_PLL1_51P2_AP	31
+#define CLK_PLL1_57P6	32
+#define CLK_PLL1_25P6	33
+#define CLK_PLL1_12P8	34
+#define CLK_PLL1_12P8_WDT	35
+#define CLK_PLL1_6P4	36
+#define CLK_PLL1_3P2	37
+#define CLK_PLL1_1P6	38
+#define CLK_PLL1_0P8	39
+#define CLK_PLL1_351	40
+#define CLK_PLL1_409P6	41
+#define CLK_PLL1_204P8	42
+#define CLK_PLL1_491	43
+#define CLK_PLL1_245P76	44
+#define CLK_PLL1_614	45
+#define CLK_PLL1_47P26	46
+#define CLK_PLL1_31P5	47
+#define CLK_PLL1_819	48
+#define CLK_PLL1_1228	49
+#define CLK_RCPU_HDMIAUDIO	50
+#define CLK_RCPU_CAN		51
+#define CLK_RCPU_CAN_BUS	52
+#define CLK_RCPU2_PWM0		53
+#define CLK_RCPU2_PWM1		54
+#define CLK_RCPU2_PWM2		55
+#define CLK_RCPU2_PWM3		56
+#define CLK_RCPU2_PWM4		57
+#define CLK_RCPU2_PWM5		58
+#define CLK_RCPU2_PWM6		59
+#define CLK_RCPU2_PWM7		60
+#define CLK_RCPU2_PWM8		61
+#define CLK_RCPU2_PWM9		62
+#define CLK_RCPU_I2C0		63
+#define CLK_RCPU_IR		64
+#define CLK_RCPU_UART0		65
+#define CLK_RCPU_UART1		66
+
+#define CLK_MAX_NO		67
+
+#endif /* _CCU_SPACEMIT_K1X_DTS_H_ */
