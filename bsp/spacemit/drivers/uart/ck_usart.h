@@ -9,6 +9,7 @@
 
 
 #include <rtdef.h>
+#include "drv_usart.h"
 #include <register_defination.h>
 
 #ifdef __cplusplus
@@ -59,7 +60,24 @@ extern "C" {
 #define DW_IIR_RECV_LINE        0x06    /* receiver line status */
 #define DW_IIR_CHAR_TIMEOUT     0x0c    /* character timeout */
 
-#define CONFIG_USART_NUM	1
+typedef struct
+{
+    rt_uint32_t base;
+    rt_uint32_t irq;
+    struct clk *clk, *rst;
+    usart_event_cb_t cb_event;           ///< Event callback
+    rt_uint32_t rx_total_num;
+    rt_uint32_t tx_total_num;
+    rt_uint8_t *rx_buf;
+    rt_uint8_t *tx_buf;
+    volatile rt_uint32_t rx_cnt;
+    volatile rt_uint32_t tx_cnt;
+    volatile rt_uint32_t tx_busy;
+    volatile rt_uint32_t rx_busy;
+    rt_uint32_t last_tx_num;
+    rt_uint32_t last_rx_num;
+    rt_int32_t idx;
+} ck_usart_priv_t;
 
 #ifdef __cplusplus
 }

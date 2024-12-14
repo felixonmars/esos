@@ -4,7 +4,3 @@
 /dts-v1/;
 
 #include "k1-x.dtsi"
-
-&uart {
-	reg = <0xd4017000 0x100>;
-};

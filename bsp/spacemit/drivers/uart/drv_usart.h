@@ -296,6 +296,8 @@ rt_int32_t ck_usart_clr_int_flag(usart_handle_t handle, rt_uint32_t flag);
 
 rt_int32_t ck_usart_set_int_flag(usart_handle_t handle, rt_uint32_t flag);
 
+int alloc_usart_memory(rt_uint32_t num);
+
 #ifdef __cplusplus
 }
 #endif

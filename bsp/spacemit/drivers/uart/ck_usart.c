@@ -5,6 +5,7 @@
  */
 
 #include <rtthread.h>
+#include <rtdevice.h>
 #include "drv_usart.h"
 #include "ck_usart.h"
 
@@ -30,25 +31,7 @@
     } while(0)
 #endif
 
-typedef struct
-{
-    rt_uint32_t base;
-    rt_uint32_t irq;
-    usart_event_cb_t cb_event;           ///< Event callback
-    rt_uint32_t rx_total_num;
-    rt_uint32_t tx_total_num;
-    rt_uint8_t *rx_buf;
-    rt_uint8_t *tx_buf;
-    volatile rt_uint32_t rx_cnt;
-    volatile rt_uint32_t tx_cnt;
-    volatile rt_uint32_t tx_busy;
-    volatile rt_uint32_t rx_busy;
-    rt_uint32_t last_tx_num;
-    rt_uint32_t last_rx_num;
-    rt_int32_t idx;
-} ck_usart_priv_t;
-
-static ck_usart_priv_t usart_instance[CONFIG_USART_NUM];
+static ck_usart_priv_t *usart_instance;
 
 /**
   \brief       set the bautrate of usart.
@@ -65,7 +48,7 @@ rt_int32_t csi_usart_config_baudrate(usart_handle_t handle, rt_uint32_t baud)
     WAIT_USART_IDLE(addr);
 
     /* baudrate=(seriak clock freq)/(16*divisor); algorithm :rounding*/
-    rt_uint32_t divisor = ((/* (drv_get_usart_freq(usart_priv->idx) */ UART_FUNC_CLK_FREQ  * 10) / baud) >> 4;
+    rt_uint32_t divisor = ((clk_get_rate(usart_priv->clk) * 10) / baud) >> 4;
 
     if ((divisor % 10) >= 5)
     {
@@ -407,7 +390,7 @@ usart_handle_t csi_usart_initialize(rt_int32_t idx, usart_event_cb_t cb_event)
 
     rt_int32_t ret = target_usart_init(idx, &base, &irq, &handler);
 
-    if (ret < 0 || ret >= CONFIG_USART_NUM)
+    if (ret < 0)
     {
         return RT_NULL;
     }
@@ -426,4 +409,15 @@ usart_handle_t csi_usart_initialize(rt_int32_t idx, usart_event_cb_t cb_event)
 #endif
 
     return usart_priv;
+}
+
+int alloc_usart_memory(rt_uint32_t num)
+{
+	usart_instance = rt_calloc(num, sizeof(ck_usart_priv_t));
+	if (!usart_instance) {
+		rt_kprintf("%s:%d, failed\n", __func__, __LINE__);
+		return -RT_ENOMEM;
+	}
+
+	return 0;
 }

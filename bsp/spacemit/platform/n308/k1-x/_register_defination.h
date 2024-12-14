@@ -8,8 +8,6 @@
 
 #include <rtdef.h>
 
-#define UART_REG_BASE	(0xc0881000)
-#define UART1_REG_BASE	(0xc088d000)
 typedef struct {
 	union {
 		rt_uint32_t RBR;	/* Offset: 0x000 Receive buffer register */
@@ -33,25 +31,7 @@ typedef struct {
 	rt_uint32_t FOR;
 	rt_uint32_t ABR;
 	rt_uint32_t ACR;
-}ck_usart_reg_t;
-
-#define UART_CR_REG_BASE	(0xc08800d8)
-#define UART1_CR_REG_BASE	(0xc088003c)
-#define UART_FUNC_CLK_FREQ	(26000000)
-typedef union uart_clk_rst_reg {
-    rt_uint32_t val;
-    struct {
-	rt_uint32_t uart_rsten:1;
-	rt_uint32_t uart_fclken:1;
-	rt_uint32_t uart_pclken:1;
-	rt_uint32_t reserved0:1;
-	rt_uint32_t uart_fclk_sel:2;
-	rt_uint32_t reserved1:2;
-	rt_uint32_t uart_clk_div:11;
-	rt_uint32_t reserved2:13;
-    } bits;
-} uart_clk_rst_t;
-
+} ck_usart_reg_t;
 
 /* AUDIO PMU */
 #define AUDIO_PMU_VOTE_REG	0xc088c018

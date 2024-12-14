@@ -83,11 +83,30 @@
 			status = "okay";
 		};
 
-		uart: serial@d4017000 {
-			compatible = "spacemit,pxa-uart";
-			clocks = <&ccu CLK_RCPU_UART0>;
-			status = "ok";
+		intc: interrupt-controller@e0000000 {
+			#interrupt-cells = <3>;
+			compatible = "riscv,plic0";
+			interrupt-controller;
+			reg = <0xe0000000 0x04000000>;
+			status = "okay";
+		};
+		
+		uart0: serial0@c0881000 {
+			compatible = "spacemit,pxa-uart0";
+			reg = <0xc0881000 0x100>;
+			interrupt-parent = <&intc>;
+			interrupts = <0 36 0>;
+			clocks = <&ccu CLK_RCPU_UART0>, <&ccu CLK_RST_RCPU_UART0>;
+			status = "okay";
 		};
 
+		uart1: serial1@c088d000 {
+			compatible = "spacemit,pxa-uart1";
+			reg = <0xc088d000 0x100>;
+			interrupt-parent = <&intc>;
+			interrupts = <0 63 0>;
+			clocks = <&ccu CLK_RCPU_UART1>, <&ccu CLK_RST_RCPU_UART1>;
+			status = "okay";
+		};
 	};
 };

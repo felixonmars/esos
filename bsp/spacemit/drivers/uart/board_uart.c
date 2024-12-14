@@ -28,32 +28,38 @@ struct
     rt_uint32_t base;
     rt_uint32_t irq;
     void *handler;
-} sg_usart_config[CONFIG_USART_NUM] =
-{
-    {UART_REG_BASE, UART_IRQn, usart_irqhandler},
+    const char *name;
+    usart_handle_t uart_handle;
+    struct rt_serial_device serial;
+    struct dtb_compatible_array __compatible;
+} sg_usart_config[] = {
+    {
+        .name = "uart0",
+        .handler = usart_irqhandler,
+        .__compatible = {
+            .compatible = "spacemit,pxa-uart0",
+        },
+    },
+
+    {
+        .name = "uart1",
+        .handler = usart_irqhandler,
+        .__compatible = {
+            .compatible = "spacemit,pxa-uart1",
+        },
+    },
 };
 
 rt_int32_t target_usart_init(rt_int32_t idx, rt_uint32_t *base, rt_uint32_t *irq, void **handler)
 {
-    if (idx >= CONFIG_USART_NUM)
-    {
-        return -1;
-    }
-
     if (base != RT_NULL)
-    {
         *base = sg_usart_config[idx].base;
-    }
 
     if (irq != RT_NULL)
-    {
         *irq = sg_usart_config[idx].irq;
-    }
 
     if (handler != RT_NULL)
-    {
         *handler = sg_usart_config[idx].handler;
-    }
 
     return idx;
 }
@@ -89,8 +95,7 @@ static rt_err_t uart_configure(struct rt_serial_device *serial, struct serial_co
 
     ret = csi_usart_config(uart, bauds, USART_MODE_ASYNCHRONOUS, parity, stopbits, databits);
 
-    if (ret < 0)
-    {
+    if (ret < 0) {
         return -RT_ERROR;
     }
 
@@ -105,8 +110,7 @@ static rt_err_t uart_control(struct rt_serial_device *serial, int cmd, void *arg
     uart = (usart_handle_t)serial->parent.user_data;
     RT_ASSERT(uart != RT_NULL);
 
-    switch (cmd)
-    {
+    switch (cmd) {
     case RT_DEVICE_CTRL_CLR_INT:
         /* Disable the UART Interrupt */
         ck_usart_clr_int_flag(uart, IER_RDA_INT_ENABLE);
@@ -158,38 +162,110 @@ const struct rt_uart_ops _uart_ops =
 
 int rt_hw_usart_init(void)
 {
+    int i, ret;
+    ck_usart_priv_t *priv;
+    struct clk *clk, *rst;
     struct serial_configure config = RT_SERIAL_CONFIG_DEFAULT;
-#ifndef SOC_SPACEMIT_K1_X
-    rcpu_clk_en_t *rcpu_ck_en = (rcpu_clk_en_t *)RCPU_CLK_EN_BASE;
-    rcpu_sw_reset_t *rcpu_rstn = (rcpu_sw_reset_t *)RCPU_SW_RST_BASE;
-    /* enable clk */
-    rcpu_ck_en->bits.mcu_uart_clken = 1;
+    struct dtb_node *compatible_node;
+    struct dtb_node *dtb_head_node = get_dtb_node_head();
 
-    /* enable reset */
-    rcpu_rstn->bits.mcu_uart_rstn = 1;
-#else
-    uart_clk_rst_t *uart_clk_rst_en = (uart_clk_rst_t*)UART_CR_REG_BASE;
-    /* enable uart clk&reset */
-    uart_clk_rst_en->bits.uart_rsten = 1;
-    uart_clk_rst_en->bits.uart_fclken = 1;
-    uart_clk_rst_en->bits.uart_pclken = 1;
-    uart_clk_rst_en->bits.uart_fclk_sel = 0;
-#endif
+    i = alloc_usart_memory(sizeof(sg_usart_config) / sizeof(sg_usart_config[0]));
+    if (i < 0)
+        return i;
 
-    serial.ops                 = & _uart_ops;
-    serial.config              = config;
-    serial.config.bufsz        = 2048;
-    serial.config.baud_rate    = 115200;
+    for (i = 0; i < sizeof(sg_usart_config) / sizeof(sg_usart_config[0]); ++i) {
+        if (sg_usart_config[i].__compatible.compatible) {
 
-    uart_handle = csi_usart_initialize(0, RT_NULL);
+            compatible_node = dtb_node_find_compatible_node(dtb_head_node,
+                    sg_usart_config[i].__compatible.compatible);
 
-    rt_hw_interrupt_install(UART_IRQn, usart_irqhandler, RT_NULL, RT_NULL);
-    rt_hw_interrupt_umask(UART_IRQn);
+            if (compatible_node != RT_NULL) {
 
-    rt_hw_serial_register(&serial,
-                          "uart",
-                          RT_DEVICE_FLAG_RDWR | RT_DEVICE_FLAG_INT_RX,
-                          uart_handle);
+                if (!dtb_node_device_is_available(compatible_node))
+                    continue;
+
+                /* get the register base */
+                sg_usart_config[i].base = dtb_node_get_addr_index(compatible_node, 0);
+                if (sg_usart_config[i].base < 0) {
+                    rt_kprintf("get reg of uart error\n");
+                    return -RT_ERROR;
+                }
+
+                /* get the interrupt irq */
+                sg_usart_config[i].irq = dtb_node_irq_get(compatible_node, 0);
+                if (sg_usart_config[i].irq < 0) {
+                    rt_kprintf("get irq of uart error\n");
+                    return -RT_ERROR;
+                }
+
+                clk = of_clk_get(compatible_node, 0);
+                if (IS_ERR(clk)) {
+                    rt_kprintf("%s:%d, get clk failed\n", __func__, __LINE__);
+                    return -RT_EINVAL;
+                }
+
+                /* get the reset */
+                rst = of_clk_get(compatible_node, 1);
+                if (IS_ERR(rst)) {
+                    rt_kprintf("%s:%d, get clk failed\n", __func__, __LINE__);
+                    return -RT_EINVAL;
+                }
+
+                /* enable clk */
+                ret = clk_prepare_enable(clk);
+                if (ret) {
+                    rt_kprintf("%s:%d, enable clk faild\n", __func__, __LINE__);
+                    return -RT_EINVAL;
+                }
+
+                /* enable reset */
+                ret = clk_prepare_enable(rst);
+                if (ret) {
+                    rt_kprintf("%s:%d, reset faild\n", __func__, __LINE__);
+                    return -RT_EINVAL;
+                }
+
+                /* register the uart */
+                /* for k1x, get the uart parameters from dts */
+                sg_usart_config[i].serial.ops    = & _uart_ops;
+                sg_usart_config[i].serial.config    = config;
+                sg_usart_config[i].serial.config.bufsz    = 2048;
+                sg_usart_config[i].serial.config.baud_rate    = 115200;
+
+                sg_usart_config[i].uart_handle = csi_usart_initialize(i, RT_NULL);
+                priv = (ck_usart_priv_t *)sg_usart_config[i].uart_handle;
+                priv->clk = clk;
+                priv->rst = rst;
+
+                /* get the clock */
+                rt_hw_interrupt_install(sg_usart_config[i].irq, usart_irqhandler,
+                                        (void *)&sg_usart_config[i].serial, RT_NULL);
+                rt_hw_interrupt_umask(sg_usart_config[i].irq);
+
+                rt_hw_serial_register(&sg_usart_config[i].serial,
+                        sg_usart_config[i].name,
+                        RT_DEVICE_FLAG_RDWR | RT_DEVICE_FLAG_INT_RX,
+                        sg_usart_config[i].uart_handle);
+            }
+        } else {
+            /* for k1proc */
+            sg_usart_config[i].serial.ops = & _uart_ops;
+            sg_usart_config[i].serial.config = config;
+            sg_usart_config[i].serial.config.bufsz = 2048;
+            sg_usart_config[i].serial.config.baud_rate = 115200;
+
+            sg_usart_config[i].uart_handle = csi_usart_initialize(i, RT_NULL);
+
+            /* get the clock */
+            rt_hw_interrupt_install(sg_usart_config[i].irq, usart_irqhandler,
+                                    (void *)&sg_usart_config[i].serial, RT_NULL);
+            rt_hw_interrupt_umask(sg_usart_config[i].irq);
+
+            rt_hw_serial_register(&sg_usart_config[i].serial, sg_usart_config[i].name,
+                                  RT_DEVICE_FLAG_RDWR | RT_DEVICE_FLAG_INT_RX,
+                                  sg_usart_config[i].uart_handle);
+        }
+    }
 
     return 0;
 }
