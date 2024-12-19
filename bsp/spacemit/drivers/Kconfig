@@ -36,6 +36,10 @@ menu "On-chip Peripheral Drivers"
 	bool "Enable PM"
 	default n
 	select RT_USING_PM
+
+    config BSP_USING_PWM
+        bool "Enable PWM"
+        default n
 endmenu
 
 menu "Board extended module Drivers"
