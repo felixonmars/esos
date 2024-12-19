@@ -108,5 +108,96 @@
 			clocks = <&ccu CLK_RCPU_UART1>, <&ccu CLK_RST_RCPU_UART1>;
 			status = "okay";
 		};
+
+		rpwm0: pwm@c0888100 {
+			compatible = "spacemit,k1x-rpwm0";
+			reg = <0xc0888100 0x10>;
+			clocks = <&ccu CLK_RCPU2_PWM0>, <&ccu CLK_RST_RCPU2_PWM0>;
+			clock-rate = <24576000>;
+			k1x,pwm-disable-fd;
+			status = "disabled";
+		};
+
+			rpwm1: pwm@c0888200 {
+			compatible = "spacemit,k1x-rpwm1";
+			reg = <0xc0888200 0x10>;
+			clocks = <&ccu CLK_RCPU2_PWM1>, <&ccu CLK_RST_RCPU2_PWM1>;
+			clock-rate = <24576000>;
+			k1x,pwm-disable-fd;
+			status = "disabled";
+		};
+
+		rpwm2: pwm@c0888300 {
+			compatible = "spacemit,k1x-rpwm2";
+			reg = <0xc0888300 0x10>;
+			clocks = <&ccu CLK_RCPU2_PWM2>, <&ccu CLK_RST_RCPU2_PWM2>;
+			clock-rate = <24576000>;
+			k1x,pwm-disable-fd;
+			status = "disabled";
+		};
+
+		rpwm3: pwm@c0888400 {
+			compatible = "spacemit,k1x-rpwm3";
+			reg = <0xc0888400 0x10>;
+			clocks = <&ccu CLK_RCPU2_PWM3>, <&ccu CLK_RST_RCPU2_PWM3>;
+			clock-rate = <24576000>;
+			k1x,pwm-disable-fd;
+			status = "disabled";
+		};
+
+		rpwm4: pwm@c0888500 {
+			compatible = "spacemit,k1x-rpwm4";
+			reg = <0xc0888500 0x10>;
+			clocks = <&ccu CLK_RCPU2_PWM4>, <&ccu CLK_RST_RCPU2_PWM4>;
+			clock-rate = <24576000>;
+			k1x,pwm-disable-fd;
+			status = "disabled";
+		};
+
+		rpwm5: pwm@c0888600 {
+			compatible = "spacemit,k1x-rpwm5";
+			reg = <0xc0888600 0x10>;
+			clocks = <&ccu CLK_RCPU2_PWM5>, <&ccu CLK_RST_RCPU2_PWM5>;
+			clock-rate = <24576000>;
+			k1x,pwm-disable-fd;
+			status = "disabled";
+		};
+
+		rpwm6: pwm@c0888700 {
+			compatible = "spacemit,k1x-rpwm6";
+			reg = <0xc0888700 0x10>;
+			clocks = <&ccu CLK_RCPU2_PWM6>, <&ccu CLK_RST_RCPU2_PWM6>;
+			clock-rate = <24576000>;
+			k1x,pwm-disable-fd;
+			status = "disabled";
+		};
+
+		rpwm7: pwm@c0888800 {
+			compatible = "spacemit,k1x-rpwm7";
+			reg = <0xc0888800 0x10>;
+			clocks = <&ccu CLK_RCPU2_PWM7>, <&ccu CLK_RST_RCPU2_PWM7>;
+			clock-rate = <24576000>;
+			k1x,pwm-disable-fd;
+			status = "disabled";
+		};
+
+		rpwm8: pwm@c0888900 {
+			compatible = "spacemit,k1x-rpwm8";
+			reg = <0xc0888900 0x10>;
+			clocks = <&ccu CLK_RCPU2_PWM8>, <&ccu CLK_RST_RCPU2_PWM8>;
+			clock-rate = <24576000>;
+			k1x,pwm-disable-fd;
+			status = "disabled";
+		};
+
+		rpwm9: pwm@c0888a00 {
+			compatible = "spacemit,k1x-rpwm9";
+			reg = <0xc0888a00 0x10>;
+			clocks = <&ccu CLK_RCPU2_PWM9>, <&ccu CLK_RST_RCPU2_PWM9>;
+			clock-rate = <24576000>;
+			k1x,pwm-disable-fd;
+			status = "disabled";
+		};
+
 	};
 };
