@@ -165,6 +165,7 @@ int pwm_probe(void)
 	struct dtb_node *compatible_node;
 	struct dtb_node *dtb_head_node = get_dtb_node_head();
 #ifdef SOC_SPACEMIT_K1_X
+	void *property_status = RT_NULL;
 	int property_size;
 	rt_uint32_t rate;
 	void * list;
@@ -201,10 +202,11 @@ int pwm_probe(void)
 			}
 			clk_prepare_enable(pc->rst);
 #ifdef SOC_SPACEMIT_K1_X
-			if (dtb_node_get_property(compatible_node, "k1x,pwm-disable-fd", NULL))
-				pc->dcr_fd = 0;
-			else
+			property_status = dtb_node_get_dtb_node_property(compatible_node, "k1x,pwm-disable-fd", RT_NULL);
+			if (property_status)
 				pc->dcr_fd = 1;
+			else
+				pc->dcr_fd = 0;
 
 			rate = 0;
 			property_size = 0;
