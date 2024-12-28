@@ -118,7 +118,7 @@
 			status = "disabled";
 		};
 
-			rpwm1: pwm@c0888200 {
+		rpwm1: pwm@c0888200 {
 			compatible = "spacemit,k1x-rpwm1";
 			reg = <0xc0888200 0x10>;
 			clocks = <&ccu CLK_RCPU2_PWM1>, <&ccu CLK_RST_RCPU2_PWM1>;
@@ -196,6 +196,22 @@
 			clocks = <&ccu CLK_RCPU2_PWM9>, <&ccu CLK_RST_RCPU2_PWM9>;
 			clock-rate = <24576000>;
 			k1x,pwm-disable-fd;
+			status = "disabled";
+		};
+
+		ri2c0: ri2c@c0887000 {
+			compatible = "spacemit,k1x-ri2c0";
+			reg = <0xc0887000 0x38>;
+			/* usually i2c client has only 1 reg field */
+			clocks = <&ccu CLK_RCPU_I2C0>, <&ccu CLK_RST_RCPU_I2C0>;
+			interrupt-parent = <&intc>;
+			interrupts = <0 32 0>;
+			/* spacemit,i2c-fast-mode; */
+			/* spacemit,i2c-high-mode; */
+			spacemit,i2c-master-code = /bits/ 8 <0x0e>;
+			spacemit,i2c-clk-rate = <32000000>;
+			spacemit,i2c-lcr = <0x82c469f>;
+			spacemit,i2c-wcr = <0x142a>;
 			status = "disabled";
 		};
 
