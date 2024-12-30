@@ -162,6 +162,20 @@ extern "C" {
 #include "drivers/clkdev.h"
 #endif
 
+#ifdef RT_USING_RADIX_TREE
+#include "drivers/radix-tree.h"
+#endif
+
+#ifdef RT_USING_PIN
+#include "drivers/pinctrl/pinctrl.h"
+#include "drivers/pinctrl/pinconf.h"
+#include "drivers/pinctrl/pinconf-generic.h"
+#include "drivers/pinctrl/pinmux.h"
+#include "drivers/pinctrl/machine.h"
+#include "drivers/pinctrl/pinctrl-state.h"
+#include "drivers/pinctrl/pinctrl-consumer.h"
+#endif
+
 #ifdef __cplusplus
 }
 #endif

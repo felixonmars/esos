@@ -5,8 +5,11 @@ src = []
 CPPPATH = [cwd + '/../include']
 group = []
 
-if GetDepend(['RT_USING_PIN']):
-    src = src + ['pin.c']
+if GetDepend(['RT_USING_RADIX_TREE']):
+    src = src + ['radix-tree.c']
+
+# if GetDepend(['RT_USING_PIN']):
+#    src = src + ['pin.c']
     
 if GetDepend(['RT_USING_ADC']):
     src = src + ['adc.c']

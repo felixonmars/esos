@@ -6,8 +6,8 @@ endmenu
 
 menu "On-chip Peripheral Drivers"
 
-    config BSP_USING_GPIO
-        bool "Enable GPIO"
+    config BSP_USING_PIN
+        bool "Enable PINTRL"
         select RT_USING_PIN
         default y
 

@@ -25,6 +25,17 @@ extern int of_fixed_clk_setup(void);
 extern int spacemit_ccu_init(void);
 #endif
 
+#ifdef RT_USING_RADIX_TREE
+extern void radix_tree_init_maxindex(void);
+#endif
+
+#if defined(RT_USING_PIN) && defined(RT_USING_MUTEX)
+struct rt_mutex pinctrldev_list_mutex;
+struct rt_mutex pinctrl_list_mutex;
+struct rt_mutex pinctrl_maps_mutex;
+extern int spacemit_pcs_init(void);
+#endif
+
 /**
  * This function will initial smart-evb board.
  */
@@ -42,12 +53,23 @@ void rt_hw_board_init(void)
 
     device_tree_setup((void *)RT_FDT_BASE);
 
+#ifdef RT_USING_RADIX_TREE
+    radix_tree_init_maxindex();
+#endif
+
 #if defined(RT_USING_CLK) && defined(RT_USING_MUTEX)
     rt_mutex_init(&clk_prepare_mutex, "clk_prepare_mutex", RT_IPC_FLAG_PRIO);
     rt_mutex_init(&of_clk_mutex, "of_clk_mutex", RT_IPC_FLAG_PRIO);
     rt_mutex_init(&clocks_mutex, "clk_mutex", RT_IPC_FLAG_PRIO);
     of_fixed_clk_setup();
     spacemit_ccu_init();
+#endif
+
+#if defined(RT_USING_PIN) && defined(RT_USING_MUTEX)
+    rt_mutex_init(&pinctrldev_list_mutex, "gpindev_mut", RT_IPC_FLAG_PRIO);
+    rt_mutex_init(&pinctrl_list_mutex, "gpin_mut", RT_IPC_FLAG_PRIO);
+    rt_mutex_init(&pinctrl_maps_mutex, "gpin_maps", RT_IPC_FLAG_PRIO);
+    spacemit_pcs_init();
 #endif
 
     /* uart must be initialize here */

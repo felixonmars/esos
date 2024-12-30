@@ -111,13 +111,18 @@ if RT_USING_I2C
     endif
 endif
 
+config RT_USING_RADIX_TREE
+    bool "Using radix tree"
+    default n
+
 config RT_USING_PHY
     bool "Using ethernet phy device drivers"
     default n
 
 config RT_USING_PIN
     bool "Using generic GPIO device drivers"
-    default y
+    select RT_USING_RADIX_TREE
+    default n
 
 config RT_USING_ADC
     bool "Using ADC device drivers"

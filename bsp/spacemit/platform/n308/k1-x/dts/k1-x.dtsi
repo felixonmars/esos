@@ -90,7 +90,20 @@
 			reg = <0xe0000000 0x04000000>;
 			status = "okay";
 		};
-		
+
+		pmx_core: pinmux@d401e000 {
+			compatible = "pinctrl-single";
+			reg = <0xd401e000 0x250>;
+			pinctrl-single,bit-per-mux;
+			pinctrl-single,register-width = <32>;
+			pinctrl-single,function-mask = <0xff77>;
+			status = "okay";
+
+			range: gpio-range {
+				#pinctrl-single,gpio-range-cells = <3>;
+			};
+		};
+
 		uart0: serial0@c0881000 {
 			compatible = "spacemit,pxa-uart0";
 			reg = <0xc0881000 0x100>;
@@ -106,7 +119,7 @@
 			interrupt-parent = <&intc>;
 			interrupts = <0 63 0>;
 			clocks = <&ccu CLK_RCPU_UART1>, <&ccu CLK_RST_RCPU_UART1>;
-			status = "okay";
+			status = "disabled";
 		};
 
 		rpwm0: pwm@c0888100 {
