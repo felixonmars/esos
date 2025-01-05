@@ -1,0 +1,11 @@
+# for module compiling
+import os
+from building import *
+
+cwd  = GetCurrentDir()
+src     = Glob('*.c')
+CPPPATH = [cwd]
+
+group = DefineGroup('drvgpio', src, depend = ['BSP_USING_GPIO'], CPPPATH = CPPPATH)
+
+Return('group')

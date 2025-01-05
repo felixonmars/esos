@@ -283,8 +283,8 @@ static int pin_request(struct pinctrl_dev *pctldev,
 	 * we got it by default and proceed.
 	 */
 	if (gpio_range && ops->gpio_request_enable)
-	/* This requests and enables a single GPIO pin */
-	status = ops->gpio_request_enable(pctldev, gpio_range, pin);
+		/* This requests and enables a single GPIO pin */
+		status = ops->gpio_request_enable(pctldev, gpio_range, pin);
 	else if (ops->request)
 		status = ops->request(pctldev, pin);
 	else
@@ -369,5 +369,47 @@ err_pin_request:
 		pin_free(pctldev, pins[i], NULL);
 
         return ret;
+}
+
+extern char *rt_kasprintf(const char *fmt, ...);
+
+/**
+ * pinmux_request_gpio() - request pinmuxing for a GPIO pin
+ * @pctldev: pin controller device affected
+ * @pin: the pin to mux in for GPIO
+ * @range: the applicable GPIO range
+ */
+int pinmux_request_gpio(struct pinctrl_dev *pctldev,
+                        struct pinctrl_gpio_range *range,
+                        unsigned pin, unsigned gpio)
+{
+	char *owner;
+	int ret;
+
+	/* Conjure some name stating what chip and pin this is taken by */
+	owner = rt_kasprintf("%s:%d", range->name, gpio);
+	if (!owner)
+		return -RT_EINVAL;
+
+	ret = pin_request(pctldev, pin, owner, range);
+	if (ret < 0)
+		rt_free((void *)owner);
+
+	return ret;
+}
+
+/**
+ * pinmux_free_gpio() - release a pin from GPIO muxing
+ * @pctldev: the pin controller device for the pin
+ * @pin: the affected currently GPIO-muxed in pin
+ * @range: applicable GPIO range
+ */
+void pinmux_free_gpio(struct pinctrl_dev *pctldev, unsigned pin,
+                      struct pinctrl_gpio_range *range)
+{
+	char *owner;
+
+	owner = pin_free(pctldev, pin, range);
+	rt_free((void *)owner);
 }
 

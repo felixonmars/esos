@@ -176,6 +176,11 @@ extern "C" {
 #include "drivers/pinctrl/pinctrl-consumer.h"
 #endif
 
+#ifdef RT_USING_GPIO
+#include "drivers/gpio/gpio.h"
+#include "drivers/gpio/of_gpio.h"
+#endif
+
 #ifdef __cplusplus
 }
 #endif

@@ -5,7 +5,7 @@ struct pinctrl_dev;
 struct pinctrl_map;
 struct pinmux_ops;
 struct pinconf_ops;
-/* struct gpio_chip; */
+struct gpio_chip;
 
 /**
  * struct pinctrl_pin_desc - boards/machines provide information on their
@@ -42,7 +42,7 @@ struct pinctrl_gpio_range {
         unsigned int pin_base;
         unsigned const *pins;
         unsigned int npins;
-        /* struct gpio_chip *gc; */
+        struct gpio_chip *gc;
 };
 
 /**
@@ -109,5 +109,6 @@ struct pinctrl_dev *pinctrl_register(struct pinctrl_desc *pctldesc,
 const char *pinctrl_dev_get_name(struct pinctrl_dev *pctldev);
 struct pinctrl *pinctrl_get(struct dtb_node *dev);
 void *pinctrl_dev_get_drvdata(struct pinctrl_dev *pctldev);
+extern struct pinctrl_dev *pinctrl_find_and_add_gpio_range(const char *devname, struct pinctrl_gpio_range *range);
 
 #endif /* __RT_PINCTRL_H__ */

@@ -820,3 +820,234 @@ void *pinctrl_dev_get_drvdata(struct pinctrl_dev *pctldev)
 	return pctldev->driver_data;
 }
 
+/**
+ * pinctrl_add_gpio_range() - register a GPIO range for a controller
+ * @pctldev: pin controller device to add the range to
+ * @range: the GPIO range to add
+ *
+ * This adds a range of GPIOs to be handled by a certain pin controller. Call
+ * this to register handled ranges after registering your pin controller.
+ */
+void pinctrl_add_gpio_range(struct pinctrl_dev *pctldev,
+                            struct pinctrl_gpio_range *range)
+{
+	rt_mutex_take(&pctldev->mutex, RT_WAITING_FOREVER);
+	rt_list_insert_after(&pctldev->gpio_ranges, &range->node);
+	rt_mutex_release(&pctldev->mutex);
+}
+
+void pinctrl_add_gpio_ranges(struct pinctrl_dev *pctldev,
+                             struct pinctrl_gpio_range *ranges,
+                             unsigned nranges)
+{
+	int i;
+
+	for (i = 0; i < nranges; i++)
+		pinctrl_add_gpio_range(pctldev, &ranges[i]);
+}
+
+struct pinctrl_dev *pinctrl_find_and_add_gpio_range(const char *devname,
+                struct pinctrl_gpio_range *range)
+{
+	struct pinctrl_dev *pctldev;
+
+	pctldev = get_pinctrl_dev_from_devname(devname);
+
+        /*
+         * If we can't find this device, let's assume that is because
+         * it has not probed yet, so the driver trying to register this
+         * range need to defer probing.
+         */
+	if (!pctldev) {
+		return ERR_PTR(-EPROBE_DEFER);
+	}
+
+	pinctrl_add_gpio_range(pctldev, range);
+
+	return pctldev;
+}
+
+/**
+ * pinctrl_match_gpio_range() - check if a certain GPIO pin is in range
+ * @pctldev: pin controller device to check
+ * @gpio: gpio pin to check taken from the global GPIO pin space
+ *
+ * Tries to match a GPIO pin number to the ranges handled by a certain pin
+ * controller, return the range or NULL
+ */
+static struct pinctrl_gpio_range *
+pinctrl_match_gpio_range(struct pinctrl_dev *pctldev, unsigned gpio)
+{
+	struct pinctrl_gpio_range *range = NULL;
+
+	rt_mutex_take(&pctldev->mutex, RT_WAITING_FOREVER);
+	/* Loop over the ranges */
+	rt_list_for_each_entry(range, &pctldev->gpio_ranges, node) {
+		/* Check if we're in the valid range */
+		if (gpio >= range->base &&
+			gpio < range->base + range->npins) {
+			rt_mutex_release(&pctldev->mutex);
+			return range;
+		}
+	}
+	
+	rt_mutex_release(&pctldev->mutex);
+	
+	return NULL;
+}
+
+/**
+ * pinctrl_get_device_gpio_range() - find device for GPIO range
+ * @gpio: the pin to locate the pin controller for
+ * @outdev: the pin control device if found
+ * @outrange: the GPIO range if found
+ *
+ * Find the pin controller handling a certain GPIO pin from the pinspace of
+ * the GPIO subsystem, return the device and the matching GPIO range. Returns
+ * -EPROBE_DEFER if the GPIO range could not be found in any device since it
+ * may still have not been registered.
+ */
+static int pinctrl_get_device_gpio_range(unsigned gpio,
+                                         struct pinctrl_dev **outdev,
+                                         struct pinctrl_gpio_range **outrange)
+{
+	struct pinctrl_dev *pctldev = NULL;
+
+	/* Loop over the pin controllers */
+	rt_list_for_each_entry(pctldev, &pinctrldev_list, node) {
+		struct pinctrl_gpio_range *range;
+
+		range = pinctrl_match_gpio_range(pctldev, gpio);
+		if (range != NULL) {
+			*outdev = pctldev;
+			*outrange = range;
+			return 0;
+		}
+	}
+
+	return -EPROBE_DEFER;
+}
+
+/**
+ * pinctrl_ready_for_gpio_range() - check if other GPIO pins of
+ * the same GPIO chip are in range
+ * @gpio: gpio pin to check taken from the global GPIO pin space
+ *
+ * This function is complement of pinctrl_match_gpio_range(). If the return
+ * value of pinctrl_match_gpio_range() is NULL, this function could be used
+ * to check whether pinctrl device is ready or not. Maybe some GPIO pins
+ * of the same GPIO chip don't have back-end pinctrl interface.
+ * If the return value is true, it means that pinctrl device is ready & the
+ * certain GPIO pin doesn't have back-end pinctrl device. If the return value
+ * is false, it means that pinctrl device may not be ready.
+ */
+static bool pinctrl_ready_for_gpio_range(unsigned gpio)
+{
+	struct pinctrl_dev *pctldev;
+	struct pinctrl_gpio_range *range = NULL;
+	struct gpio_chip *chip = gpio_to_chip(gpio);
+
+	rt_mutex_take(&pinctrldev_list_mutex, RT_WAITING_FOREVER);
+
+	/* Loop over the pin controllers */
+	rt_list_for_each_entry(pctldev, &pinctrldev_list, node) {
+		/* Loop over the ranges */
+		rt_list_for_each_entry(range, &pctldev->gpio_ranges, node) {
+			/* Check if any gpio range overlapped with gpio chip */
+			if (range->base + range->npins - 1 < chip->base ||
+					range->base > chip->base + chip->ngpio - 1)
+				continue;
+			rt_mutex_release(&pinctrldev_list_mutex);
+			
+			return true;
+		}
+	}
+
+	rt_mutex_release(&pinctrldev_list_mutex);
+
+	return false;
+}
+
+/**
+ * gpio_to_pin() - GPIO range GPIO number to pin number translation
+ * @range: GPIO range used for the translation
+ * @gpio: gpio pin to translate to a pin number
+ *
+ * Finds the pin number for a given GPIO using the specified GPIO range
+ * as a base for translation. The distinction between linear GPIO ranges
+ * and pin list based GPIO ranges is managed correctly by this function.
+ *
+ * This function assumes the gpio is part of the specified GPIO range, use
+ * only after making sure this is the case (e.g. by calling it on the
+ * result of successful pinctrl_get_device_gpio_range calls)!
+ */
+static inline int gpio_to_pin(struct pinctrl_gpio_range *range,
+                                unsigned int gpio)
+{
+	unsigned int offset = gpio - range->base;
+	if (range->pins)
+		return range->pins[offset];
+	else
+		return range->pin_base + offset;
+}
+
+/**
+ * pinctrl_request_gpio() - request a single pin to be used in as GPIO
+ * @gpio: the GPIO pin number from the GPIO subsystem number space
+ *
+ * This function should *ONLY* be used from gpiolib-based GPIO drivers,
+ * as part of their gpio_request() semantics, platforms and individual drivers
+ * shall *NOT* request GPIO pins to be muxed in.
+ */
+int pinctrl_request_gpio(unsigned gpio)
+{
+	struct pinctrl_dev *pctldev;
+	struct pinctrl_gpio_range *range;
+	int ret;
+	int pin;
+
+	ret = pinctrl_get_device_gpio_range(gpio, &pctldev, &range);
+	if (ret) {
+		if (pinctrl_ready_for_gpio_range(gpio))
+			ret = 0;
+		return ret;
+	}
+
+	/* Convert to the pin controllers number space */
+	pin = gpio_to_pin(range, gpio);
+
+	ret = pinmux_request_gpio(pctldev, range, pin, gpio);
+
+	return ret;
+}
+
+/**
+ * pinctrl_free_gpio() - free control on a single pin, currently used as GPIO
+ * @gpio: the GPIO pin number from the GPIO subsystem number space
+ *
+ * This function should *ONLY* be used from gpiolib-based GPIO drivers,
+ * as part of their gpio_free() semantics, platforms and individual drivers
+ * shall *NOT* request GPIO pins to be muxed out.
+ */
+void pinctrl_free_gpio(unsigned gpio)
+{
+	struct pinctrl_dev *pctldev;
+	struct pinctrl_gpio_range *range;
+	int ret;
+	int pin;
+
+	ret = pinctrl_get_device_gpio_range(gpio, &pctldev, &range);
+	if (ret) {
+		return;
+	}
+
+	rt_mutex_take(&pctldev->mutex, RT_WAITING_FOREVER);
+
+	/* Convert to the pin controllers number space */
+	pin = gpio_to_pin(range, gpio);
+
+	pinmux_free_gpio(pctldev, pin, range);
+
+	rt_mutex_release(&pctldev->mutex);
+}
+

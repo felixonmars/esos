@@ -94,6 +94,7 @@
 		pmx_core: pinmux@d401e000 {
 			compatible = "pinctrl-single";
 			reg = <0xd401e000 0x250>;
+			#gpio-range-cells = <3>;
 			pinctrl-single,bit-per-mux;
 			pinctrl-single,register-width = <32>;
 			pinctrl-single,function-mask = <0xff77>;
@@ -103,6 +104,30 @@
 				#pinctrl-single,gpio-range-cells = <3>;
 			};
 		};
+
+                gpio: gpio@d4019000 {
+			compatible = "spacemit,k1x-gpio";
+			reg = <0xd4019000 0x800>;
+			banks = <4>;
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			gcb0: gpio0 {
+				reg-offset = <0x0>;
+			};
+
+			gcb1: gpio1 {
+				reg-offset = <0x4>;
+			};
+
+			gcb2: gpio2 {
+				reg-offset = <0x8>;
+			};
+
+			gcb3: gpio3 {
+				reg-offset = <0x100>;
+			};
+                };
 
 		uart0: serial0@c0881000 {
 			compatible = "spacemit,pxa-uart0";
@@ -227,6 +252,5 @@
 			spacemit,i2c-wcr = <0x142a>;
 			status = "disabled";
 		};
-
 	};
 };

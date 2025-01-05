@@ -8,7 +8,7 @@
 
 &pmx_core {
         pinctrl-single,gpio-range = <
-		&range GPIO_49  2 (MUX_MODE0 | EDGE_NONE | PULL_UP   | PAD_3V_DS4) 
+		&range GPIO_49  2 (MUX_MODE0 | EDGE_NONE | PULL_UP | PAD_3V_DS4)
 	>;
 
 	pinctrl_rcpu: pinctrl_rcpu_grp {
@@ -17,6 +17,10 @@
 			K1X_PADCONF(GPIO_48, (MUX_MODE1 | EDGE_NONE | PULL_UP | PAD_3V_DS4))     /* r_uart0_rx */
 		>;
 	};
+};
+
+&gpio {
+	gpio-ranges = <&pmx_core 49  GPIO_49  2>;
 };
 
 &uart0 {

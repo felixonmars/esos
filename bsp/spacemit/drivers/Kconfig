@@ -11,6 +11,11 @@ menu "On-chip Peripheral Drivers"
         select RT_USING_PIN
         default y
 
+    config BSP_USING_GPIO
+        bool "Enable GPIO"
+        select RT_USING_GPIO
+        default y
+
     config BSP_USING_UART
         bool "Enable UART"
         default y

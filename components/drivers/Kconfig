@@ -120,8 +120,12 @@ config RT_USING_PHY
     default n
 
 config RT_USING_PIN
-    bool "Using generic GPIO device drivers"
+    bool "Using generic Pinctrl device drivers"
     select RT_USING_RADIX_TREE
+    default n
+
+config RT_USING_GPIO
+    bool "Using generic GPIO device drivers"
     default n
 
 config RT_USING_ADC

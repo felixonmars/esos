@@ -1478,7 +1478,6 @@ int spacemit_pcs_init(void)
 					rt_kprintf("pcs add gpio function failed\n");
 					return -RT_EINVAL;
 				}
-
 			}
 		}
 	}

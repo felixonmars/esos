@@ -36,6 +36,10 @@ struct rt_mutex pinctrl_maps_mutex;
 extern int spacemit_pcs_init(void);
 #endif
 
+#if defined(RT_USING_GPIO)
+extern int spacemit_gpio_init(void);
+#endif
+
 /**
  * This function will initial smart-evb board.
  */
@@ -70,6 +74,10 @@ void rt_hw_board_init(void)
     rt_mutex_init(&pinctrl_list_mutex, "gpin_mut", RT_IPC_FLAG_PRIO);
     rt_mutex_init(&pinctrl_maps_mutex, "gpin_maps", RT_IPC_FLAG_PRIO);
     spacemit_pcs_init();
+#endif
+
+#if defined(RT_USING_GPIO)
+    spacemit_gpio_init();
 #endif
 
     /* uart must be initialize here */
