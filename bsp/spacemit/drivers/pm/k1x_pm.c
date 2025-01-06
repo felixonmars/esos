@@ -105,7 +105,7 @@ int cpu_suspend(rt_ubase_t arg,
 	suspend_save_csrs(&context);
 
 	/* Save context on stack */
-	if (__cpu_suspend_enter(&context)) {
+	if (__cpu_suspend_enter((unsigned long)&context)) {
 		/* Call the finisher */
 		rc = finish(arg, (rt_ubase_t)__cpu_resume_enter, (rt_ubase_t)&context);
 

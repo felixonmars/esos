@@ -38,7 +38,7 @@ struct clk_hw *__clk_hw_register_fixed_rate(/*struct device *dev, */
 	struct clk_fixed_rate *fixed;
 	struct clk_hw *hw;
 	struct clk_init_data init = {};
-	int ret = -RT_EINVAL;
+	struct clk *ret;
 
 	/* allocate fixed-rate clock */
 	fixed = rt_calloc(1, sizeof(*fixed));

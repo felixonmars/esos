@@ -2086,7 +2086,7 @@ static int clk_core_set_parent_nolock(struct clk_core *core,
 {
 	int ret = 0;
 	int p_index = 0;
-	unsigned long p_rate = 0;
+	unsigned long p_rate;
 
 	if (!core)
 		return 0;

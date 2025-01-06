@@ -44,7 +44,7 @@ struct spacemit_gpio_chip {
  *	struct irq_domain *domain;
  */
 	unsigned int ngpio;
-	unsigned int nbank;
+	unsigned long nbank;
 	struct spacemit_gpio_bank *banks;
 };
 
@@ -56,7 +56,7 @@ static struct dtb_compatible_array __compatible[] = {
 static int gpio_probe_dt(struct dtb_node *np, struct spacemit_gpio_chip *chip)
 {
 	struct dtb_node *child;
-	unsigned int offset;
+	unsigned long offset;
 	int i, ret;
 
         chip->banks = rt_calloc(chip->nbank, sizeof(struct spacemit_gpio_bank));

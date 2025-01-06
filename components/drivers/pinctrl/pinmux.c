@@ -407,7 +407,7 @@ int pinmux_request_gpio(struct pinctrl_dev *pctldev,
 void pinmux_free_gpio(struct pinctrl_dev *pctldev, unsigned pin,
                       struct pinctrl_gpio_range *range)
 {
-	char *owner;
+	const char *owner;
 
 	owner = pin_free(pctldev, pin, range);
 	rt_free((void *)owner);

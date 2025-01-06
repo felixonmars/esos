@@ -340,7 +340,7 @@ static int ccu_mix_set_rate(struct clk_hw *hw, unsigned long rate,
 	struct ccu_common * common = &mix->common;
 	struct ccu_div_config *div = mix->div? mix->div: NULL;
 	struct ccu_mux_config *mux = mix->mux? mix->mux: NULL;
-	unsigned long best_rate = 0;
+	unsigned long best_rate;
 	unsigned int cur_mux, cur_div, mux_val = 0, div_val = 0;
 	unsigned int reg = 0;
 	int ret = 0;

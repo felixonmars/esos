@@ -162,10 +162,10 @@ struct pcs_device {
 	struct dtb_node *dev;
 	struct pinctrl_dev *pctl;
 	struct rt_mutex mutex;
-	unsigned width;
-	unsigned fmask;
+	unsigned long width;
+	unsigned long fmask;
 	unsigned fshift;
-	unsigned foff;
+	unsigned long foff;
 	unsigned fmax;
 	bool bits_per_mux;
 	bool is_pinconf;
@@ -489,7 +489,7 @@ static int pcs_parse_bits_in_pinctrl_entry(struct pcs_device *pcs,
 			}
 
 			vals[found].mask = submask;
-			vals[found].reg = pcs->base[0] + offset;
+			vals[found].reg = (void *)(pcs->base[0] + offset);
 			vals[found].val = val_pos;
 
 			pin = pcs_get_pin_by_offset(pcs, offset);
@@ -579,7 +579,8 @@ static void pcs_add_conf2(struct pcs_device *pcs, struct dtb_node *np,
                           const char *name, enum pin_config_param param,
                           struct pcs_conf_vals **conf, unsigned long **settings)
 {
-	unsigned value[2], shift;
+	unsigned long value[2];
+	unsigned shift;
 	int ret;
 
 	ret = dtb_node_read_u32_array(np, name, value, 2);
@@ -600,7 +601,7 @@ static void pcs_add_conf4(struct pcs_device *pcs, struct dtb_node *np,
                           const char *name, enum pin_config_param param,
                           struct pcs_conf_vals **conf, unsigned long **settings)
 {
-	unsigned value[4];
+	unsigned long value[4];
 	int ret;
 
 	/* value to set, enable, disable, mask */
@@ -747,7 +748,7 @@ static int pcs_parse_one_pinctrl_entry(struct pcs_device *pcs,
 		index++;
 		val = fdt32_to_cpu(*(mux++));
 		index++;
-		vals[found].reg = pcs->base[0] + offset;
+		vals[found].reg = (void *)(pcs->base[0] + offset);
 		vals[found].val = val;
 
 		pin = pcs_get_pin_by_offset(pcs, offset);
@@ -1026,9 +1027,9 @@ static int pcs_request_gpio(struct pinctrl_dev *pctldev,
 				|| pin < frange->offset)
 			continue;
 		mux_bytes = pcs->width / BITS_PER_BYTE;
-		data = pcs->read(pcs->base[0] + pin * mux_bytes) & ~pcs->fmask;
+		data = pcs->read((void *)(pcs->base[0] + pin * mux_bytes)) & ~pcs->fmask;
 		data |= frange->gpiofunc;
-		pcs->write(data, pcs->base[0] + pin * mux_bytes);
+		pcs->write(data, (void *)(pcs->base[0] + pin * mux_bytes));
 		break;
 	}
 
@@ -1105,7 +1106,7 @@ static int pcs_pinconf_get(struct pinctrl_dev *pctldev,
 		}
 
 		offset = pin * (pcs->width / BITS_PER_BYTE);
-		data = pcs->read(pcs->base[0] + offset) & func->conf[i].mask;
+		data = pcs->read((void *)(pcs->base[0] + offset)) & func->conf[i].mask;
 		switch (func->conf[i].param) {
 		/* 4 parameters */
 		case PIN_CONFIG_BIAS_PULL_DOWN:
@@ -1157,7 +1158,7 @@ static int pcs_pinconf_set(struct pinctrl_dev *pctldev,
         for (i = 0; i < func->nconfs; i++) {
                 if (pinconf_to_config_param(config) == func->conf[i].param) {
                         offset = pin * (pcs->width / BITS_PER_BYTE);
-                        data = pcs->read(pcs->base[0] + offset);
+                        data = pcs->read((void *)(pcs->base[0] + offset));
                         arg = pinconf_to_config_argument(config);
                         switch (func->conf[i].param) {
                         /* 2 parameters */
@@ -1187,7 +1188,7 @@ static int pcs_pinconf_set(struct pinctrl_dev *pctldev,
                         default:
                                 return -ENOTSUPP;
                         }
-                        pcs->write(data, pcs->base[0] + offset);
+                        pcs->write(data, (void *)(pcs->base[0] + offset));
                         return 0;
                 }
         }
@@ -1368,10 +1369,10 @@ static int pcs_add_gpio_func(struct dtb_node *node, struct pcs_device *pcs)
 int spacemit_pcs_init(void)
 {
 	int i = 0, j = 0, ret;
-	rt_uint32_t *u32_ptr;
+	void *u32_ptr;
 	struct pcs_device *pcs;
-	rt_size_t property_size;
-	rt_uint32_t u32_value;
+	int property_size;
+	unsigned long u32_value;
 	struct dtb_node *dtb_head_node = get_dtb_node_head();
 	struct dtb_node *compatible_node;
 
