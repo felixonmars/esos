@@ -198,7 +198,11 @@ struct spacemit_i2c_dev {
 	int			num;
 	//struct resource		resrc;
 	struct rt_mutex		mtx;
-	rt_ubase_t	*fifo_lock;
+#ifdef RT_USING_SMP
+	struct rt_spinlock	filo_lock;
+#else
+	rt_ubase_t	fifo_lock;
+#endif
 	int			drv_retries;
 
 	/* virtual base address mapped for register */

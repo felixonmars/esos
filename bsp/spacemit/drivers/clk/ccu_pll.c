@@ -126,15 +126,18 @@ static int ccu_pll_enable(struct clk_hw *hw)
 	struct ccu_pll *p = hw_to_ccu_pll(hw);
 	union pllx_swcr3 swcr3;
 	rt_tick_t tick_delay, now;
+	unsigned long flags;
 
 	if (ccu_pll_is_enabled(hw))
 		return 0;
 
-	rt_hw_spin_lock(p->common.lock);
+	flags = rt_spin_lock_irqsave(&p->common.lock);
+
 	swcr3.v = pll_readl_pll_swcr3(p->common);
 	swcr3.b.pll_en = 1;
 	pll_writel_pll_swcr3(swcr3.v, p->common);
-	rt_hw_spin_unlock(p->common.lock);
+
+	rt_spin_unlock_irqrestore(&p->common.lock, flags);
 
 	/* check lock status */
 	/* udelay(50); */
@@ -167,14 +170,17 @@ static int ccu_pll_enable(struct clk_hw *hw)
 
 static void ccu_pll_disable(struct clk_hw *hw)
 {
+	unsigned long flags;
 	struct ccu_pll *p = hw_to_ccu_pll(hw);
 	union pllx_swcr3 swcr3;
 
-	rt_hw_spin_lock(p->common.lock);
+	flags = rt_spin_lock_irqsave(&p->common.lock);
+
 	swcr3.v = pll_readl_pll_swcr3(p->common);
 	swcr3.b.pll_en = 0;
 	pll_writel_pll_swcr3(swcr3.v, p->common);
-	rt_hw_spin_unlock(p->common.lock);
+
+	rt_spin_unlock_irqrestore(&p->common.lock, flags);
 }
 
 /*
@@ -194,6 +200,7 @@ static int ccu_pll_set_rate(struct clk_hw *hw, unsigned long rate,
 	union pllx_swcr3 swcr3;
 	bool found = false;
 	bool pll_enabled = false;
+	unsigned long flags;
 
 	if (ccu_pll_is_enabled(hw)) {
 		pll_enabled = true;
@@ -228,7 +235,8 @@ static int ccu_pll_set_rate(struct clk_hw *hw, unsigned long rate,
 		return -RT_EINVAL;
 	}
 
-	rt_hw_spin_lock(p->common.lock);
+	flags = rt_spin_lock_irqsave(&p->common.lock);
+
 	/* setp 2: set pll kvco/band and fbd/frcd setting */
 	swcr1.v = pll_readl_pll_swcr1(p->common);
 	swcr1.b.reg5 = reg5;
@@ -242,7 +250,7 @@ static int ccu_pll_set_rate(struct clk_hw *hw, unsigned long rate,
 	swcr3.b.div_frc = div_frc;
 	pll_writel_pll_swcr3(swcr3.v, p->common);
 
-	rt_hw_spin_unlock(p->common.lock);
+	rt_spin_unlock_irqrestore(&p->common.lock, flags);
 
 	if (pll_enabled)
 		ccu_pll_enable(hw);

@@ -6,6 +6,12 @@
 #define ESHUTDOWN       58      /* Cannot send after transport endpoint shutdown */
 #define EBUSY           16      /* Device or resource busy */
 
+#ifdef RT_USING_SMP
+extern struct rt_spinlock enable_lock;
+#else
+extern rt_base_t enable_lock;
+#endif
+
 extern struct rt_mutex clk_prepare_mutex;
 extern struct rt_mutex of_clk_mutex;
 
@@ -90,6 +96,20 @@ static void clk_prepare_lock(void)
 static void clk_prepare_unlock(void)
 {
 	rt_mutex_release(&clk_prepare_mutex);
+}
+
+static unsigned long clk_enable_lock(void)
+{
+	rt_base_t flags;
+
+	flags = rt_spin_lock_irqsave(&enable_lock);
+
+	return flags;
+}
+
+static void clk_enable_unlock(unsigned long flags)
+{
+        rt_spin_unlock_irqrestore(&enable_lock, flags);
 }
 
 /**
@@ -626,9 +646,9 @@ static int clk_core_enable_lock(struct clk_core *core)
 	rt_base_t flags;
 	int ret;
 
-	flags = rt_hw_interrupt_disable();
+	flags = clk_enable_lock();
 	ret = clk_core_enable(core);
-	rt_hw_interrupt_enable(flags);
+	clk_enable_unlock(flags);
 
 	return ret;
 }
@@ -637,9 +657,9 @@ static void clk_core_disable_lock(struct clk_core *core)
 {
 	rt_base_t flags;
 
-	flags = rt_hw_interrupt_disable();
+	flags = clk_enable_lock();
         clk_core_disable(core);
-	rt_hw_interrupt_enable(flags);
+	clk_enable_unlock(flags);
 }
 
 static void clk_core_fill_parent_index(struct clk_core *core, unsigned char index)
@@ -817,9 +837,9 @@ static struct clk_core *__clk_set_parent_before(struct clk_core *core,
 	}
 
 	/* update the clk tree topology */
-	flags = rt_hw_interrupt_disable();
+	flags = clk_enable_lock();
 	clk_reparent(core, parent);
-	rt_hw_interrupt_enable(flags);
+	clk_enable_unlock(flags);
 
 	return old_parent;
 }
@@ -2067,9 +2087,9 @@ static int __clk_set_parent(struct clk_core *core, struct clk_core *parent,
 		ret = core->ops->set_parent(core->hw, p_index);
 
 	if (ret) {
-		flags = rt_hw_interrupt_disable();
+		flags = clk_enable_lock();
 		clk_reparent(core, old_parent);
-		rt_hw_interrupt_enable(flags);
+		clk_enable_unlock(flags);
 		
 		__clk_set_parent_after(core, old_parent, parent);
 

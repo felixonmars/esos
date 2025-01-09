@@ -21,6 +21,13 @@ extern unsigned char __bss_end__[];
 struct rt_mutex clk_prepare_mutex;
 struct rt_mutex of_clk_mutex;
 struct rt_mutex clocks_mutex;
+
+#ifdef RT_USING_SMP
+struct rt_spinlock enable_lock;
+#else
+rt_base_t enable_lock;
+#endif
+
 extern int of_fixed_clk_setup(void);
 extern int spacemit_ccu_init(void);
 #endif
@@ -37,6 +44,13 @@ extern int spacemit_pcs_init(void);
 #endif
 
 #if defined(RT_USING_GPIO)
+
+#ifdef RT_USING_SMP
+struct rt_spinlock gpio_lock;
+#else
+rt_base_t gpio_lock;
+#endif
+
 extern int spacemit_gpio_init(void);
 #endif
 
@@ -65,6 +79,9 @@ void rt_hw_board_init(void)
     rt_mutex_init(&clk_prepare_mutex, "clk_prepare_mutex", RT_IPC_FLAG_PRIO);
     rt_mutex_init(&of_clk_mutex, "of_clk_mutex", RT_IPC_FLAG_PRIO);
     rt_mutex_init(&clocks_mutex, "clk_mutex", RT_IPC_FLAG_PRIO);
+    
+    rt_spin_lock_init(&enable_lock);
+
     of_fixed_clk_setup();
     spacemit_ccu_init();
 #endif
@@ -77,6 +94,8 @@ void rt_hw_board_init(void)
 #endif
 
 #if defined(RT_USING_GPIO)
+    rt_spin_lock_init(&gpio_lock);
+    
     spacemit_gpio_init();
 #endif
 

@@ -22,6 +22,7 @@ static void ccu_mix_disable(struct clk_hw *hw)
 	unsigned long rate_delay;
 	rt_tick_t tick_delay, now;
 	unsigned int tmp;
+	unsigned long flags;
 
 	if (!gate)
 		return;
@@ -39,7 +40,7 @@ static void ccu_mix_disable(struct clk_hw *hw)
 	}
 
 	if (common->lock)
-		rt_hw_spin_lock(common->lock);
+		flags = rt_spin_lock_irqsave(&common->lock);
 
 	if (common->reg_type == CLK_DIV_TYPE_2REG_NOFC_V3
 		|| common->reg_type == CLK_DIV_TYPE_2REG_FC_V4)
@@ -57,7 +58,7 @@ static void ccu_mix_disable(struct clk_hw *hw)
 		writel(tmp, common->base + common->reg_ctrl);
 
 	if (common->lock)
-		rt_hw_spin_unlock(common->lock);
+		rt_spin_unlock_irqrestore(&common->lock, flags);
 
 	if (gate->flags & SPACEMIT_CLK_GATE_NEED_DELAY) {
 		rate = clk_hw_get_rate(&common->hw);
@@ -92,6 +93,7 @@ static int ccu_mix_enable(struct clk_hw *hw)
 	int timeout_power = 1;
 	unsigned long rate_delay = 10;
 	rt_tick_t tick_delay, now;
+	unsigned long flags;
 
 	if (!gate)
 		return 0;
@@ -109,7 +111,7 @@ static int ccu_mix_enable(struct clk_hw *hw)
 	}
 
 	if (common->lock)
-		rt_hw_spin_lock(common->lock);
+		flags = rt_spin_lock_irqsave(&common->lock);
 
 	if (common->reg_type == CLK_DIV_TYPE_2REG_NOFC_V3
 		|| common->reg_type == CLK_DIV_TYPE_2REG_FC_V4)
@@ -133,7 +135,7 @@ static int ccu_mix_enable(struct clk_hw *hw)
 		val = readl(common->base + common->reg_ctrl);
 
 	if (common->lock)
-		rt_hw_spin_unlock(common->lock);
+		rt_spin_unlock_irqrestore(&common->lock, flags);
 
 	while ((val & gate->gate_mask) != gate->val_enable && (timeout_power < TIMEOUT_LIMIT)) {
 
@@ -188,6 +190,7 @@ static int ccu_mix_is_enabled(struct clk_hw *hw)
 	struct ccu_common * common = &mix->common;
 	struct ccu_gate_config *gate = mix->gate;
 	unsigned int tmp;
+	unsigned long flags;
 
 	if (!gate)
 		return 1;
@@ -197,7 +200,7 @@ static int ccu_mix_is_enabled(struct clk_hw *hw)
 	}
 
 	if (common->lock)
-		rt_hw_spin_lock(common->lock);
+		flags = rt_spin_lock_irqsave(&common->lock);
 
 	if (common->reg_type == CLK_DIV_TYPE_2REG_NOFC_V3
 		|| common->reg_type == CLK_DIV_TYPE_2REG_FC_V4)
@@ -206,7 +209,7 @@ static int ccu_mix_is_enabled(struct clk_hw *hw)
 		tmp = readl(common->base + common->reg_ctrl);
 
 	if (common->lock)
-		rt_hw_spin_unlock(common->lock);
+		rt_spin_unlock_irqrestore(&common->lock, flags);
 
 	return (tmp & gate->gate_mask) == gate->val_enable;
 }
@@ -341,6 +344,7 @@ static int ccu_mix_set_rate(struct clk_hw *hw, unsigned long rate,
 	struct ccu_div_config *div = mix->div? mix->div: NULL;
 	struct ccu_mux_config *mux = mix->mux? mix->mux: NULL;
 	unsigned long best_rate;
+	unsigned long flags;
 	unsigned int cur_mux, cur_div, mux_val = 0, div_val = 0;
 	unsigned int reg = 0;
 	int ret = 0;
@@ -380,7 +384,7 @@ static int ccu_mix_set_rate(struct clk_hw *hw, unsigned long rate,
 		return 0;
 	}
 
-	rt_hw_spin_lock(common->lock);
+	flags = rt_spin_lock_irqsave(&common->lock);
 	
 	if (common->reg_type == CLK_DIV_TYPE_2REG_NOFC_V3
 		|| common->reg_type == CLK_DIV_TYPE_2REG_FC_V4)
@@ -406,7 +410,7 @@ static int ccu_mix_set_rate(struct clk_hw *hw, unsigned long rate,
 		ret = ccu_mix_trigger_fc(hw);
 	}
 
-	rt_hw_spin_unlock(common->lock);
+	rt_spin_unlock_irqrestore(&common->lock, flags);
 
 	if(ret)
 		rt_kprintf("%s of %s timeout\n", __func__, clk_hw_get_name(&common->hw));
@@ -457,6 +461,7 @@ static int ccu_mix_set_parent(struct clk_hw *hw, unsigned char index)
 	struct ccu_common * common = &mix->common;
 	struct ccu_mux_config *mux = mix->mux;
 	unsigned int reg = 0;
+	unsigned long flags;
 	int ret = 0;
 
 	if(!mux)
@@ -477,7 +482,7 @@ static int ccu_mix_set_parent(struct clk_hw *hw, unsigned char index)
 		return 0;
 	}
 
-	rt_hw_spin_lock(common->lock);
+	flags = rt_spin_lock_irqsave(&common->lock);
 
 	if (common->reg_type == CLK_DIV_TYPE_2REG_NOFC_V3
 		|| common->reg_type == CLK_DIV_TYPE_2REG_FC_V4)
@@ -500,7 +505,7 @@ static int ccu_mix_set_parent(struct clk_hw *hw, unsigned char index)
 		ret = ccu_mix_trigger_fc(hw);
 	}
 
-	rt_hw_spin_unlock(common->lock);
+	rt_spin_unlock_irqrestore(&common->lock, flags);
 
 	if(ret)
 		rt_kprintf("%s of %s timeout\n", __func__, clk_hw_get_name(&common->hw));

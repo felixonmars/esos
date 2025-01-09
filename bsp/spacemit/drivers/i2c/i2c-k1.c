@@ -15,8 +15,6 @@
 #define I2C_SMBUS_BLOCK_MAX	32    /* As specified in SMBus standard */
 #define USEC_PER_SEC		1000000L
 
-rt_ubase_t ri2c0_lock;
-
 static inline struct spacemit_i2c_dev *to_spacemit_i2c_dev(struct rt_i2c_bus_device *dev)
 {
 	return rt_container_of(dev, struct spacemit_i2c_dev, dev);
@@ -446,6 +444,7 @@ static int spacemit_i2c_byte_xfer_next_msg(struct spacemit_i2c_dev *spacemit_i2c
 
 static void spacemit_i2c_fifo_xfer_fill_buffer(struct spacemit_i2c_dev *spacemit_i2c)
 {
+	unsigned long flags;
 	int finish, count = 0, fill = 0;
 	rt_uint32_t data = 0;
 	rt_uint32_t data_buf[SPACEMIT_I2C_TX_FIFO_DEPTH * 2];
@@ -537,10 +536,10 @@ static void spacemit_i2c_fifo_xfer_fill_buffer(struct spacemit_i2c_dev *spacemit
 			break;
 	}
 
-	rt_hw_spin_lock(spacemit_i2c->fifo_lock);
+	flags = rt_spin_lock_irqsave(&spacemit_i2c->fifo_lock);
 	for (i = 0; i < data_cnt; i++)
 		spacemit_i2c_write_reg(spacemit_i2c, REG_WFIFO, data_buf[i]);
-	rt_hw_spin_unlock(spacemit_i2c->fifo_lock);
+	rt_spin_unlock_irqrestore(&spacemit_i2c->fifo_lock, flags);
 }
 
 static void spacemit_i2c_fifo_xfer_copy_buffer(struct spacemit_i2c_dev *spacemit_i2c)
@@ -1002,7 +1001,7 @@ static int spacemit_i2c_probe(void)
 			rt_mutex_init(&spacemit_i2c->mtx, "i2c_mutex", RT_IPC_FLAG_PRIO);
 			rt_completion_init(&spacemit_i2c->complete);
 
-			spacemit_i2c->fifo_lock = &ri2c0_lock;
+			rt_spin_lock_init(&spacemit_i2c->fifo_lock);
 
 			spacemit_i2c->irq = dtb_node_irq_get(compatible_node, 0);
 			if (spacemit_i2c->irq < 0) {

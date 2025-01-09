@@ -10,7 +10,12 @@
 #undef EPROBE_DEFER
 #define EPROBE_DEFER    517     /* Driver requests probe retry */
 
-rt_base_t gpio_lock;
+#ifdef RT_USING_SMP
+extern struct rt_spinlock gpio_lock;
+#else
+extern rt_base_t gpio_lock;
+#endif
+
 static rt_list_t gpio_chips = RT_LIST_OBJECT_INIT(gpio_chips);
 
 struct gpio_desc {
@@ -276,6 +281,7 @@ int gpiochip_add_pin_range(struct gpio_chip *chip, const char *pinctl_name,
  */
 int gpiochip_add(struct gpio_chip *chip)
 {
+	unsigned long flags;
 	int		status = 0;
 	unsigned	id;
 	int		base = chip->base;
@@ -286,7 +292,7 @@ int gpiochip_add(struct gpio_chip *chip)
 		goto fail;
 	}
 
-	gpio_lock = rt_hw_interrupt_disable();
+	flags = rt_spin_lock_irqsave(&gpio_lock);
 
 	if (base < 0) {
 		base = gpiochip_find_base(chip->ngpio);
@@ -319,7 +325,7 @@ int gpiochip_add(struct gpio_chip *chip)
 		}
 	}
 
-	rt_hw_interrupt_enable(gpio_lock);
+	rt_spin_unlock_irqrestore(&gpio_lock, flags);
 
 	rt_list_init(&chip->pin_ranges);
 
@@ -339,7 +345,7 @@ int gpiochip_add(struct gpio_chip *chip)
 	return 0;
 
 unlock:
-	rt_hw_interrupt_enable(gpio_lock);
+	rt_spin_unlock_irqrestore(&gpio_lock, flags);
 fail:
 	/* failures here can mean systems won't boot... */
 	rt_kprintf("gpiochip_add: gpios %d..%d (%s) failed to register\n",
@@ -386,9 +392,10 @@ struct gpio_chip *gpiochip_find(void *data,
                                 int (*match)(struct gpio_chip *chip,
                                              void *data))
 {
+	unsigned long flags;
 	struct gpio_chip *chip;
 
-	gpio_lock = rt_hw_interrupt_disable();
+	flags = rt_spin_lock_irqsave(&gpio_lock);
 	
 	rt_list_for_each_entry(chip, &gpio_chips, list)
 		if (match(chip, data))
@@ -398,7 +405,7 @@ struct gpio_chip *gpiochip_find(void *data,
 	if (&chip->list == &gpio_chips)
 		chip = NULL;
 
-	rt_hw_interrupt_enable(gpio_lock);
+	rt_spin_unlock_irqrestore(&gpio_lock, flags);
 
 	return chip;
 }
@@ -439,6 +446,7 @@ static int gpiod_get_direction(const struct gpio_desc *desc)
  */
 static int gpiod_request(struct gpio_desc *desc, const char *label)
 {
+	unsigned long flags;
 	struct gpio_chip        *chip;
 	int status = -EPROBE_DEFER;
 
@@ -447,7 +455,7 @@ static int gpiod_request(struct gpio_desc *desc, const char *label)
 		return -RT_EINVAL;
 	}
 	
-	gpio_lock = rt_hw_interrupt_disable();
+	flags = rt_spin_lock_irqsave(&gpio_lock);
 
 	chip = desc->chip;
 	if (chip == NULL)
@@ -475,9 +483,9 @@ static int gpiod_request(struct gpio_desc *desc, const char *label)
 
 	if (chip->request) {
 		/* chip->request may sleep */
-		rt_hw_interrupt_enable(gpio_lock);
+		rt_spin_unlock_irqrestore(&gpio_lock, flags);
 		status = chip->request(chip, gpio_chip_hwgpio(desc));
-		gpio_lock = rt_hw_interrupt_disable();
+		flags = rt_spin_lock_irqsave(&gpio_lock);
 
 		if (status < 0) {
 			desc_set_label(desc, NULL);
@@ -491,15 +499,15 @@ static int gpiod_request(struct gpio_desc *desc, const char *label)
 
 	if (chip->get_direction) {
 		/* chip->get_direction may sleep */
-		rt_hw_interrupt_enable(gpio_lock);
+		rt_spin_unlock_irqrestore(&gpio_lock, flags);
 		gpiod_get_direction(desc);
-		gpio_lock = rt_hw_interrupt_disable();
+		flags = rt_spin_lock_irqsave(&gpio_lock);
 	}
 done:
 	if (status)
 		rt_kprintf("_gpio_request: gpio-%d (%s) status %d\n", desc_to_gpio(desc), label ? : "?", status);
 
-	rt_hw_interrupt_enable(gpio_lock);
+	rt_spin_unlock_irqrestore(&gpio_lock, flags);
 
 	return status;
 }
@@ -555,6 +563,7 @@ static int gpio_ensure_requested(struct gpio_desc *desc)
 
 static int gpiod_direction_input(struct gpio_desc *desc)
 {
+	unsigned long flags;
 	struct gpio_chip        *chip;
 	int                     status = -RT_EINVAL;
 	int                     offset;
@@ -564,7 +573,7 @@ static int gpiod_direction_input(struct gpio_desc *desc)
 		return -RT_EINVAL;
 	}
 
-	gpio_lock = rt_hw_interrupt_disable();
+	flags = rt_spin_lock_irqsave(&gpio_lock);
 
 	chip = desc->chip;
 	if (!chip || !chip->get || !chip->direction_input)
@@ -575,7 +584,7 @@ static int gpiod_direction_input(struct gpio_desc *desc)
 		goto fail;
 
 	/* now we know the gpio is valid and chip won't vanish */
-	rt_hw_interrupt_enable(gpio_lock);
+	rt_spin_unlock_irqrestore(&gpio_lock, flags);
 
         /* might_sleep_if(chip->can_sleep); */
 
@@ -598,7 +607,7 @@ static int gpiod_direction_input(struct gpio_desc *desc)
 lose:
 	return status;
 fail:
-	rt_hw_interrupt_enable(gpio_lock);
+	rt_spin_unlock_irqrestore(&gpio_lock, flags);
 	if (status)
 		rt_kprintf("%s: gpio-%d status %d\n", __func__, desc_to_gpio(desc), status);
 
@@ -612,6 +621,7 @@ int gpio_direction_input(unsigned gpio)
 
 static int gpiod_direction_output(struct gpio_desc *desc, int value)
 {
+	unsigned long flags;
 	struct gpio_chip        *chip;
 	int                     status = -RT_EINVAL;
 	int offset;
@@ -629,7 +639,7 @@ static int gpiod_direction_output(struct gpio_desc *desc, int value)
 	if (!value && test_bit(FLAG_OPEN_SOURCE,  &desc->flags))
 		return gpiod_direction_input(desc);
 
-	gpio_lock = rt_hw_interrupt_disable();
+	flags = rt_spin_lock_irqsave(&gpio_lock);
 
 	chip = desc->chip;
 	if (!chip || !chip->set || !chip->direction_output)
@@ -641,7 +651,7 @@ static int gpiod_direction_output(struct gpio_desc *desc, int value)
 
 	/* now we know the gpio is valid and chip won't vanish */
 	
-	rt_hw_interrupt_enable(gpio_lock);
+	rt_spin_unlock_irqrestore(&gpio_lock, flags);
 
 	/* might_sleep_if(chip->can_sleep); */
 
@@ -663,7 +673,7 @@ static int gpiod_direction_output(struct gpio_desc *desc, int value)
 lose:
 	return status;
 fail:
-	rt_hw_interrupt_enable(gpio_lock);
+	rt_spin_unlock_irqrestore(&gpio_lock, flags);
         
 	if (status)
 		rt_kprintf("%s: gpio-%d status %d\n", __func__,

@@ -9,8 +9,6 @@ struct spacemit_ccu {
 	struct clk_hw_onecell_data *clk_cells;
 };
 
-rt_ubase_t g_cru_lock;
-
 static const struct ccu_pll_rate_tbl pll3_rate_tbl[] = {
 	PLL_RATE(1600000000UL, 0x61, 0xcd, 0x50, 0x00, 0x43, 0xeaaaab),
 	PLL_RATE(1800000000UL, 0x61, 0xcd, 0x50, 0x00, 0x4b, 0x000000),
@@ -563,7 +561,7 @@ int ccu_common_init(struct clk_hw * hw, struct spacemit_k1x_clk *clk_info)
 	if (!common)
 		return -1;
 
-	common->lock = &g_cru_lock;
+	rt_spin_lock_init(&common->lock);
 
 	switch(common->base_type){
 	case BASE_TYPE_MPMU:

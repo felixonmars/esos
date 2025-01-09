@@ -191,7 +191,12 @@ struct ccu_common {
 	const char		* const *parent_names;
 	unsigned char num_parents;
 	unsigned long	flags;
-	rt_ubase_t	*lock;
+#ifdef RT_USING_SMP
+	struct rt_spinlock lock;
+#else
+	rt_base_t lock;
+#endif
+
 	struct clk_hw	hw;
 };
 
