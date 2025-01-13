@@ -181,6 +181,11 @@ extern "C" {
 #include "drivers/gpio/of_gpio.h"
 #endif
 
+#ifdef RT_USING_MAILBOX
+#include "drivers/mailbox_controller.h"
+#include "drivers/mailbox_client.h"
+#endif
+
 #ifdef __cplusplus
 }
 #endif

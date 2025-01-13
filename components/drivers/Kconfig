@@ -144,6 +144,10 @@ config RT_USING_CLK
     bool "Using CLK device drivers"
     default n
 
+config RT_USING_MAILBOX
+    bool "Using Mailbox device drivers"
+    default n
+
 config RT_USING_MTD_NOR
     bool "Using MTD Nor Flash device drivers"
     default n
