@@ -252,5 +252,15 @@
 			spacemit,i2c-wcr = <0x142a>;
 			status = "disabled";
 		};
+
+		rspi0: rspi0@c0885000 {
+			compatible = "spacemit,k1x-rspi0";
+			reg = <0xc0885000 0x30>;
+			clocks = <&ccu CLK_RCPU_SSP0>, <&ccu CLK_RST_RCPU_SSP0>;
+			clock-frequency = <26000000>;
+			interrupt-parent = <&intc>;
+			interrupts = <0 34 0>;
+			status = "disabled";
+		};
 	};
 };
