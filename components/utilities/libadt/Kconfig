@@ -1,0 +1,13 @@
+menuconfig RT_USING_ADT
+    bool "Enable ADT(abstract data type)"
+    default y
+
+config RT_USING_ADT_BITMAP
+    bool "Bitmap"
+    depends on RT_USING_ADT
+    default y
+
+config RT_USING_ADT_BITOPS
+    bool "BitopsAtomic"
+    depends on RT_USING_ADT
+    default y

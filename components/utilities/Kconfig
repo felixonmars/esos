@@ -210,5 +210,6 @@ config RT_USING_VAR_EXPORT
     default n
 
 source "$RTT_DIR/components/utilities/rt-link/Kconfig"
+source "$RTT_DIR/components/utilities/libadt/Kconfig"
 
 endmenu
