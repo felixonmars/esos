@@ -148,6 +148,12 @@ config RT_USING_MAILBOX
     bool "Using Mailbox device drivers"
     default n
 
+config RT_USING_DMA
+    bool "Using Direct Memory Access (DMA)"
+    select RT_USING_ADT
+    select RT_USING_ADT_BITMAP
+    default n
+
 config RT_USING_MTD_NOR
     bool "Using MTD Nor Flash device drivers"
     default n

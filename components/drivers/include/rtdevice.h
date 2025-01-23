@@ -162,6 +162,10 @@ extern "C" {
 #include "drivers/clkdev.h"
 #endif
 
+#ifdef RT_USING_DMA
+#include "drivers/dma.h"
+#endif
+
 #ifdef RT_USING_RADIX_TREE
 #include "drivers/radix-tree.h"
 #endif
