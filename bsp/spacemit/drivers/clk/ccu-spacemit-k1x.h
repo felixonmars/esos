@@ -7,6 +7,7 @@
 #ifndef _CCU_SPACEMIT_K1X_H_
 #define _CCU_SPACEMIT_K1X_H_
 
+#include <rthw.h>
 #include <rtthread.h>
 #include <rtdevice.h>
 
@@ -191,12 +192,7 @@ struct ccu_common {
 	const char		* const *parent_names;
 	unsigned char num_parents;
 	unsigned long	flags;
-#ifdef RT_USING_SMP
 	struct rt_spinlock lock;
-#else
-	rt_base_t lock;
-#endif
-
 	struct clk_hw	hw;
 };
 

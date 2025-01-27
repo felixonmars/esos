@@ -22,11 +22,7 @@ struct rt_mutex clk_prepare_mutex;
 struct rt_mutex of_clk_mutex;
 struct rt_mutex clocks_mutex;
 
-#ifdef RT_USING_SMP
 struct rt_spinlock enable_lock;
-#else
-rt_base_t enable_lock;
-#endif
 
 extern int of_fixed_clk_setup(void);
 extern int spacemit_ccu_init(void);
@@ -44,13 +40,7 @@ extern int spacemit_pcs_init(void);
 #endif
 
 #if defined(RT_USING_GPIO)
-
-#ifdef RT_USING_SMP
 struct rt_spinlock gpio_lock;
-#else
-rt_base_t gpio_lock;
-#endif
-
 extern int spacemit_gpio_init(void);
 #endif
 

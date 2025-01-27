@@ -39,8 +39,7 @@ static void ccu_mix_disable(struct clk_hw *hw)
 		return;
 	}
 
-	if (common->lock)
-		flags = rt_spin_lock_irqsave(&common->lock);
+	flags = rt_spin_lock_irqsave(&common->lock);
 
 	if (common->reg_type == CLK_DIV_TYPE_2REG_NOFC_V3
 		|| common->reg_type == CLK_DIV_TYPE_2REG_FC_V4)
@@ -57,8 +56,7 @@ static void ccu_mix_disable(struct clk_hw *hw)
 	else
 		writel(tmp, common->base + common->reg_ctrl);
 
-	if (common->lock)
-		rt_spin_unlock_irqrestore(&common->lock, flags);
+	rt_spin_unlock_irqrestore(&common->lock, flags);
 
 	if (gate->flags & SPACEMIT_CLK_GATE_NEED_DELAY) {
 		rate = clk_hw_get_rate(&common->hw);
@@ -110,8 +108,7 @@ static int ccu_mix_enable(struct clk_hw *hw)
 		return 0;
 	}
 
-	if (common->lock)
-		flags = rt_spin_lock_irqsave(&common->lock);
+	flags = rt_spin_lock_irqsave(&common->lock);
 
 	if (common->reg_type == CLK_DIV_TYPE_2REG_NOFC_V3
 		|| common->reg_type == CLK_DIV_TYPE_2REG_FC_V4)
@@ -134,8 +131,7 @@ static int ccu_mix_enable(struct clk_hw *hw)
 	else
 		val = readl(common->base + common->reg_ctrl);
 
-	if (common->lock)
-		rt_spin_unlock_irqrestore(&common->lock, flags);
+	rt_spin_unlock_irqrestore(&common->lock, flags);
 
 	while ((val & gate->gate_mask) != gate->val_enable && (timeout_power < TIMEOUT_LIMIT)) {
 
@@ -199,8 +195,7 @@ static int ccu_mix_is_enabled(struct clk_hw *hw)
 		return (twsi8_reg_val & gate->gate_mask) == gate->val_enable;
 	}
 
-	if (common->lock)
-		flags = rt_spin_lock_irqsave(&common->lock);
+	flags = rt_spin_lock_irqsave(&common->lock);
 
 	if (common->reg_type == CLK_DIV_TYPE_2REG_NOFC_V3
 		|| common->reg_type == CLK_DIV_TYPE_2REG_FC_V4)
@@ -208,8 +203,7 @@ static int ccu_mix_is_enabled(struct clk_hw *hw)
 	else
 		tmp = readl(common->base + common->reg_ctrl);
 
-	if (common->lock)
-		rt_spin_unlock_irqrestore(&common->lock, flags);
+	rt_spin_unlock_irqrestore(&common->lock, flags);
 
 	return (tmp & gate->gate_mask) == gate->val_enable;
 }

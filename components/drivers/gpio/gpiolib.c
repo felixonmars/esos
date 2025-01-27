@@ -11,11 +11,7 @@
 #undef EPROBE_DEFER
 #define EPROBE_DEFER    517     /* Driver requests probe retry */
 
-#ifdef RT_USING_SMP
 extern struct rt_spinlock gpio_lock;
-#else
-extern rt_base_t gpio_lock;
-#endif
 
 static rt_list_t gpio_chips = RT_LIST_OBJECT_INIT(gpio_chips);
 

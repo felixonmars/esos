@@ -6,11 +6,7 @@
 #define ESHUTDOWN       58      /* Cannot send after transport endpoint shutdown */
 #define EBUSY           16      /* Device or resource busy */
 
-#ifdef RT_USING_SMP
 extern struct rt_spinlock enable_lock;
-#else
-extern rt_base_t enable_lock;
-#endif
 
 extern struct rt_mutex clk_prepare_mutex;
 extern struct rt_mutex of_clk_mutex;
