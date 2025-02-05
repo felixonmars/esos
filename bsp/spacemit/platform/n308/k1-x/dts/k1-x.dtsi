@@ -270,7 +270,24 @@
 			interrupt-parent = <&intc>;
 			interrupts = <0 30 0>;
 			#mbox-cells = <1>;
-			status = "disabled";
+			status = "okay";
+		};
+
+		rproc0: rproc0@0 {
+			compatible = "spacemit,k1x-rproc0";
+			shared_mem_pa_base = <0x30200000>;
+			shared_mem_buf_offset = <0x0>;
+			shared_mem_size	= <0xfc000>;
+			proc_id = <0>;
+			rsc_id = <0>;
+			vdev_id = <0>;
+			mboxes = <&mailbox 0>, <&mailbox 1>;
+			mbox-names = "vq0", "vq1";
+
+			/* put here to enable the mailbox irq */
+			interrupt-parent = <&intc>;
+			interrupts = <0 30 0>;
+			status = "okay";
 		};
 	};
 };
