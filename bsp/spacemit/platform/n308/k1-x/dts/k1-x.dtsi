@@ -262,5 +262,15 @@
 			interrupts = <0 34 0>;
 			status = "disabled";
 		};
+
+		mailbox: mailbox@c088a000 {
+			compatible = "spacemit,k1-x-mailbox";
+			reg = <0xc088a000 0x100>;
+			/* put here to register the mailbox irq */
+			interrupt-parent = <&intc>;
+			interrupts = <0 30 0>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
 	};
 };
