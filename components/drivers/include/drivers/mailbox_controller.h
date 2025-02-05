@@ -1,6 +1,7 @@
 #ifndef __RT_MAILBOX_CONTROLLER__H__
 #define __RT_MAILBOX_CONTROLLER__H__
 
+#include <rthw.h>
 #include <rtthread.h>
 #include <rtdevice.h>
 
@@ -82,11 +83,7 @@ struct mbox_controller {
 			const struct fdt_phandle_args *sp);
 	/* Internal to API */
 	struct rt_timer poll_hrt;
-#ifdef RT_USING_SMP
 	struct rt_spinlock poll_hrt_lock;
-#else
-	rt_base_t poll_hrt_lock;
-#endif
 	rt_list_t node;
 };
 
@@ -126,11 +123,8 @@ struct mbox_chan {
 	void *active_req;
 	unsigned msg_count, msg_free;
 	void *msg_data[MBOX_TX_QUEUE_LEN];
-#ifdef RT_USING_SMP /* Serialise access to the channel */
+	/* Serialise access to the channel */
 	struct rt_spinlock lock;
-#else
-	rt_base_t lock;
-#endif
 	void *con_priv;
 };
 

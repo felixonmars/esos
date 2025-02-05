@@ -49,6 +49,11 @@ menu "On-chip Peripheral Drivers"
     config BSP_USING_SPI
         bool "Enable SPI"
         default n
+
+    config BSP_USING_MAILBOX
+        bool "Enable MAILBOX"
+        default n
+	select RT_USING_MAILBOX
 endmenu
 
 menu "Board extended module Drivers"
