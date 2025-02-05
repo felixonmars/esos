@@ -7,15 +7,12 @@
 #include <rthw.h>
 #include <rtthread.h>
 #include <dtb_head.h>
+#include <register_defination.h>
 #ifdef RT_USING_ARMSCP_MODULE
 #include <fwk_arch.h>
 #endif
 
 extern unsigned char __bss_end__[];
-
-#if defined(SOC_SPACEMIT_K1_X) && defined(RT_USING_OPENAMP)
-#include <platform_info.h>
-#endif
 
 #if defined(RT_USING_CLK) && defined(RT_USING_MUTEX)
 struct rt_mutex clk_prepare_mutex;
@@ -51,11 +48,7 @@ void rt_hw_board_init(void)
 {
 #ifdef RT_USING_HEAP
 #if defined(SOC_SPACEMIT_K1_X)
-#if defined(RT_USING_OPENAMP)
     rt_system_heap_init((void *)RT_HEAP_START, (void *)RT_HEAP_END);
-#else
-    rt_system_heap_init((void *)__bss_end__, (void *)(0x40000));
-#endif
 #endif
 #endif
 

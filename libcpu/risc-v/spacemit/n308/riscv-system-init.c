@@ -8,10 +8,7 @@
 #include <rtdef.h>
 #include <spacemit_sdk_soc.h>
 #include <core_feature_base.h>
-
-#if defined(SOC_SPACEMIT_K1_X) && defined(RT_USING_OPENAMP)
-#include <platform_info.h>
-#endif
+#include <register_defination.h>
 
 #define SOC_TIMER_FREQ	(32768 * 4)
 

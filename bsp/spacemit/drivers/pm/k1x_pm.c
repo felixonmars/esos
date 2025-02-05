@@ -13,7 +13,6 @@
 #include <spacemit_sdk_soc.h>
 #include <register_defination.h>
 #include <openamp/rpmsg.h>
-#include <platform_info.h>
 
 extern unsigned long __text_start;
 extern unsigned long _end;

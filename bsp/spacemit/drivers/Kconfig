@@ -54,6 +54,11 @@ menu "On-chip Peripheral Drivers"
         bool "Enable MAILBOX"
         default n
 	select RT_USING_MAILBOX
+
+    config BSP_USING_RPMSG
+	bool "Enable rpmsg"
+	default y
+	select RT_USING_RPMSG_SERVICE
 endmenu
 
 menu "Board extended module Drivers"

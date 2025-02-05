@@ -9,7 +9,6 @@
 
 #include <metal/sys.h>
 #include <metal/irq.h>
-#include "platform_info.h"
 
 /* Main hw machinery initialization entry point, called from main()*/
 /* return 0 on success */
@@ -23,9 +22,4 @@ int init_system(void)
 	metal_spacemit_irq_init();
 
 	return 0;
-}
-
-void cleanup_system()
-{
-	metal_finish();
 }

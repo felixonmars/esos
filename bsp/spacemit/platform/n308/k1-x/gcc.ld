@@ -12,7 +12,7 @@ ENTRY(Reset_Handler)
 
 MEMORY
 {
-   SRAM (rwx) : ORIGIN = ENTRY_POINT, LENGTH = 256K
+   RAM (rwx) : ORIGIN = ENTRY_POINT, LENGTH = 2M
    RESOURCE_TABLE (rwx) : ORIGIN = 0x302fc000, LENGTH = 16K
 }
 
@@ -55,14 +55,14 @@ SECTIONS
 
         . = ALIGN(8);
         _etext = .;
-    } > SRAM
+    } > RAM
 
     .eh_frame_hdr :
     {
          *(.eh_frame_hdr)
          *(.eh_frame_entry)
-    } > SRAM
-    .eh_frame : ONLY_IF_RO { KEEP (*(.eh_frame)) } > SRAM
+    } > RAM
+    .eh_frame : ONLY_IF_RO { KEEP (*(.eh_frame)) } > RAM
 
     . = ALIGN(8);
     __text_end = .;
@@ -81,7 +81,7 @@ SECTIONS
 
         *(.sdata)
         *(.sdata.*)
-    } > SRAM
+    } > RAM
 
     . = ALIGN(8);
     .ctors :
@@ -90,7 +90,7 @@ SECTIONS
         KEEP(*(SORT(.init_array.*)))
         KEEP(*(.init_array))
         PROVIDE(__ctors_end__ = .);
-    } > SRAM
+    } > RAM
 
     .dtors :
     {
@@ -98,7 +98,7 @@ SECTIONS
         KEEP(*(SORT(.fini_array.*)))
         KEEP(*(.fini_array))
         PROVIDE(__dtors_end__ = .);
-    } > SRAM
+    } > RAM
 
     /* stack for dual core */
     .stack :
@@ -108,7 +108,7 @@ SECTIONS
         . += __STACKSIZE__;
 	__StackTop = .;
 	PROVIDE( __rt_rvstack = .);
-    } > SRAM
+    } > RAM
 
     PROVIDE(__stack = __StackTop);
     PROVIDE( __rt_rvstack = .);
@@ -120,7 +120,7 @@ SECTIONS
         *(.sbss.*)
         *(.dynsbss)
         *(.scommon)
-    } > SRAM
+    } > RAM
 
     .bss :
     {
@@ -129,7 +129,7 @@ SECTIONS
         *(.dynbss)
         *(COMMON)
     __bss_end__ = .;
-    } > SRAM
+    } > RAM
 
     _end = .;
 

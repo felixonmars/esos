@@ -104,7 +104,7 @@ function select_board()
 function select_entry_point()
 {
 	if [ "x${TARGET_CHIP}_${TARGET_BOARD}" = "xn308_k1-x" ]; then
-		TARGET_ENTRY_POINT=0x0
+		TARGET_ENTRY_POINT=0x30300000
 	else
 		mk_error "No valid entry point!"
 		return 1
