@@ -136,6 +136,7 @@ SECTIONS
     .resource_table :
     {
 	. = ALIGN(4);
+	__resource_table_start__ = .;
 	*(.resource_table)
     } > RESOURCE_TABLE
 

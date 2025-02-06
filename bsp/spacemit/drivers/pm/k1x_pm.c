@@ -6,6 +6,7 @@
 
 #include <rthw.h>
 #include <drivers/pm.h>
+#include <rtconfig.h>
 #include <rtdevice.h>
 #include <rtthread.h>
 #include <riscv_sleep.h>
@@ -14,38 +15,57 @@
 #include <register_defination.h>
 #include <openamp/rpmsg.h>
 
-extern unsigned long __text_start;
-extern unsigned long _end;
 struct rpmsg_endpoint lpwept;
 extern struct rpmsg_device *rpdev;
+extern unsigned char __resource_table_start__[];
 
 #define RPMSG_LOW_PWR_SERV_NAME         "rcpu-pwr-management-service"
 
 static int __suspend_asm_finish(rt_ubase_t arg, rt_ubase_t entry, rt_ubase_t context)
 {
 	audio_pmu_vote_t *lpvote = (audio_pmu_vote_t *)AUDIO_PMU_VOTE_REG;
-	audio_vote_for_main_mpu_t *vmp =
-		(audio_vote_for_main_mpu_t *)AUDIO_VOTE_FOR_MAIN_PMU;
-
-	/* for n308 when rcpu resumed from poweroff, it will start to run at 0 address */
-	/* copy the rcpu runtime snapshots */
-	memcpy((void *)((rt_uint32_t *)RCPU_RUNTIME_MEM_SNAPSHOT_BASE + 1),
-			(void *)&__text_start,
-			(unsigned long)&_end - (unsigned long)&__text_start);
 
 	/* flush dcache all */
 	MFlushInvalDCache();
 
-	/* tell the Big-cpu that we have complete to store the runtime snapshots */
-	*((rt_uint32_t *)RCPU_RUNTIME_MEM_SNAPSHOT_BASE) = 1;
+	/* tell the Big-cpu that we have complete: using the reserved address of resource table, which defined in file k1-rproc.c
+	 *
+	 *struct remote_resource_table __resource resources[1][1] = {
+	 *	{
+	 *		{
+	 *			// Version
+ 	 *			1,
+	 *
+	 *			// NUmber of table entries
+	 *			NUM_TABLE_ENTRIES,
+	 *
+	 *			// reserved fields
+	 *			{ 0, 0, },
+	 *
+	 *			// Offsets of rsc entries
+	 *			{
+	 *				 offsetof(struct remote_resource_table, rpmsg_vdev),
+	 *			},
+	 *
+	 *			// Virtio device entry
+	 *			{
+	 *				RSC_VDEV, VIRTIO_ID_RPMSG_, 0, RPMSG_IPU_C0_FEATURES, 0, 0, 0,
+	 *				NUM_VRINGS, {0, 0},
+	 *			},
+	 *
+	 *			// Vring rsc entry - part of vdev rsc entry
+	 *			{ RING_TX, VRING_ALIGN, VRING_SIZE, 0, 0 },
+	 *
+	 *			{ RING_RX, VRING_ALIGN, VRING_SIZE, 1, 0 },
+	 *		},
+	 *	},
+	* }; */
 
+	*((rt_uint32_t *)((unsigned int)__resource_table_start__ + 8)) = 1;
+
+	/* flush dcache all */
 	MFlushInvalDCache();
 
-	vmp->bits.audio_pmu_vote_vctcxosd = 1;
-	vmp->bits.audio_pmu_vote_ddrsd = 1;
-	vmp->bits.audio_pmu_vote_axisd = 1;
-	vmp->bits.audio_pmu_vote_stben = 1;
-	vmp->bits.audio_pmu_vote_slpen = 1;
 	lpvote->bits.vote_for_lp = 1;
 	lpvote->bits.vote_for_plloff = 1;
 	lpvote->bits.vote_for_pwroff = 1;
@@ -159,6 +179,31 @@ static void sleep(struct rt_pm *pm, uint8_t mode)
 
 		cpu_suspend(0, __suspend_asm_finish);
 
+		/* enable ICACHE & DCACHE */
+#ifdef RT_USING_CACHE
+#if defined(__ICACHE_PRESENT) && (__ICACHE_PRESENT == 1)
+		if (ICachePresent()) { // Check whether icache real present or not
+			EnableICache();
+		}
+#endif
+
+#if defined(__DCACHE_PRESENT) && (__DCACHE_PRESENT == 1)
+		if (DCachePresent()) { // Check whether dcache real present or not
+			EnableDCache();
+		}
+
+#if defined(RT_USING_OPENAMP)
+		/* set the vring & share memory to non-cacheable */
+		/* base: SHARED_MEM_PA; size SHARED_MEM_SIZE */
+		__RV_CSR_SET(CSR_MNOCM, 0xfff00000);
+		__RV_CSR_SET(CSR_MNOCB, SHARED_MEM_PA | 0x1);
+#endif
+#endif
+#endif
+		/* Do fence and fence.i to make sure previous ilm/dlm/icache/dcache control done */
+		__RWMB();
+		__FENCE_I();
+
 		/* initialize the eclic again */
 		ECLIC_Init();
 
@@ -183,9 +228,10 @@ static void sleep(struct rt_pm *pm, uint8_t mode)
 
 		rt_pm_request(RT_PM_DEFAULT_SLEEP_MODE);
 
-		/* tell the Big-cpu that we have complete to store the runtime snapshots */
-		*((rt_uint32_t *)RCPU_RUNTIME_MEM_SNAPSHOT_BASE) = 2;
+		/* using the reserved address of resource table to tell the big-cpu that we have complete resume */
+		*((rt_uint32_t *)((unsigned int)__resource_table_start__ + 8)) = 2;
 
+		/* flush dcache all */
 		MFlushInvalDCache();
 	break;
 

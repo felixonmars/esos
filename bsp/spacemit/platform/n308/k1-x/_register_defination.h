@@ -90,7 +90,6 @@ typedef union audio_wakeup_en_reg {
 
 #define RT_HEAP_START		0x30000000
 #define RT_HEAP_END		0x30200000
-#define RCPU_RUNTIME_MEM_SNAPSHOT_BASE	0x30300000
 #define SHARED_MEM_PA	0x30200000
 
 #endif
