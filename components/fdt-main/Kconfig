@@ -1,17 +1,3 @@
 config RT_USING_FDT
 	bool "Using fdt..."
 	default y
-
-if RT_USING_FDT
-	if SOC_SPACEMIT_K1_X
-		config RT_FDT_BASE
-			hex "The base address of dtb"
-			default 0x30340000
-	endif
- 
-	if SOC_SPACEMIT_K1_PRO
-		config RT_FDT_BASE
-			hex "The base address of dtb"
-			default 0x0	
-	endif 
-endif

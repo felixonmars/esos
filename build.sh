@@ -179,16 +179,17 @@ function config_sdk()
 
 function build_kernel()
 {
+	# build dtb
+	source ${ESOS_BASE_DEFCONF}
+	cd ${BSP_DIR}/platform/${TARGET_CHIP}/${TARGET_BOARD}/dts/
+	make
+	cd -
+
 	# build src 
 	source ${ESOS_BASE_DEFCONF}
 	cd ${BSP_DIR}
 	scons --useconfig=.config
 	scons
-	cd -
-
-	# build dtb
-	cd ${BSP_DIR}/platform/${TARGET_CHIP}/${TARGET_BOARD}/dts/
-	make
 	cd -
 }
 

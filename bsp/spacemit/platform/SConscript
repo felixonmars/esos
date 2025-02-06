@@ -1,9 +1,8 @@
 from building import *
 
 # The set of source files associated with this SConscript file.
-src = Split('''
-''')
 cwd = GetCurrentDir()
+src     = Glob('*.S')
 CPPPATH = [cwd]
 
 group = DefineGroup('SpacemitPlatformDef', src, depend = [''], CPPPATH = CPPPATH)

@@ -41,6 +41,8 @@ struct rt_spinlock gpio_lock;
 extern int spacemit_gpio_init(void);
 #endif
 
+extern unsigned long __irf_start[];
+
 /**
  * This function will initial smart-evb board.
  */
@@ -52,7 +54,7 @@ void rt_hw_board_init(void)
 #endif
 #endif
 
-    device_tree_setup((void *)RT_FDT_BASE);
+    device_tree_setup((void *)__irf_start);
 
 #ifdef RT_USING_RADIX_TREE
     radix_tree_init_maxindex();

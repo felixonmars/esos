@@ -275,6 +275,7 @@
 
 		rproc0: rproc0@0 {
 			compatible = "spacemit,k1x-rproc0";
+			reg = <0x0 0x0>;
 			shared_mem_pa_base = <0x30200000>;
 			shared_mem_buf_offset = <0x0>;
 			shared_mem_size	= <0xfc000>;
