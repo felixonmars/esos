@@ -290,5 +290,16 @@
 			interrupts = <0 30 0>;
 			status = "okay";
 		};
+
+		rcan0: rcan0@c0870000 {
+			compatible = "spacemit,k1x-rcan0";
+			/* not used */
+			reg = <0xc0870000 0x1000>;
+			interrupt-parent = <&intc>;
+			interrupts = <0 60 0>;
+			mboxes = <&mailbox 2>;
+			mbox-names = "mcan0";
+			status = "okay";
+		};
 	};
 };
