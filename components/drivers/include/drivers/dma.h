@@ -135,6 +135,8 @@ struct rt_dma_chan
     struct rt_dma_slave_transfer transfer;
     void (*callback)(struct rt_dma_chan *chan, rt_size_t size);
     void *priv;
+    rt_list_t device_node;
+    rt_bool_t used;
 };
 
 struct rt_dma_pool

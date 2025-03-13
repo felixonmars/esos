@@ -25,6 +25,10 @@ menu "On-chip Peripheral Drivers"
         bool "Enable ADMA"
         default n
 
+    config BSP_USING_DMA
+        bool "Enable DMA"
+        default n
+
     config BSP_USING_CAN
         bool "Enable CAN"
         default n
