@@ -9,6 +9,7 @@
 #include <rtdevice.h>
 #include <riscv-ops.h>
 #include <drivers/spi.h>
+#include <drivers/dma.h>
 #include <ipc/workqueue.h>
 #include "k1x_spi.h"
 
@@ -21,7 +22,7 @@
 
 #define SSP_DATA_8_BIT		(7 << 5)
 #define SSP_DATA_16_BIT		(15 << 5)
-#define SSP_DATA_24_BIT		(24 << 5)
+#define SSP_DATA_24_BIT		(23 << 5)
 #define SSP_DATA_32_BIT		(31 << 5)
 
 struct k1x_spi {
@@ -46,6 +47,12 @@ struct k1x_spi {
 	struct rt_completion	complete;
 	struct rt_spi_message *msg;
 	int irq;
+	struct rt_device dev;
+	struct rt_dma_chan *tx_chan;
+	struct rt_dma_chan *rx_chan;
+	rt_bool_t support_dma;
+	rt_bool_t tx_cb;
+	void *tmp;
 };
 
 static inline struct k1x_spi *to_k1x_spi(struct rt_spi_bus *bus)
@@ -197,6 +204,19 @@ rt_uint32_t k1x_spi_pio_xfer(struct k1x_spi *priv)
 	return 0;
 }
 
+//callback
+void spi_dma_callback(struct rt_dma_chan *chan, rt_size_t size)
+{
+	struct k1x_spi *priv = (struct k1x_spi *)chan->priv;
+
+	rt_dma_chan_stop(priv->rx_chan);
+	rt_dma_chan_stop(priv->tx_chan);
+	rt_free(priv->tmp);
+
+	//transmit or receive complete
+	rt_completion_done(&priv->complete);
+}
+
 static int k1x_spi_transfer_config(struct k1x_spi *priv)
 {
 	rt_uint32_t top_ctrl;
@@ -247,6 +267,11 @@ static rt_uint32_t k1x_spi_transfer_enable(struct k1x_spi *priv)
 {
 	struct rt_spi_message *msg = priv->msg;
 	rt_uint32_t ret = 0;
+	struct rt_dma_slave_config conf;
+	struct rt_dma_slave_transfer transfer;
+	struct rt_dma_chan *chan;
+	rt_uint32_t top_ctrl;
+	rt_uint32_t data_len;
 
 	priv->len = msg->length >> 3;
 	priv->tx = (void *)msg->send_buf;
@@ -285,8 +310,89 @@ static rt_uint32_t k1x_spi_transfer_enable(struct k1x_spi *priv)
 		priv->read = null_reader;
 	}
 
-	writel(BIT_SSP_TIE | BIT_SSP_RIE | BIT_SSP_TINTE, priv->base + REG_SSP_INT_EN);
+	if (priv->support_dma) {
+		data_len = priv->len;
+		priv->tmp = (void *)rt_calloc(1, data_len);
+		rt_memset(priv->tmp, 0, data_len);
+		rt_hw_cpu_dcache_ops(RT_HW_CACHE_FLUSH, priv->tmp, data_len);
 
+		if (priv->tx == RT_NULL) {
+			priv->tx = priv->tmp;
+			priv->tx_end = priv->tx + priv->len;
+			priv->tx_cb = 0;
+
+		} else if (priv->rx == RT_NULL) {
+			priv->rx = priv->tmp;
+			priv->rx_end = priv->rx + priv->len;
+			priv->tx_cb = 1;
+		}
+
+		if (priv->tx) {
+			chan = priv->tx_chan;
+			if (priv->tx_cb)
+				chan->callback = spi_dma_callback;
+			else
+				chan->callback = RT_NULL;
+
+			conf.direction = RT_DMA_MEM_TO_DEV;
+			conf.src_addr = (rt_ubase_t)priv->tx;
+			conf.dst_addr = (rt_ubase_t)(priv->base + REG_SSP_DATAR);
+			conf.src_addr_width = priv->data_length >> 3;
+			conf.dst_addr_width = priv->data_length >> 3;
+			conf.src_maxburst = 8;
+			conf.dst_maxburst = 8;
+
+			rt_dma_chan_config(chan, &conf);
+
+			transfer.src_addr = (rt_ubase_t)priv->tx;
+			transfer.dst_addr = (rt_ubase_t)(priv->base + REG_SSP_DATAR);
+			transfer.buffer_len = priv->len;
+
+			rt_dma_prep_single(chan, &transfer);
+		}
+
+		if (priv->rx) {
+			chan = priv->rx_chan;
+			if (!priv->tx_cb)
+				chan->callback = spi_dma_callback;
+			else
+				chan->callback = RT_NULL;
+
+			conf.direction = RT_DMA_DEV_TO_MEM;
+			conf.src_addr = (rt_ubase_t)(priv->base + REG_SSP_DATAR);
+			conf.dst_addr = (rt_ubase_t)priv->rx;
+			conf.src_addr_width = priv->data_length >> 3;
+			conf.dst_addr_width = priv->data_length >> 3;
+			conf.src_maxburst = 8;
+			conf.dst_maxburst = 8;
+
+			rt_dma_chan_config(chan, &conf);
+
+			transfer.src_addr = (rt_ubase_t)(priv->base + REG_SSP_DATAR);
+			transfer.dst_addr = (rt_ubase_t)priv->rx;
+			transfer.buffer_len = priv->len;
+
+			rt_dma_prep_single(chan, &transfer);
+		}
+	}
+
+	if (priv->support_dma) {
+		//clear status
+		writel(0xFFFFFFFF, priv->base + REG_SSP_STATUS);
+		//start transmit and receive
+		rt_dma_chan_start(priv->rx_chan);
+		rt_dma_chan_start(priv->tx_chan);
+
+		top_ctrl = readl(priv->base + REG_SSP_TOP_CTRL);
+		writel(top_ctrl | BIT_SSP_TRAIL, priv->base + REG_SSP_TOP_CTRL);
+		writel(BIT_SSP_TIM | BIT_SSP_RIM, priv->base + REG_SSP_INT_EN);
+		writel(BIT_SSP_TSRE | BIT_SSP_RSRE | BITS_SSP_RFT(9) | BITS_SSP_TFT(8),
+			priv->base + REG_SSP_FIFO_CTRL);
+
+		return 0;
+	}
+
+	writel(BIT_SSP_TIE | BIT_SSP_RIE | BIT_SSP_TINTE, priv->base + REG_SSP_INT_EN);
 	return ret;
 }
 
@@ -339,6 +445,7 @@ static rt_uint32_t k1x_spi_xfer(struct rt_spi_device *dev, struct rt_spi_message
 
 	priv->msg = msg;
 	k1x_spi_transfer_config(priv);
+
 	k1x_spi_transfer_enable(priv);
 
 	ret = rt_completion_wait(&priv->complete, RT_WAITING_FOREVER);
@@ -347,6 +454,10 @@ static rt_uint32_t k1x_spi_xfer(struct rt_spi_device *dev, struct rt_spi_message
 			ret = -RT_ETIMEOUT;
 		}
 
+	if (priv->support_dma) {
+		writel(BITS_SSP_RFT(9) | BITS_SSP_TFT(8), priv->base + REG_SSP_FIFO_CTRL);
+	}
+
 	if (msg->cs_release)
 	{
 		//release bus
@@ -354,6 +465,7 @@ static rt_uint32_t k1x_spi_xfer(struct rt_spi_device *dev, struct rt_spi_message
 		val &= ~(BIT_SSP_SSE | BIT_SSP_HOLD_FRAME_LOW);
 		writel(val, priv->base + REG_SSP_TOP_CTRL);
 	}
+
 	return !ret;
 }
 
@@ -401,6 +513,25 @@ static struct dtb_compatible_array __compatible[] = {
 	{}
 };
 
+int k1x_spi_dma_setup(struct k1x_spi *spacemit_spi)
+{
+	if (spacemit_spi->support_dma) {
+		spacemit_spi->tx_chan = rt_dma_chan_request(&spacemit_spi->dev, "tx");
+		if (!spacemit_spi->tx_chan)
+			return -RT_ERROR;
+		spacemit_spi->tx_chan->priv = (void *)spacemit_spi;
+
+		spacemit_spi->rx_chan = rt_dma_chan_request(&spacemit_spi->dev, "rx");
+		if (!spacemit_spi->rx_chan) {
+			rt_dma_chan_release(spacemit_spi->tx_chan);
+			return -RT_ERROR;
+		}
+		spacemit_spi->rx_chan->priv = (void *)spacemit_spi;
+	}
+
+	return 0;
+}
+
 static int spacemit_spi_probe(void)
 {
 	int i;
@@ -442,6 +573,15 @@ static int spacemit_spi_probe(void)
 			{
 				spacemit_spi->freq = u32_value;
 			}
+
+			/* enable fast speed mode */
+			property_ptr = dtb_node_get_dtb_node_property(compatible_node,
+				"k1x,ssp-disable-dma", RT_NULL);
+			if (property_ptr)
+				spacemit_spi->support_dma = 0;
+			else
+				spacemit_spi->support_dma = 1;
+
 			if (!spacemit_spi->freq) {
 				rt_kprintf("Please provide clock-frequency!\n");
 				return -RT_EINVAL;
@@ -470,8 +610,17 @@ static int spacemit_spi_probe(void)
 				return -RT_ERROR;
 			}
 
-			rt_hw_interrupt_install(spacemit_spi->irq, spacemit_spi_int_handler, (void *)spacemit_spi, "rspi0-irq");
-			rt_hw_interrupt_umask(spacemit_spi->irq);
+			spacemit_spi->dev.node = compatible_node;
+			if (spacemit_spi->support_dma) {
+				if (k1x_spi_dma_setup(spacemit_spi))
+					spacemit_spi->support_dma = 0;
+			}
+
+			if (!spacemit_spi->support_dma) {
+				rt_hw_interrupt_install(spacemit_spi->irq, spacemit_spi_int_handler,
+					(void *)spacemit_spi, "rspi0-irq");
+				rt_hw_interrupt_umask(spacemit_spi->irq);
+			}
 
 			/* current default settings */
 			writel(0, spacemit_spi->base + REG_SSP_TOP_CTRL);
