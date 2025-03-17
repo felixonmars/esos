@@ -495,11 +495,11 @@ struct rt_dma_chan *rt_dma_chan_request(struct rt_device *dev, const char *name)
 
     if (!dev)
     {
-        return rt_err_ptr(-RT_EINVAL);
+        return RT_NULL;
     }
     if (!dev->node)
     {
-        return rt_err_ptr(-RT_EINVAL);
+        return RT_NULL;
     }
 
     if (name)
@@ -525,7 +525,7 @@ struct rt_dma_chan *rt_dma_chan_request(struct rt_device *dev, const char *name)
 
     if (rt_is_err_or_null(ctrl))
     {
-        return ctrl ? ctrl : rt_err_ptr(-RT_ENOSYS);
+        return RT_NULL;
     }
 
     if (ctrl->ops->request_chan)
@@ -538,7 +538,7 @@ struct rt_dma_chan *rt_dma_chan_request(struct rt_device *dev, const char *name)
 
         if (!chan)
         {
-            chan = rt_err_ptr(-RT_ENOMEM);
+            chan = RT_NULL;
         }
     }
 
@@ -551,7 +551,7 @@ struct rt_dma_chan *rt_dma_chan_request(struct rt_device *dev, const char *name)
     {
         LOG_E("%s: unset request channels error", rt_dm_dev_get_name(ctrl->dev));
 
-        return rt_err_ptr(-RT_ERROR);
+        return RT_NULL;
     }
 
     chan->name = name;
