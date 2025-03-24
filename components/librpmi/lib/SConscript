@@ -1,0 +1,19 @@
+from building import *
+
+cwd        = GetCurrentDir()
+src        = Glob('*.c')
+CPPPATH    = [cwd]
+CPPDEFINES = []
+
+group = DefineGroup('LibRpmiModule', src, depend = ['RT_USING_LIBRPMI_MODULE'], CPPPATH = CPPPATH)
+
+# search in the file system implementation
+list = os.listdir(cwd)
+
+if GetDepend('RT_USING_LIBRPMI_MODULE'):
+	for item in list:
+		if os.path.isfile(os.path.join(cwd, item, 'SConscript')):
+			group = group + SConscript(os.path.join(item, 'SConscript'))
+
+Return('group')
+

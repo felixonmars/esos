@@ -1,0 +1,25 @@
+menu "RPMI framework"
+
+config RT_USING_LIBRPMI
+    bool "Enable RISC-V Platform Management Interface (RPMI)"
+    default n
+    help
+        RISC-V platform management interface (RPMI) library for platform firmware.
+
+if RT_USING_LIBRPMI
+
+config RT_LIBRPMI_DEBUG
+    bool "Enable RPMI debug output"
+    default n
+    help
+        Enable debug output for RPMI component.
+
+config RT_USING_LIBRPMI_MODULE
+    bool "Enable RPMI module support"
+    default n
+    help
+        Enable module support for RPMI library.
+
+endif
+
+endmenu

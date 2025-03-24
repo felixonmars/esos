@@ -29,6 +29,8 @@ source "$RTT_DIR/components/drivers/Kconfig"
 
 source "$RTT_DIR/components/libc/Kconfig"
 
+source "$RTT_DIR/components/librpmi/Kconfig"
+
 source "$RTT_DIR/components/net/Kconfig"
 
 source "$RTT_DIR/components/vbus/Kconfig"
