@@ -144,7 +144,7 @@
 			compatible = "spacemit,pxa-uart0";
 			reg = <0xc0881000 0x100>;
 			interrupt-parent = <&intc>;
-			interrupts = <0 36 0>;
+			interrupts = <0 63 0>;
 			clocks = <&ccu CLK_RCPU_UART0>, <&ccu CLK_RST_RCPU_UART0>;
 			status = "okay";
 		};
@@ -153,7 +153,7 @@
 			compatible = "spacemit,pxa-uart1";
 			reg = <0xc088d000 0x100>;
 			interrupt-parent = <&intc>;
-			interrupts = <0 63 0>;
+			interrupts = <0 36 0>;
 			clocks = <&ccu CLK_RCPU_UART1>, <&ccu CLK_RST_RCPU_UART1>;
 			status = "disabled";
 		};
