@@ -39,6 +39,12 @@ struct uart_service {
 
 struct uart_service _uart_service[] = {
 	{
+		.ser_name = "ruart-service0",
+		.irq = UART_IRQn,
+		.sem_name = "ruart0_sem",
+		.tid_name = "ruart0_tid",
+	},
+	{
 		.ser_name = "ruart-service1",
 		.irq = UART1_INT_REQ_IRQn,
 		.sem_name = "ruart1_sem",
