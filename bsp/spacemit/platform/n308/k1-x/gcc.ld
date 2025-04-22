@@ -131,6 +131,13 @@ SECTIONS
     __bss_end__ = .;
     } > RAM
 
+    .version_id_table :
+    {
+	. = ALIGN(4);
+	__version_id_table_start__ = .;
+	*(.version_id_table)
+    } > RAM
+    
     _end = .;
 
     .resource_table :
