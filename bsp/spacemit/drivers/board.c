@@ -41,6 +41,11 @@ struct rt_spinlock gpio_lock;
 extern int spacemit_gpio_init(void);
 #endif
 
+#if defined(RT_USING_LIBRPMI)
+struct rt_mutex rpmi_hsm_mtx;
+struct rt_mutex rpmi_clk_mtx;
+#endif
+
 extern unsigned long __irf_start[];
 
 /**
@@ -84,6 +89,10 @@ void rt_hw_board_init(void)
     spacemit_gpio_init();
 #endif
 
+#if defined(RT_USING_LIBRPMI)
+    rt_mutex_init(&rpmi_hsm_mtx, "rpmi_hsm_mtx", RT_IPC_FLAG_PRIO);
+    rt_mutex_init(&rpmi_clk_mtx, "rpmi_clk_mtx", RT_IPC_FLAG_PRIO);
+#endif
     /* uart must be initialize here */
 #ifdef RT_USING_COMPONENTS_INIT
     rt_components_board_init();

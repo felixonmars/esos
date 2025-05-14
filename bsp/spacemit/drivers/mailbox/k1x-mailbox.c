@@ -41,8 +41,12 @@ static void spacemit_mbox_irq(int irq, void *dev_id)
 		/* clear the irq pending */
 		writel(1 << i, (void *)&mbox->regs->ipc_icr);
 
-		/* then send an ack */
-		writel(1 << (i + SPACEMIT_TX_ACK_OFFSET), (void *)&mbox->regs->ipc_isrw);
+#if 0
+		/* debug code for k1 rpmi */
+		if (i != 3)
+#endif
+			/* then send an ack */
+			writel(1 << (i + SPACEMIT_TX_ACK_OFFSET), (void *)&mbox->regs->ipc_isrw);
 	}
 
 	return;

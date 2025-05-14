@@ -235,8 +235,9 @@ enum rpmi_base_service_id {
 ((((__major) & RPMI_BASE_VERSION_MAJOR_MASK) << RPMI_BASE_VERSION_MAJOR_POS) | \
  (((__minor) & RPMI_BASE_VERSION_MINOR_MASK) << RPMI_BASE_VERSION_MINOR_POS))
 
-#define RPMI_BASE_FLAGS_F0_PRIVILEGE		(1U << 1)
-#define RPMI_BASE_FLAGS_F0_EV_NOTIFY		(1U << 0)
+#define RPMI_BASE_FLAGS_F0_PRIVILEGE            (1U << 2)
+#define RPMI_BASE_FLAGS_F0_EV_NOTIFY            (1U << 1)
+#define RPMI_BASE_FLAGS_F0_MSI_EN               (1U)
 
 /** RPMI System MSI (SYSMSI) ServiceGroup Service IDs */
 enum rpmi_sysmsi_service_id {

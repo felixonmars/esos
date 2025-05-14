@@ -1,0 +1,11 @@
+# for module compiling
+import os
+from building import *
+
+cwd  = GetCurrentDir()
+src     = Glob('*.c')
+CPPPATH = [cwd]
+
+group = DefineGroup('rpmi_plaform_driver', src, depend = ['BSP_USING_RPMSG', 'SOC_SPACEMIT_K1_X'], CPPPATH = CPPPATH)
+
+Return('group')

@@ -6,6 +6,7 @@
 
 #ifndef __LIBRPMI_ENV_H__
 #define __LIBRPMI_ENV_H__
+#include <rthw.h>
 
 /******************************************************************************/
 
@@ -185,6 +186,7 @@ static inline char *rpmi_env_strncpy(char *dest, const char *src, rpmi_size_t co
  */
 static inline void rpmi_env_cache_invalidate(void *base, rpmi_size_t len)
 {
+	rt_hw_cpu_dcache_ops(RT_HW_CACHE_INVALIDATE, base, len);
 }
 
 /**
@@ -195,6 +197,7 @@ static inline void rpmi_env_cache_invalidate(void *base, rpmi_size_t len)
  */
 static inline void rpmi_env_cache_clean(void *base, rpmi_size_t len)
 {
+	rt_hw_cpu_dcache_ops(RT_HW_CACHE_FLUSH, base, len);
 }
 
 /** @} */

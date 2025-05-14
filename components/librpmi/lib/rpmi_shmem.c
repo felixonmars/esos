@@ -60,7 +60,7 @@ struct rpmi_shmem_platform_ops rpmi_shmem_simple_ops = {
 static enum rpmi_error shmem_env_memcpy_invalidate_read(void *priv, rpmi_uint64_t addr,
 						        void *in, rpmi_uint32_t len)
 {
-	rpmi_env_cache_clean((void *)(unsigned long)addr, len);
+	rpmi_env_cache_invalidate((void *)(unsigned long)addr, len);
 	rpmi_env_memcpy(in, (const void *)(unsigned long)addr, len);
 	return RPMI_SUCCESS;
 }
@@ -109,6 +109,7 @@ enum rpmi_error rpmi_shmem_read(struct rpmi_shmem *shmem, rpmi_uint32_t offset,
 			__func__, shmem->name, offset, len);
 		return RPMI_ERR_BAD_RANGE;
 	}
+
 	return shmem->ops->read(shmem->ops_priv, shmem->base + offset, in, len);
 }
 
