@@ -312,6 +312,19 @@ enum rpmi_clock_service_id {
 	RPMI_CLK_SRV_ID_MAX,
 };
 
+/** RPMI Voltage  ServiceGroup Service IDs */
+enum rpmi_voltage_service_id {
+	RPMI_VOLTAGE_SRV_ENABLE_NOTIFICATION = 0x01,
+	RPMI_VOLTAGE_SRV_GET_NUM_DOMAINS = 0x02,
+	RPMI_VOLTAGE_SRV_GET_ATTRIBUTES = 0x03,
+	RPMI_VOLTAGE_SRV_GET_SUPPORTED_LEVELS = 0x04,
+	RPMI_VOLTAGE_SRV_SET_CONFIG = 0x05,
+	RPMI_VOLTAGE_SRV_GET_CONFIG = 0x06,
+	RPMI_VOLTAGE_SRV_SET_LEVEL = 0x07,
+	RPMI_VOLTAGE_SRV_GET_LEVEL = 0x08,
+	RPMI_VOLTAGE_SRV_MAX_COUNT,
+};
+
 /** RPMI CPPC (CPPC) ServiceGroup Service IDs */
 enum rpmi_cppc_service_id {
 	RPMI_CPPC_SRV_ENABLE_NOTIFICATION = 0x01,
@@ -1275,6 +1288,133 @@ void rpmi_service_group_clock_destroy(struct rpmi_service_group *group);
 
 /** @} */
 
+/******************************************************************************/
+
+/**
+ * \defgroup LIBRPMI_VOLTAGESRVGRP_INTERFACE RPMI Voltage Service Group Library Interface
+ * @brief Global functions and data structures implemented by the RPMI library
+ * for RPMI voltage service group.
+ * @{
+ */
+
+/** Supported voltage states */
+enum rpmi_voltage_state {
+	RPMI_VOLTAGE_STATE_DISABLED = 0,
+	RPMI_VOLTAGE_STATE_ENABLED = 1,
+	RPMI_VOLTAGE_STATE_MAX_IDX,
+};
+
+/** Voltage type based on rate format */
+enum rpmi_voltage_type {
+	RPMI_VOLTAGE_TYPE_DISCRETE = 0,
+	RPMI_VOLTAGE_TYPE_LINEAR = 1,
+	RPMI_VOLTAGE_TYPE_MAX_IDX,
+};
+
+/** A voltage level representation in RPMI */
+struct rpmi_voltage_level_liner {
+	rpmi_uint32_t min_voltage;
+	rpmi_uint32_t max_voltage;
+	rpmi_uint32_t step;
+};
+
+struct rpmi_voltage_level_discrete {
+	rpmi_uint32_t voltage;
+};
+
+/**
+ * Voltage Data and Tree details
+ *
+ * This structure represents the static
+ * voltage data which platform has to maintain
+ * and pass to create the voltage service group.
+ */
+struct rpmi_voltage_data {
+	/* Parent clock ID */
+	rpmi_uint32_t parent_id;
+	/* Voltage transition latency(milli-seconds) */
+	rpmi_uint32_t transition_latency_ms;
+	/* Number of rates supported as per the voltage format type */
+	rpmi_uint32_t level_count;
+	/* Voltage level format type */
+	enum rpmi_voltage_type voltage_type;
+	/* Voltage name */
+	const char *name;
+	/* Voltage level array */
+	const rpmi_uint32_t *voltage_level_array;
+};
+
+/** Voltage Attributes */
+struct rpmi_voltage_attrs {
+	/** voltage transition latency in milli-seconds */
+	rpmi_uint32_t transition_latency;
+#define RPMI_VOLTAGE_FLAGS_FORMAT_DISCRETE      (0 << 1)
+#define RPMI_VOLTAGE_FLAGS_FORMAT_LINEAR        (1 << 1)
+#define RPMI_VOLTAGE_FLAGS_FORMAT_CAN_EN        (0 << 0)
+#define RPMI_VOLTAGE_FLAGS_FORMAT_CAN_CHANGE    (1 << 0)
+	/** voltage level format type */
+	enum rpmi_voltage_type type;
+	/** number of supported levels */
+	rpmi_uint32_t level_count;
+	/** array of supported levels */
+	const rpmi_uint32_t *level_array;
+	/* Voltage name */
+	const char *name;
+};
+
+/** Platform specific voltage operations(synchronous) */
+struct rpmi_voltage_platform_ops {
+	/** Set the voltage state enable/disable/others */
+	enum rpmi_error (*set_config)(void *priv,
+				      rpmi_uint32_t domain_id,
+				      enum rpmi_voltage_state state);
+
+	/**
+	 * Get state together
+	 **/
+	enum rpmi_error (*get_config)(void *priv,
+				       rpmi_uint32_t domain_id,
+				       enum rpmi_voltage_state *state);
+
+	/**
+	 * Set voltage level.
+	 * */
+	enum rpmi_error (*set_voltage_level)(void *priv,
+				    rpmi_uint32_t domain_id,
+				    rpmi_uint32_t level);
+
+	/**
+	 * Recalculate and set rate.
+	 * Recalculate and set the clock rate based on the new input(parent)
+	 * clock and return the new rate in buffer.
+	 */
+	enum rpmi_error (*get_voltage_level)(void *priv,
+					rpmi_uint32_t domain_id,
+					rpmi_uint32_t *level);
+};
+
+/**
+ * @brief Create a voltage service group instance
+ *
+ * @param[in] voltage_mod		pointer to voltage module
+ * @return rpmi_service_group *	pointer to RPMI service group instance upon
+ * success and NULL upon failure
+ */
+struct rpmi_service_group *
+rpmi_service_group_voltage_create(rpmi_uint32_t domain_count,
+				const struct rpmi_voltage_data *voltage_tree_data,
+				const struct rpmi_voltage_platform_ops *ops,
+				void *ops_priv);
+
+/**
+ * @brief Destroy(free) a voltage service group instance
+ *
+ * @param[in] group	pointer to RPMI service group instance
+ */
+void rpmi_service_group_voltage_destroy(struct rpmi_service_group *group);
+/** @} */
+
+/******************************************************************************/
 /**
  * \defgroup LIBRPMI_CPPCSRVGRP_INTERFACE RPMI CPPC Service Group Library Interface
  * @brief Global functions and data structures implemented by the RPMI library
