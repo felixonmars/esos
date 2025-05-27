@@ -67,6 +67,23 @@ struct spacemit_rpmi_clk_ops {
 	rt_list_t list;
 };
 
+/* RPMI voltage structures */
+struct spacemit_rpmi_voltage_config {
+	int domain_count;
+	struct rpmi_voltage_data *voltage_data;
+	struct dtb_node *node;
+	struct rpmi_voltage_platform_ops *ops;
+	/* reserved for future use */
+	void *priv;
+};
+
+struct spacemit_rpmi_voltage_ops {
+	char *name;
+	int (*init)(void *priv);
+	struct rpmi_voltage_platform_ops *voltage_ops;
+	rt_list_t list;
+};
+
 /* RPMI sysreset structures */
 struct spacemit_rpmi_sysreset_config {
 	int reset;
@@ -80,6 +97,7 @@ struct spacemit_rpmi_config {
 	rpmi_uint32_t p2a_queue_size;     /* RCPU to AP queue size */
 	struct spacemit_rpmi_hsm_config hsm_config;
 	struct spacemit_rpmi_clk_config clk_config;
+	struct spacemit_rpmi_voltage_config voltage_config;
 	struct spacemit_rpmi_sysreset_config sysreset_config;
 };
 
@@ -101,5 +119,6 @@ struct spacemit_rpmi_priv {
 
 int spacemit_rpmi_hsm_register(rt_list_t *node);
 int spacemit_rpmi_clk_register(rt_list_t *node);
+int spacemit_rpmi_voltage_register(rt_list_t *node);
 
 #endif /* __RPMI_PLATFORM_DEFIN_H__ */

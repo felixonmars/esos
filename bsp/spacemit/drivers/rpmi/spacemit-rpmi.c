@@ -5,9 +5,11 @@
 
 extern struct spacemit_rpmi_func rpmi_hsm_func;
 extern struct spacemit_rpmi_func rpmi_clk_func;
+extern struct spacemit_rpmi_func rpmi_voltage_func;
 
 static struct dtb_compatible_array __k1_compatible_sub[] = {
 	{ .compatible = "k2-os0-rpmi-clock", .data = (void *)&rpmi_clk_func },
+	{ .compatible = "k2-os0-rpmi-voltage", .data = (void *)&rpmi_voltage_func },
 	{ .compatible = "k2-os0-rpmi-hsm", .data = (void *)&rpmi_hsm_func },
 	{},
 };
@@ -174,7 +176,6 @@ int rt_hw_rpmi_init(void)
 			/* check the status */
 			if (!dtb_node_device_is_available(compatible_node))
 				continue;
-
 
 			priv = (struct spacemit_rpmi_priv *)rt_calloc(1, sizeof(struct spacemit_rpmi_priv));
 			if (priv == RT_NULL) {
