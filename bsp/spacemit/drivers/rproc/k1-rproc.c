@@ -7,13 +7,12 @@
 #define __section_t(S)          __attribute__((__section__(#S)))
 #define __resource              __section_t(.resource_table)
 
-#define RPMSG_IPU_C0_FEATURES        1
-
 /* VirtIO rpmsg device id */
 #define VIRTIO_ID_RPMSG_             7
 
 /* Remote supports Name Service announcement */
-#define VIRTIO_RPMSG_F_NS           0
+#define VIRTIO_RPMSG_F_NS		0
+#define VIRTIO_F_ACCESS_PLATFORM	1
 
 #define NUM_VRINGS                  0x02
 #define VRING_ALIGN                 0x1000
@@ -42,7 +41,7 @@ struct remote_resource_table __resource resources[1][1] = {
 
 			/* Virtio device entry */
 			{
-				RSC_VDEV, VIRTIO_ID_RPMSG_, 0, RPMSG_IPU_C0_FEATURES, 0, 0, 0,
+				RSC_VDEV, VIRTIO_ID_RPMSG_, 0, (1 << VIRTIO_RPMSG_F_NS), (1 << VIRTIO_F_ACCESS_PLATFORM), 0, 0,
 				NUM_VRINGS, {0, 0},
 			},
 
