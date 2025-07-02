@@ -54,9 +54,7 @@ extern unsigned long __irf_start[];
 void rt_hw_board_init(void)
 {
 #ifdef RT_USING_HEAP
-#if defined(SOC_SPACEMIT_K1_X)
     rt_system_heap_init((void *)RT_HEAP_START, (void *)RT_HEAP_END);
-#endif
 #endif
 
     device_tree_setup((void *)__irf_start);
@@ -69,7 +67,7 @@ void rt_hw_board_init(void)
     rt_mutex_init(&clk_prepare_mutex, "clk_prepare_mutex", RT_IPC_FLAG_PRIO);
     rt_mutex_init(&of_clk_mutex, "of_clk_mutex", RT_IPC_FLAG_PRIO);
     rt_mutex_init(&clocks_mutex, "clk_mutex", RT_IPC_FLAG_PRIO);
-    
+
     rt_spin_lock_init(&enable_lock);
 
     of_fixed_clk_setup();

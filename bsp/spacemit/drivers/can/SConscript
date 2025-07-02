@@ -6,6 +6,9 @@ cwd  = GetCurrentDir()
 src     = Glob('*.c')
 CPPPATH = [cwd]
 
+if GetDepend('SOC_SPACEMIT_K1_X') == False:
+    SrcRemove(src, ['can_drv.c'])
+
 group = DefineGroup('Drivers_can', src, depend = ['BSP_USING_CAN'], CPPPATH = CPPPATH)
 
 Return('group')

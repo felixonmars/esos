@@ -58,3 +58,39 @@ if CPU == 'n308':
 
         DUMP_ACTION = OBJDUMP + ' -D -S $TARGET > rtt.asm\n'
         POST_ACTION = OBJCPY + ' -O binary $TARGET rtthread.bin\n' + SIZE + ' $TARGET \n'
+
+elif CPU == 'rt24':
+    EXEC_PATH   = os.getcwd() + '/../../tools/toolchain/spacemit-toolchain-elf-newlib-x86_64-v1.0.9/bin'
+    if PLATFORM == 'gcc':
+        # toolchains
+        PREFIX  = 'riscv64-unknown-elf-'
+        CC      = PREFIX + 'gcc'
+        CXX     = PREFIX + 'gcc'
+        AS      = PREFIX + 'gcc'
+        AR      = PREFIX + 'ar'
+        LINK    = PREFIX + 'gcc'
+        SIZE    = PREFIX + 'size'
+        OBJDUMP = PREFIX + 'objdump'
+        OBJCPY  = PREFIX + 'objcopy'
+        STRIP   = PREFIX + 'strip'
+        TARGET_EXT = 'elf'
+
+        DEVICE = ' -march=rv64imafdc -mabi=lp64d -mcmodel=medany '
+
+        CFLAGS  = DEVICE + '-ffreestanding -flax-vector-conversions -Wno-cpp -fno-common -ffunction-sections -fdata-sections -fstrict-volatile-bitfields -fdiagnostics-color=always'
+        AFLAGS  = ' -c' + DEVICE + ' -x assembler-with-cpp -D__ASSEMBLY__ '
+        LFLAGS  = DEVICE + ' -nostartfiles -Wl,--no-whole-archive ' + ' -Xlinker --defsym=ENTRY_POINT=%s -T ./platform/%s/%s/gcc.ld -Wl,-gc-sections -Wl,-Map=rtt.map' % (TARGET_ENTRY,CPU,BOARD)
+        CPATH   = ''
+        LPATH   = ''
+
+        if BUILD == 'debug':
+            CFLAGS += ' -O0 -gdwarf-2'
+            AFLAGS += ' -gdwarf-2'
+        else:
+            CFLAGS += ' -O2 -g2'
+
+        CXXFLAGS = CFLAGS
+
+        DUMP_ACTION = OBJDUMP + ' -D -S $TARGET > rtt.asm\n'
+        POST_ACTION = OBJCPY + ' -O binary $TARGET rtthread.bin\n' + SIZE + ' $TARGET \n'
+

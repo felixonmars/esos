@@ -25,8 +25,8 @@
 struct pcs_pingroup {
 	struct dtb_node *np;
 	const char *name;
-	int *gpins;
-	int ngpins;
+	unsigned *gpins;
+	unsigned ngpins;
 	rt_list_t node;
 };
 
@@ -164,10 +164,10 @@ struct pcs_device {
 	struct dtb_node *dev;
 	struct pinctrl_dev *pctl;
 	struct rt_mutex mutex;
-	unsigned int width;
-	unsigned int fmask;
+	uint32_t width;
+	uint32_t fmask;
 	unsigned fshift;
-	unsigned int foff;
+	uint32_t foff;
 	unsigned fmax;
 	bool bits_per_mux;
 	bool is_pinconf;
@@ -373,8 +373,8 @@ static void pcs_remove_function(struct pcs_device *pcs,
 static int pcs_add_pingroup(struct pcs_device *pcs,
                                         struct dtb_node *np,
                                         const char *name,
-                                        int *gpins,
-                                        int ngpins)
+                                        unsigned *gpins,
+                                        unsigned ngpins)
 {
 	struct pcs_pingroup *pingroup;
 
@@ -432,9 +432,10 @@ static int pcs_parse_bits_in_pinctrl_entry(struct pcs_device *pcs,
                                                 unsigned *num_maps,
                                                 const char **pgnames)
 {
+	unsigned *pins;
 	struct pcs_func_vals *vals;
 	const rt_uint32_t *mux;
-	int size, rows, *pins, index = 0, found = 0, res = -RT_ENOMEM;
+	int size, rows, index = 0, found = 0, res = -RT_ENOMEM;
 	int npins_in_row;
 	struct pcs_function *function;
 
@@ -581,7 +582,7 @@ static void pcs_add_conf2(struct pcs_device *pcs, struct dtb_node *np,
                           const char *name, enum pin_config_param param,
                           struct pcs_conf_vals **conf, unsigned long **settings)
 {
-	unsigned int value[2];
+	uint32_t value[2];
 	unsigned shift;
 	int ret;
 
@@ -603,7 +604,7 @@ static void pcs_add_conf4(struct pcs_device *pcs, struct dtb_node *np,
                           const char *name, enum pin_config_param param,
                           struct pcs_conf_vals **conf, unsigned long **settings)
 {
-	unsigned int value[4];
+	uint32_t value[4];
 	int ret;
 
 	/* value to set, enable, disable, mask */
@@ -720,9 +721,10 @@ static int pcs_parse_one_pinctrl_entry(struct pcs_device *pcs,
                                                 unsigned *num_maps,
                                                 const char **pgnames)
 {
+	unsigned *pins;
 	struct pcs_func_vals *vals;
 	const rt_uint32_t *mux;
-	int size, rows, *pins, index = 0, found = 0, res = -RT_ENOMEM;
+	int size, rows, index = 0, found = 0, res = -RT_ENOMEM;
 	struct pcs_function *function;
 
 	mux = dtb_node_get_property(np, PCS_MUX_PINS_NAME, &size);

@@ -43,8 +43,8 @@ struct spacemit_gpio_chip {
  *	int irq;
  *	struct irq_domain *domain;
  */
-	unsigned int ngpio;
-	unsigned int nbank;
+	uint32_t ngpio;
+	uint32_t nbank;
 	struct spacemit_gpio_bank *banks;
 };
 

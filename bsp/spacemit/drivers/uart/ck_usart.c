@@ -307,6 +307,7 @@ rt_int32_t csi_usart_config(usart_handle_t handle,
 {
     rt_int32_t ret;
 
+#ifndef SOC_SPACEMIT_K2
     /* control the data_bit of the usart*/
     ret = csi_usart_config_baudrate(handle, baud);
 
@@ -314,7 +315,7 @@ rt_int32_t csi_usart_config(usart_handle_t handle,
     {
         return ret;
     }
-
+#endif
     /* control mode of the usart*/
     ret = csi_usart_config_mode(handle, mode);
 
@@ -379,9 +380,7 @@ usart_handle_t csi_usart_initialize(rt_int32_t idx, usart_event_cb_t cb_event)
 
     /* enable received data available */
     addr->IER = IER_RDA_INT_ENABLE | IIR_RECV_LINE_ENABLE;
-#ifdef SOC_SPACEMIT_K1_X
     addr->IER |= UART_IER_UUE;
-#endif
 
     return usart_priv;
 }

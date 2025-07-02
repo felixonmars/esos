@@ -105,6 +105,8 @@ function select_entry_point()
 {
 	if [ "x${TARGET_CHIP}_${TARGET_BOARD}" = "xn308_k1-x" ]; then
 		TARGET_ENTRY_POINT=0x30300000
+	elif [ "x${TARGET_CHIP}_${TARGET_BOARD}" = "xrt24_k2" ]; then
+		TARGET_ENTRY_POINT=0x100200000
 	else
 		mk_error "No valid entry point!"
 		return 1
@@ -172,6 +174,12 @@ function config_sdk()
 		if [ ! -d "${TOP_DIR}/tools/toolchain/gcc" ]; then
 			cd ${TOP_DIR}/tools/toolchain/
 			tar -jxvf ${TOP_DIR}/tools/toolchain/nuclei_riscv_newlibc_prebuilt_linux64_2022.12.tar.bz2
+			cd -
+		fi
+	elif [ "x${TARGET_CHIP}" = "xrt24" ]; then
+		if [ ! -d "${TOP_DIR}/tools/toolchain/spacemit-toolchain-elf-newlib-x86_64-v1.0.9" ]; then
+			cd ${TOP_DIR}/tools/toolchain/
+			tar -xf ${TOP_DIR}/tools/toolchain/spacemit-toolchain-elf-newlib-x86_64-v1.0.9.tar.xz
 			cd -
 		fi
 	fi
