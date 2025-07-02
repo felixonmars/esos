@@ -2,7 +2,7 @@
 #include <rtdevice.h>
 #include "ccu_pll.h"
 #include "ccu_mix.h"
-#include "ccu-spacemit-k1x.h"
+#include "ccu-spacemit.h"
 
 struct spacemit_ccu {
 	struct spacemit_k1x_clk clk_info;
@@ -545,11 +545,12 @@ static struct clk_hw_onecell_data spacemit_k1x_hw_clks = {
 
 
 static struct spacemit_ccu spacemit_ccu_k1x = {
-	.clk_cells = &spacemit_k1x_hw_clks,	
+	.clk_cells = &spacemit_k1x_hw_clks,
 };
 
 struct dtb_compatible_array __compatible[] = {
 	{ .compatible = "spacemit,rcpu-ccu-k1x", .data = (void *)&spacemit_ccu_k1x },
+	{ .compatible = "spacemit,rcpu-ccu-k2", .data = (void *)&spacemit_ccu_k1x },
 	{},
 };
 
@@ -582,12 +583,14 @@ int ccu_common_init(struct clk_hw * hw, struct spacemit_k1x_clk *clk_info)
 	case BASE_TYPE_DCIU:
 		common->base = clk_info->dciu_base;
 		break;
+#ifndef SOC_SPACEMIT_K2
 	case BASE_TYPE_DDRC:
 		common->base = clk_info->ddrc_base;
 		break;
 	case BASE_TYPE_APBC2:
 		common->base = clk_info->apbc2_base;
 		break;
+#endif
 	case BASE_TYPE_RCPU:
 		common->base = clk_info->rcpu_base;
 		break;
@@ -689,6 +692,7 @@ int spacemit_ccu_init(void)
 				return -RT_ERROR;
 			}
 
+#ifndef SOC_SPACEMIT_K2
 			ccu->clk_info.ddrc_base = (void *)dtb_node_get_addr_index(compatible_node, 6);
 			if (ccu->clk_info.ddrc_base < 0) {
 				rt_kprintf("get ddrc error\n");
@@ -712,9 +716,21 @@ int spacemit_ccu_init(void)
 				rt_kprintf("get rcpu2 error\n");
 				return -RT_ERROR;
 			}
+#else
+			ccu->clk_info.rcpu_base = (void *)dtb_node_get_addr_index(compatible_node, 6);
+			if (ccu->clk_info.rcpu_base < 0) {
+				rt_kprintf("get rcpu error\n");
+				return -RT_ERROR;
+			}
 
+			ccu->clk_info.rcpu2_base = (void *)dtb_node_get_addr_index(compatible_node, 7);
+			if (ccu->clk_info.rcpu2_base < 0) {
+				rt_kprintf("get rcpu2 error\n");
+				return -RT_ERROR;
+			}
+#endif
 			spacemit_ccu_probe(compatible_node, ccu);
-		}	
+		}
 	}
 
 	return 0;

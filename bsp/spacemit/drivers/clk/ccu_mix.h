@@ -10,7 +10,7 @@
 #include <rtthread.h>
 #include <rtdevice.h>
 #include <riscv-ops.h>
-#include "ccu-spacemit-k1x.h"
+#include "ccu-spacemit.h"
 
 #define SPACEMIT_CLK_GATE_NEED_DELAY BIT(0)
 

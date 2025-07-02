@@ -14,23 +14,6 @@
  * busy(USR[0]=0) and the DLAB bit(LCR[7]) is set.
  */
 
-#ifndef SOC_SPACEMIT_K1_X
-#define WAIT_USART_IDLE(addr)\
-    do {                       \
-        rt_int32_t timecount = 0;  \
-        while ((addr->USR & USR_UART_BUSY) && (timecount < UART_BUSY_TIMEOUT)) {\
-            timecount++;\
-        }\
-        if (timecount >= UART_BUSY_TIMEOUT) {\
-            return -1;\
-        }                                   \
-    } while(0)
-#else
-#define WAIT_USART_IDLE(addr)\
-    do {                       \
-    } while(0)
-#endif
-
 static ck_usart_priv_t *usart_instance;
 
 /**
@@ -43,9 +26,6 @@ rt_int32_t csi_usart_config_baudrate(usart_handle_t handle, rt_uint32_t baud)
 {
     ck_usart_priv_t *usart_priv = handle;
     ck_usart_reg_t *addr = (ck_usart_reg_t *)(usart_priv->base);
-
-
-    WAIT_USART_IDLE(addr);
 
     /* baudrate=(seriak clock freq)/(16*divisor); algorithm :rounding*/
     rt_uint32_t divisor = ((clk_get_rate(usart_priv->clk) * 10) / baud) >> 4;
@@ -101,8 +81,6 @@ rt_int32_t csi_usart_config_parity(usart_handle_t handle, usart_parity_e parity)
     ck_usart_priv_t *usart_priv = handle;
     ck_usart_reg_t *addr = (ck_usart_reg_t *)(usart_priv->base);
 
-    WAIT_USART_IDLE(addr);
-
     switch (parity)
     {
         case USART_PARITY_NONE:
@@ -141,8 +119,6 @@ rt_int32_t csi_usart_config_stopbits(usart_handle_t handle, usart_stop_bits_e st
     ck_usart_priv_t *usart_priv = handle;
     ck_usart_reg_t *addr = (ck_usart_reg_t *)(usart_priv->base);
 
-    WAIT_USART_IDLE(addr);
-
     switch (stopbit)
     {
         case USART_STOP_BITS_1:
@@ -177,7 +153,6 @@ rt_int32_t csi_usart_config_databits(usart_handle_t handle, usart_data_bits_e da
     ck_usart_priv_t *usart_priv = handle;
     ck_usart_reg_t *addr = (ck_usart_reg_t *)(usart_priv->base);
 
-    WAIT_USART_IDLE(addr);
     /* The word size decides by the DLS bits(LCR[1:0]), and the
      * corresponding relationship between them is:
      *   DLS   word size

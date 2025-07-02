@@ -1,5 +1,8 @@
+#include <rtthread.h>
 #include <rtdevice.h>
 
+#undef ARRAY_SIZE
+#define ARRAY_SIZE(ar)     (sizeof(ar)/sizeof(ar[0]))
 /*
  * Radix tree node definition.
  */

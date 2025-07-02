@@ -10,7 +10,7 @@ static int _of_fixed_clk_setup(void)
 {
 	struct clk_hw *hw;
 	const char *clk_name;
-	unsigned long int rate;
+	rt_uint32_t rate;
 	struct dtb_node *dn;
 	struct dtb_node *dtb_head_node = get_dtb_node_head();
 	int ret;

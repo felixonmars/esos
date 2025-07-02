@@ -1,7 +1,6 @@
 #include <rtthread.h>
 #include <rtdevice.h>
 #include <rthw.h>
-#include <riscv-clic.h>
 #include <riscv-ops.h>
 
 #define DRIVER_NAME                     "pinctrl-single"
@@ -11,6 +10,9 @@
 #define PCS_OFF_DISABLED                ~0U
 #define BITS_PER_BYTE           8
 #define ENOTSUPP        524     /* Operation is not supported */
+
+#undef ARRAY_SIZE
+#define ARRAY_SIZE(ar)     (sizeof(ar)/sizeof(ar[0]))
 
 /**
  * struct pcs_pingroup - pingroups for a function
@@ -162,10 +164,10 @@ struct pcs_device {
 	struct dtb_node *dev;
 	struct pinctrl_dev *pctl;
 	struct rt_mutex mutex;
-	unsigned long width;
-	unsigned long fmask;
+	unsigned int width;
+	unsigned int fmask;
 	unsigned fshift;
-	unsigned long foff;
+	unsigned int foff;
 	unsigned fmax;
 	bool bits_per_mux;
 	bool is_pinconf;
@@ -579,7 +581,7 @@ static void pcs_add_conf2(struct pcs_device *pcs, struct dtb_node *np,
                           const char *name, enum pin_config_param param,
                           struct pcs_conf_vals **conf, unsigned long **settings)
 {
-	unsigned long value[2];
+	unsigned int value[2];
 	unsigned shift;
 	int ret;
 
@@ -590,7 +592,7 @@ static void pcs_add_conf2(struct pcs_device *pcs, struct dtb_node *np,
 	/* set value & mask */
 	value[0] &= value[1];
 	shift = ffs(value[1]) - 1;
-	
+
 	/* skip enable & disable */
 	add_config(conf, param, value[0], 0, 0, value[1]);
 	add_setting(settings, param, value[0] >> shift);
@@ -601,7 +603,7 @@ static void pcs_add_conf4(struct pcs_device *pcs, struct dtb_node *np,
                           const char *name, enum pin_config_param param,
                           struct pcs_conf_vals **conf, unsigned long **settings)
 {
-	unsigned long value[4];
+	unsigned int value[4];
 	int ret;
 
 	/* value to set, enable, disable, mask */
@@ -1369,7 +1371,7 @@ static int pcs_add_gpio_func(struct dtb_node *node, struct pcs_device *pcs)
 int spacemit_pcs_init(void)
 {
 	int i = 0, j = 0, ret;
-	void *u32_ptr;
+	rt_uint32_t *u32_ptr;
 	struct pcs_device *pcs;
 	int property_size;
 	unsigned long u32_value;
@@ -1378,11 +1380,9 @@ int spacemit_pcs_init(void)
 
 	for (i = 0; i < sizeof(__compatible) / sizeof(__compatible[0]); ++i) {
 		if (__compatible[i].compatible) {
-			
 			compatible_node = dtb_node_find_compatible_node(dtb_head_node, __compatible[i].compatible);
 
 			if (compatible_node != RT_NULL) {
-				
 				if (!dtb_node_device_is_available(compatible_node))
 					continue;
 

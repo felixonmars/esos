@@ -168,7 +168,7 @@ int pwm_probe(void)
 	void *property_status = RT_NULL;
 	int property_size;
 	rt_uint32_t rate;
-	void * list;
+	rt_uint32_t *list;
 #endif
 
 	for (i = 0; i < sizeof(__compatible) / sizeof(__compatible[0]); ++i) {

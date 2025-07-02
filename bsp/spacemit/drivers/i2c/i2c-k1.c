@@ -898,8 +898,8 @@ spacemit_i2c_parse_dt(struct dtb_node * dnode, struct spacemit_i2c_dev *spacemit
 	int property_size;
 	rt_uint32_t u32_value;
 	rt_uint8_t u8_value;
-	void * property_ptr;
-	void *property_status = RT_NULL;
+	rt_uint32_t * property_ptr;
+	rt_uint32_t *property_status = RT_NULL;
 
 	/* enable fast speed mode */
 	property_status = dtb_node_get_dtb_node_property(dnode, "spacemit,i2c-fast-mode", RT_NULL);

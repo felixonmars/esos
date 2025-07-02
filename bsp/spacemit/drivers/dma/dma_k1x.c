@@ -570,7 +570,7 @@ mmp_pdma_parse_dt(struct dtb_node *dnode, struct mmp_pdma_device *dev)
 {
 	int property_size;
 	rt_uint32_t value;
-	void *property_ptr;
+	rt_uint32_t *property_ptr;
 
 	dev->dma_channels = DMA_CHANNEL_MAX;
 	dev->max_burst_size = DMA_BURST64_MAX;

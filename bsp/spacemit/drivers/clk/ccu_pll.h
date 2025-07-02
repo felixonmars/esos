@@ -9,7 +9,7 @@
 
 #include <rtthread.h>
 #include <rtdevice.h>
-#include "ccu-spacemit-k1x.h"
+#include "ccu-spacemit.h"
 
 struct ccu_pll_rate_tbl {
 	unsigned long long rate;

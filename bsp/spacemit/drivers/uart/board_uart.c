@@ -10,7 +10,6 @@
 
 #include <rthw.h>
 #include <rtdevice.h>
-#include <riscv-clic.h>
 #include <drivers/serial.h>
 #include "ck_usart.h"
 #include "drv_usart.h"
@@ -175,12 +174,10 @@ int rt_hw_usart_init(void)
 
     for (i = 0; i < sizeof(sg_usart_config) / sizeof(sg_usart_config[0]); ++i) {
         if (sg_usart_config[i].__compatible.compatible) {
-
             compatible_node = dtb_node_find_compatible_node(dtb_head_node,
                     sg_usart_config[i].__compatible.compatible);
 
             if (compatible_node != RT_NULL) {
-
                 if (!dtb_node_device_is_available(compatible_node))
                     continue;
 
@@ -247,23 +244,6 @@ int rt_hw_usart_init(void)
                         RT_DEVICE_FLAG_RDWR | RT_DEVICE_FLAG_INT_RX,
                         sg_usart_config[i].uart_handle);
             }
-        } else {
-            /* for k1proc */
-            sg_usart_config[i].serial.ops = & _uart_ops;
-            sg_usart_config[i].serial.config = config;
-            sg_usart_config[i].serial.config.bufsz = 2048;
-            sg_usart_config[i].serial.config.baud_rate = 115200;
-
-            sg_usart_config[i].uart_handle = csi_usart_initialize(i, RT_NULL);
-
-            /* get the clock */
-            rt_hw_interrupt_install(sg_usart_config[i].irq, usart_irqhandler,
-                                    (void *)&sg_usart_config[i].serial, RT_NULL);
-            rt_hw_interrupt_umask(sg_usart_config[i].irq);
-
-            rt_hw_serial_register(&sg_usart_config[i].serial, sg_usart_config[i].name,
-                                  RT_DEVICE_FLAG_RDWR | RT_DEVICE_FLAG_INT_RX,
-                                  sg_usart_config[i].uart_handle);
         }
     }
 
