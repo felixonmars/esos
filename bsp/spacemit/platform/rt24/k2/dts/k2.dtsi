@@ -142,7 +142,9 @@
 
 		uart0: serial0@c0881000 {
 			compatible = "spacemit,pxa-uart0";
-			reg = <0xc0881000 0x100>;
+			// reg = <0xc0881000 0x100>;
+			/* the uart of RCPU on fpga is multiplexed with AP */
+			reg = <0xd4017000 0x100>;
 			interrupt-parent = <&intc>;
 			interrupts = <0 17 0>;
 			clocks = <&ccu CLK_RCPU_UART0>, <&ccu CLK_RST_RCPU_UART0>;
@@ -365,6 +367,12 @@
 			rpmi_clock0: rpmi-clock@0 {
 				compatible = "k2-os0-rpmi-clock";
 				num_clks = <1>;
+				status = "okay";
+			};
+
+			rpmi_voltage0: rpmi-voltage@0 {
+				compatible = "k1-os0-rpmi-voltage";
+				num_domains = <1>;
 				status = "okay";
 			};
 
