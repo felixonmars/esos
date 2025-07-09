@@ -4,37 +4,37 @@
 #include "../spacemit-rpmi.h"
 
 
-static enum rpmi_hart_hw_state k1_hsm_get_hw_state(void* priv,
+static enum rpmi_hart_hw_state k2_hsm_get_hw_state(void* priv,
 	rpmi_uint32_t hart_index)
 {
 	return 0;
 }
 
-static enum rpmi_error k1_hsm_hart_start_prepare(void* priv,
+static enum rpmi_error k2_hsm_hart_start_prepare(void* priv,
 	rpmi_uint32_t hart_index,
 	rpmi_uint64_t start_addr)
 {
 	return 0;
 }
 
-static void k1_hsm_hart_start_finalize(void* priv,
+static void k2_hsm_hart_start_finalize(void* priv,
 	rpmi_uint32_t hart_index,
 	rpmi_uint64_t start_addr)
 {
 }
 
-static enum rpmi_error k1_hsm_hart_stop_prepare(void* priv,
+static enum rpmi_error k2_hsm_hart_stop_prepare(void* priv,
 	rpmi_uint32_t hart_index)
 {
 	return 0;
 }
 
-static void k1_hsm_hart_stop_finalize(void* priv, rpmi_uint32_t hart_index)
+static void k2_hsm_hart_stop_finalize(void* priv, rpmi_uint32_t hart_index)
 {
 
 }
 
-static enum rpmi_error k1_hsm_hart_suspend_prepare(
+static enum rpmi_error k2_hsm_hart_suspend_prepare(
 	void* priv,
 	rpmi_uint32_t hart_index,
 	const struct rpmi_hsm_suspend_type* suspend_type,
@@ -43,7 +43,7 @@ static enum rpmi_error k1_hsm_hart_suspend_prepare(
 	return 0;
 }
 
-static void k1_hsm_hart_suspend_finalize(
+static void k2_hsm_hart_suspend_finalize(
 	void* priv,
 	rpmi_uint32_t hart_index,
 	const struct rpmi_hsm_suspend_type* suspend_type,
@@ -52,17 +52,17 @@ static void k1_hsm_hart_suspend_finalize(
 
 }
 
-struct rpmi_hsm_platform_ops k1_os0_hsm_pops = {
-	.hart_get_hw_state = k1_hsm_get_hw_state,
-	.hart_start_prepare = k1_hsm_hart_start_prepare,
-	.hart_start_finalize = k1_hsm_hart_start_finalize,
-	.hart_stop_prepare = k1_hsm_hart_stop_prepare,
-	.hart_stop_finalize = k1_hsm_hart_stop_finalize,
-	.hart_suspend_prepare = k1_hsm_hart_suspend_prepare,
-	.hart_suspend_finalize = k1_hsm_hart_suspend_finalize
+struct rpmi_hsm_platform_ops k2_os0_hsm_pops = {
+	.hart_get_hw_state = k2_hsm_get_hw_state,
+	.hart_start_prepare = k2_hsm_hart_start_prepare,
+	.hart_start_finalize = k2_hsm_hart_start_finalize,
+	.hart_stop_prepare = k2_hsm_hart_stop_prepare,
+	.hart_stop_finalize = k2_hsm_hart_stop_finalize,
+	.hart_suspend_prepare = k2_hsm_hart_suspend_prepare,
+	.hart_suspend_finalize = k2_hsm_hart_suspend_finalize
 };
 
-static int _k1_os0_hsm_init(void *priv)
+static int _k2_os0_hsm_init(void *priv)
 {
 	/* platform releated, get the registers or other thing what you want */
 	return 0;
@@ -107,7 +107,7 @@ static enum rpmi_error syssusp_resume(
 }
 
 /* System suspend platform operations */
-static struct rpmi_syssusp_platform_ops k1_os0_syssup_ops = {
+static struct rpmi_syssusp_platform_ops k2_os0_syssup_ops = {
 	.system_suspend_prepare = syssusp_prepare,
 	.system_suspend_ready = syssusp_ready,
 	.system_suspend_finalize = syssusp_finalize,
@@ -115,20 +115,20 @@ static struct rpmi_syssusp_platform_ops k1_os0_syssup_ops = {
 	.system_suspend_resume = syssusp_resume
 };
 
-static struct spacemit_rpmi_hsm_ops k1_os0_hsm_ops = {
-	.name = "k1-os0-rpmi-hsm",
-	.init = _k1_os0_hsm_init,
-	.hsm_ops = &k1_os0_hsm_pops,
-	.syssup_ops = &k1_os0_syssup_ops,
+static struct spacemit_rpmi_hsm_ops k2_os0_hsm_ops = {
+	.name = "k2-os0-rpmi-hsm",
+	.init = _k2_os0_hsm_init,
+	.hsm_ops = &k2_os0_hsm_pops,
+	.syssup_ops = &k2_os0_syssup_ops,
 };
 
-static int k1_os0_hsm_init(void)
+static int k2_os0_hsm_init(void)
 {
 
-	rt_list_init(&k1_os0_hsm_ops.list);
+	rt_list_init(&k2_os0_hsm_ops.list);
 
-	spacemit_rpmi_hsm_register(&k1_os0_hsm_ops.list);
+	spacemit_rpmi_hsm_register(&k2_os0_hsm_ops.list);
 
 	return 0;
 }
-INIT_DEVICE_EXPORT(k1_os0_hsm_init);
+INIT_DEVICE_EXPORT(k2_os0_hsm_init);

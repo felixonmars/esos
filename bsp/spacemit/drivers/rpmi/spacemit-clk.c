@@ -16,12 +16,13 @@ static int spacemit_rpmi_get_clk_config(struct dtb_node *node, void *con, char *
 
 	config->node = node;
 
-	/* initialize the platform related resources */	
+	/* initialize the platform related resources */
 	rt_mutex_take(&rpmi_clk_mtx, RT_WAITING_FOREVER);
 	rt_list_for_each_entry(pos, &rpmi_clk_list, list) {
 		if (!rt_strcmp(pos->name, match))
 			break;
 	}
+	rt_mutex_release(&rpmi_clk_mtx);
 
 	if (pos) {
 		config->ops = pos->clk_ops;

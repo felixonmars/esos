@@ -7,13 +7,13 @@ extern struct spacemit_rpmi_func rpmi_hsm_func;
 extern struct spacemit_rpmi_func rpmi_clk_func;
 
 static struct dtb_compatible_array __k1_compatible_sub[] = {
-	{ .compatible = "k1-os0-rpmi-hsm", .data = (void *)&rpmi_hsm_func },
-	{ .compatible = "k1-os0-rpmi-clock", .data = (void *)&rpmi_clk_func },
+	{ .compatible = "k2-os0-rpmi-clock", .data = (void *)&rpmi_clk_func },
+	{ .compatible = "k2-os0-rpmi-hsm", .data = (void *)&rpmi_hsm_func },
 	{},
 };
 
 static struct dtb_compatible_array __compatible[] = {
-	{ .compatible = "spacemit,k1-os0-rpmi", .data = __k1_compatible_sub },
+	{ .compatible = "spacemit,k2-os0-rpmi", .data = __k1_compatible_sub },
 	{}
 };
 
@@ -21,7 +21,7 @@ static int spacemit_rpmi_get_config_from_dt(struct dtb_node *node, struct spacem
 {
 	const void* prop_data;
 	int prop_len;
-	
+
 	/* get the configuration */
 	prop_data = dtb_node_get_property(node, "shmem-base", &prop_len);
 	if (!prop_data) {
@@ -31,12 +31,15 @@ static int spacemit_rpmi_get_config_from_dt(struct dtb_node *node, struct spacem
 
 	config->shmem_base = fdt32_to_cpu(*(uint32_t*)prop_data);
 
+	/* k2 memory base */
+	config->shmem_base |= 0x100000000;
+
 	prop_data = dtb_node_get_property(node, "shmem-size", &prop_len);
 	if (!prop_data) {
 		rt_kprintf("%s:%d, get shmem-size failed\n", __func__, __LINE__);
 		return -RT_EINVAL;
 	}
-	
+
 	config->shmem_size = fdt32_to_cpu(*(uint32_t*)prop_data);
 
 	prop_data = dtb_node_get_property(node, "slot-size", &prop_len);
@@ -197,7 +200,6 @@ int rt_hw_rpmi_init(void)
 				/* check the status */
 				if (!dtb_node_device_is_available(compatible_node))
 					break;
-
 				++j;
 			}
 

@@ -87,7 +87,7 @@ static int spacemit_rpmi_get_hsm_config(struct dtb_node *node, void *con, char *
 {
 	int i = 0;
 	struct dtb_node *node_ptr = node;
-	rt_size_t property_size;
+	int property_size;
 	rt_uint32_t u32_value;
 	rt_uint32_t *u32_ptr;
 	const void* prop_data;
@@ -114,48 +114,48 @@ static int spacemit_rpmi_get_hsm_config(struct dtb_node *node, void *con, char *
 		/* get the property */
 		prop_data = dtb_node_get_property(node_ptr, "riscv,sbi-suspend-param", &prop_len);
 		if (prop_data && prop_len >= sizeof(uint32_t)) {
-			config->stype[i].type = fdt32_to_cpu(*(uint32_t*)prop_data);		
+			config->stype[i].type = fdt32_to_cpu(*(uint32_t*)prop_data);
 		}
 
 		prop_data = dtb_node_get_property(node_ptr, "entry-latency-us", &prop_len);
 		if (prop_data && prop_len >= sizeof(uint32_t)) {
-			config->stype[i].info.entry_latency_us = fdt32_to_cpu(*(uint32_t*)prop_data);		
+			config->stype[i].info.entry_latency_us = fdt32_to_cpu(*(uint32_t*)prop_data);
 		}
 
 		prop_data = dtb_node_get_property(node_ptr, "exit-latency-us", &prop_len);
 		if (prop_data && prop_len >= sizeof(uint32_t)) {
-			config->stype[i].info.exit_latency_us = fdt32_to_cpu(*(uint32_t*)prop_data);		
+			config->stype[i].info.exit_latency_us = fdt32_to_cpu(*(uint32_t*)prop_data);
 		}
-	
+
 		prop_data = dtb_node_get_property(node_ptr, "min-residency-us", &prop_len);
 		if (prop_data && prop_len >= sizeof(uint32_t)) {
-			config->stype[i].info.min_residency_us = fdt32_to_cpu(*(uint32_t*)prop_data);		
+			config->stype[i].info.min_residency_us = fdt32_to_cpu(*(uint32_t*)prop_data);
 		}
-	
+
 		prop_data = dtb_node_get_property(node_ptr, "wakeup-latency-us", &prop_len);
 		if (prop_data && prop_len >= sizeof(uint32_t)) {
-			config->stype[i].info.wakeup_latency_us = fdt32_to_cpu(*(uint32_t*)prop_data);		
+			config->stype[i].info.wakeup_latency_us = fdt32_to_cpu(*(uint32_t*)prop_data);
 		}
 
 		if (dtb_node_get_dtb_node_property(node_ptr, "local-timer-stop", RT_NULL))
 			config->stype[i].info.flags = RPMI_HSM_SUSPEND_INFO_FLAGS_TIMER_STOP;
-		
-		++i;	
+		++i;
 	}
 
 	config->type_cnt = i;
 
 	/* support system suspend ? */
 	if (dtb_node_get_dtb_node_property(node, "risv,support-syssup", RT_NULL)) {
-		config->support_syssup = 1;	
+		config->support_syssup = 1;
 	}
 
-	/* initialize the platform related resources */	
+	/* initialize the platform related resources */
 	rt_mutex_take(&rpmi_hsm_mtx, RT_WAITING_FOREVER);
 	rt_list_for_each_entry(pos, &rpmi_hsm_list, list) {
 		if (!rt_strcmp(pos->name, match))
 			break;
 	}
+	rt_mutex_release(&rpmi_hsm_mtx);
 
 	if (pos) {
 		config->hsm_ops = pos->hsm_ops;
