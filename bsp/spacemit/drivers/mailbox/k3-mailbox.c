@@ -1,14 +1,14 @@
 #include <rtthread.h>
 #include <rtdevice.h>
 #include <riscv-ops.h>
-#include "k2_mailbox.h"
+#include "k3_mailbox.h"
 
 static struct dtb_compatible_array __compatible[] = {
-	{ .compatible = "spacemit,k2-mailbox3", },
-	{ .compatible = "spacemit,k2-mailbox4", },
-	{ .compatible = "spacemit,k2-mailbox5", },
-	{ .compatible = "spacemit,k2-mailbox6", },
-	{ .compatible = "spacemit,k2-mailbox7", },
+	{ .compatible = "spacemit,k3-mailbox3", },
+	{ .compatible = "spacemit,k3-mailbox4", },
+	{ .compatible = "spacemit,k3-mailbox5", },
+	{ .compatible = "spacemit,k3-mailbox6", },
+	{ .compatible = "spacemit,k3-mailbox7", },
 	{},
 };
 

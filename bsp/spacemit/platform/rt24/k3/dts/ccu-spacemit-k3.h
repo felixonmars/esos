@@ -4,8 +4,8 @@
  *
  */
 
-#ifndef _CCU_SPACEMIT_K2_DTS_H_
-#define _CCU_SPACEMIT_K2_DTS_H_
+#ifndef _CCU_SPACEMIT_K3_DTS_H_
+#define _CCU_SPACEMIT_K3_DTS_H_
 
 #define CLK_PLL3     0
 #define CLK_PLL1_D2  1
@@ -100,4 +100,4 @@
 
 #define CLK_MAX_NO		85
 
-#endif /* _CCU_SPACEMIT_K2_DTS_H_ */
+#endif /* _CCU_SPACEMIT_K3_DTS_H_ */

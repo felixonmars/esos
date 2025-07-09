@@ -307,7 +307,7 @@ rt_int32_t csi_usart_config(usart_handle_t handle,
 {
     rt_int32_t ret;
 
-#ifndef SOC_SPACEMIT_K2
+#ifndef SOC_SPACEMIT_K3
     /* control the data_bit of the usart*/
     ret = csi_usart_config_baudrate(handle, baud);
 

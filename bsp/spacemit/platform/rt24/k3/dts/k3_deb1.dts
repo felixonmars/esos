@@ -3,8 +3,8 @@
 
 /dts-v1/;
 
-#include "k2.dtsi"
-#include "k2-pinctrl.h"
+#include "k3.dtsi"
+#include "k3-pinctrl.h"
 
 &pmx_core {
         pinctrl-single,gpio-range = <

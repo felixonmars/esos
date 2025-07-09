@@ -8,7 +8,7 @@
  * 2020/12/12     bernard      The first version
  */
 
-INCLUDE "./platform/rt24/k2/link_stacksize.lds"
+INCLUDE "./platform/rt24/k3/link_stacksize.lds"
 
 OUTPUT_ARCH( "riscv" )
 

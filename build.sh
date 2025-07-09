@@ -105,7 +105,7 @@ function select_entry_point()
 {
 	if [ "x${TARGET_CHIP}_${TARGET_BOARD}" = "xn308_k1-x" ]; then
 		TARGET_ENTRY_POINT=0x30300000
-	elif [ "x${TARGET_CHIP}_${TARGET_BOARD}" = "xrt24_k2" ]; then
+	elif [ "x${TARGET_CHIP}_${TARGET_BOARD}" = "xrt24_k3" ]; then
 		TARGET_ENTRY_POINT=0x100200000
 	else
 		mk_error "No valid entry point!"

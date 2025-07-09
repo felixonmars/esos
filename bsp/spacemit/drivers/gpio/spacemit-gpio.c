@@ -50,7 +50,7 @@ struct spacemit_gpio_chip {
 
 static struct dtb_compatible_array __compatible[] = {
 	{ .compatible = "spacemit,k1x-gpio" },
-	{ .compatible = "spacemit,k2-gpio" },
+	{ .compatible = "spacemit,k3-gpio" },
 	{ },
 };
 

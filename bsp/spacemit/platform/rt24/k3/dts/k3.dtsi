@@ -3,10 +3,10 @@
 
 /dts-v1/;
 
-#include "ccu-spacemit-k2.h"
+#include "ccu-spacemit-k3.h"
 
 / {
-	compatible = "spacemit,k2";
+	compatible = "spacemit,k3";
 	#address-cells = <2>;
 	#size-cells = <2>;
 
@@ -68,7 +68,7 @@
 		#size-cells = <1>;
 
 		ccu: ccu@c0880000 {
-			compatible = "spacemit,rcpu-ccu-k2";
+			compatible = "spacemit,rcpu-ccu-k3";
 			reg = <0xd4050000 0x209c>,
 				<0xd4282800 0x400>,
 				<0xd4015000 0x1000>,
@@ -106,7 +106,7 @@
 		};
 
                 gpio: gpio@d4019000 {
-			compatible = "spacemit,k2-gpio";
+			compatible = "spacemit,k3-gpio";
 			reg = <0xd4019000 0x800>;
 			banks = <4>;
 			gpio-controller;
@@ -281,7 +281,7 @@
 		};
 
 		mailbox3: mailbox3@cac90c00 {
-			compatible = "spacemit,k2-mailbox3";
+			compatible = "spacemit,k3-mailbox3";
 			reg = <0xcac90c00 0x400>;
 			/* put here to register the mailbox irq */
 			interrupt-parent = <&intc>;
@@ -291,7 +291,7 @@
 		};
 
 		mailbox4: mailbox4@cac91000 {
-			compatible = "spacemit,k2-mailbox4";
+			compatible = "spacemit,k3-mailbox4";
 			reg = <0xcac91000 0x400>;
 			/* put here to register the mailbox irq */
 			interrupt-parent = <&intc>;
@@ -301,7 +301,7 @@
 		};
 
 		mailbox5: mailbox5@cac91400 {
-			compatible = "spacemit,k2-mailbox5";
+			compatible = "spacemit,k3-mailbox5";
 			reg = <0xcac91400 0x400>;
 			/* put here to register the mailbox irq */
 			interrupt-parent = <&intc>;
@@ -311,7 +311,7 @@
 		};
 
 		mailbox6: mailbox6@cac91800 {
-			compatible = "spacemit,k2-mailbox6";
+			compatible = "spacemit,k3-mailbox6";
 			reg = <0xcac91800 0x400>;
 			/* put here to register the mailbox irq */
 			interrupt-parent = <&intc>;
@@ -321,7 +321,7 @@
 		};
 
 		mailbox7: mailbox7@c0760000 {
-			compatible = "spacemit,k2-mailbox7";
+			compatible = "spacemit,k3-mailbox7";
 			reg = <0xc0760000 0x400>;
 			/* put here to register the mailbox irq */
 			interrupt-parent = <&intc>;
@@ -350,7 +350,7 @@
 
 		/* RPMI node, similar structure to rproc for mailbox communication */
 		rpmi: rpmi@1 {
-			compatible = "spacemit,k2-os0-rpmi";
+			compatible = "spacemit,k3-os0-rpmi";
 			status = "okay";
 			mboxes = <&mailbox3 0>;
 			mbox-names = "rpmi_mbox";
@@ -365,19 +365,19 @@
 			p2a-queue-size = <4096>;
 
 			rpmi_clock0: rpmi-clock@0 {
-				compatible = "k2-os0-rpmi-clock";
+				compatible = "k3-os0-rpmi-clock";
 				num_clks = <1>;
 				status = "okay";
 			};
 
 			rpmi_voltage0: rpmi-voltage@0 {
-				compatible = "k1-os0-rpmi-voltage";
+				compatible = "k3-os0-rpmi-voltage";
 				num_domains = <1>;
 				status = "okay";
 			};
 
 			rpmi_hsm0: rpmi-hsm@0 {
-				compatible = "k2-os0-rpmi-hsm";
+				compatible = "k3-os0-rpmi-hsm";
 				/* hartids*/
 				hartids = <0x0 0x1 0x2 0x3 0x4 0x5 0x6 0x7>;
 
@@ -436,7 +436,7 @@
 			};
 
 			rpmi_sysreset0: rpmi-sysreset@0 {
-				compatible = "k2-os0-rpmi-sysreset";
+				compatible = "k3-os0-rpmi-sysreset";
 				status = "disabled";
 			};
 		};
