@@ -47,6 +47,6 @@ void SystemInit(void)
 	value = SysTimer_GetLoadValue() + tick_cycles;
 	SysTimer_SetCompareValue(value);
 
-	/* Enable the Timer bit in MIE */
-	set_csr(mie, MIP_MTIP);
+	/* Enable the Timer bit & external bit in MIE */
+	set_csr(mie, MIP_MTIP | MIP_MEIP);
 }
