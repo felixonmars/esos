@@ -6,6 +6,9 @@ cwd  = GetCurrentDir()
 src     = Glob('*.c')
 CPPPATH = [cwd]
 
+if GetDepend('SOC_SPACEMIT_K1_X') == False:
+    SrcRemove(src, ['k1x-mailbox.c'])
+
 group = DefineGroup('MAILBOXDrivers', src, depend = ['BSP_USING_MAILBOX'], CPPPATH = CPPPATH)
 
 Return('group')
