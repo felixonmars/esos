@@ -278,14 +278,54 @@
 			status = "disabled";
 		};
 
-		mailbox: mailbox@c088a000 {
-			compatible = "spacemit,k1-x-mailbox";
-			reg = <0xc088a000 0x100>;
+		mailbox3: mailbox3@cac90c00 {
+			compatible = "spacemit,k2-mailbox3";
+			reg = <0xcac90c00 0x400>;
 			/* put here to register the mailbox irq */
 			interrupt-parent = <&intc>;
-			interrupts = <0 30 0>;
+			interrupts = <0 68 0>;
 			#mbox-cells = <1>;
-			status = "disabled";
+			status = "okay";
+		};
+
+		mailbox4: mailbox4@cac91000 {
+			compatible = "spacemit,k2-mailbox4";
+			reg = <0xcac91000 0x400>;
+			/* put here to register the mailbox irq */
+			interrupt-parent = <&intc>;
+			interrupts = <0 69 0>;
+			#mbox-cells = <1>;
+			status = "okay";
+		};
+
+		mailbox5: mailbox5@cac91400 {
+			compatible = "spacemit,k2-mailbox5";
+			reg = <0xcac91400 0x400>;
+			/* put here to register the mailbox irq */
+			interrupt-parent = <&intc>;
+			interrupts = <0 70 0>;
+			#mbox-cells = <1>;
+			status = "okay";
+		};
+
+		mailbox6: mailbox6@cac91800 {
+			compatible = "spacemit,k2-mailbox6";
+			reg = <0xcac91800 0x400>;
+			/* put here to register the mailbox irq */
+			interrupt-parent = <&intc>;
+			interrupts = <0 71 0>;
+			#mbox-cells = <1>;
+			status = "okay";
+		};
+
+		mailbox7: mailbox7@c0760000 {
+			compatible = "spacemit,k2-mailbox7";
+			reg = <0xc0760000 0x400>;
+			/* put here to register the mailbox irq */
+			interrupt-parent = <&intc>;
+			interrupts = <0 65 0>;
+			#mbox-cells = <1>;
+			status = "okay";
 		};
 
 		rproc0: rproc0@0 {
@@ -297,7 +337,7 @@
 			proc_id = <0>;
 			rsc_id = <0>;
 			vdev_id = <0>;
-			mboxes = <&mailbox 0>, <&mailbox 1>;
+			mboxes = <&mailbox4 0>, <&mailbox4 1>;
 			mbox-names = "vq0", "vq1";
 
 			/* put here to enable the mailbox irq */
@@ -308,13 +348,13 @@
 
 		/* RPMI node, similar structure to rproc for mailbox communication */
 		rpmi: rpmi@1 {
-			compatible = "spacemit,k1-os0-rpmi";
-			status = "disabled";
-			mboxes = <&mailbox 3>;
+			compatible = "spacemit,k2-os0-rpmi";
+			status = "okay";
+			mboxes = <&mailbox3 0>;
 			mbox-names = "rpmi_mbox";
 
 			/* Shared memory configuration */
-			shmem-base = <0x30500000>;
+			shmem-base = <0x00800000>;
 			shmem-size = <0x4000>;
 
 			/* Message and queue configuration */
@@ -322,8 +362,14 @@
 			a2p-queue-size = <4096>;
 			p2a-queue-size = <4096>;
 
+			rpmi_clock0: rpmi-clock@0 {
+				compatible = "k2-os0-rpmi-clock";
+				num_clks = <1>;
+				status = "okay";
+			};
+
 			rpmi_hsm0: rpmi-hsm@0 {
-				compatible = "k1-os0-rpmi-hsm";
+				compatible = "k2-os0-rpmi-hsm";
 				/* hartids*/
 				hartids = <0x0 0x1 0x2 0x3 0x4 0x5 0x6 0x7>;
 
@@ -382,26 +428,9 @@
 			};
 
 			rpmi_sysreset0: rpmi-sysreset@0 {
-				compatible = "k1-os0-rpmi-sysreset";
+				compatible = "k2-os0-rpmi-sysreset";
 				status = "disabled";
 			};
-
-			rpmi_clock0: rpmi-clock@0 {
-				compatible = "k1-os0-rpmi-clock";
-				num_clks = <1>;	
-				status = "disabled";
-			};
-		};
-
-		rcan0: rcan0@c0870000 {
-			compatible = "spacemit,k1x-rcan0";
-			/* not used */
-			reg = <0xc0870000 0x1000>;
-			interrupt-parent = <&intc>;
-			interrupts = <0 60 0>;
-			mboxes = <&mailbox 2>;
-			mbox-names = "mcan0";
-			status = "disabled";
 		};
 	};
 };
