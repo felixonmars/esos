@@ -9,7 +9,7 @@ extern struct rt_mutex rpmi_voltage_mtx;
 
 static int spacemit_rpmi_get_voltage_config(struct dtb_node *node, void *con, char *match)
 {
-	int i = 0;
+	int ret = 0;
 	struct spacemit_rpmi_config *c = (struct spacemit_rpmi_config *)con;
 	struct spacemit_rpmi_voltage_config *config = &c->voltage_config;
 	struct spacemit_rpmi_voltage_ops *pos = RT_NULL;
@@ -26,10 +26,10 @@ static int spacemit_rpmi_get_voltage_config(struct dtb_node *node, void *con, ch
 
 	if (pos) {
 		config->ops = pos->voltage_ops;
-		i = pos->init((void *)config);
+		ret = pos->init((void *)config);
 	}
 
-	return i;
+	return ret;
 }
 
 /** Set the voltage state enable/disable/others */
@@ -68,7 +68,7 @@ static struct rpmi_voltage_platform_ops spacemit_voltage_ops = {
 	.get_voltage_level = spacemit_get_voltage_level,
 };
 
-static int spacemit_rpmi_register_service(void *con, struct rpmi_context *cntx)
+static int spacemit_rpmi_register_volatge_service(void *con, struct rpmi_context *cntx)
 {
 	int ret;
 	struct rpmi_service_group *group = NULL;
@@ -93,7 +93,7 @@ static int spacemit_rpmi_register_service(void *con, struct rpmi_context *cntx)
 
 struct spacemit_rpmi_func rpmi_voltage_func = {
 	.rmpi_get_configuration = spacemit_rpmi_get_voltage_config,
-	.rpmi_register_service = spacemit_rpmi_register_service,
+	.rpmi_register_service = spacemit_rpmi_register_volatge_service,
 };
 
 int spacemit_rpmi_voltage_register(rt_list_t *node)

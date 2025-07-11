@@ -85,7 +85,7 @@ static struct rpmi_hsm_platform_ops hsm_ops = {
 
 static int spacemit_rpmi_get_hsm_config(struct dtb_node *node, void *con, char *match)
 {
-	int i = 0;
+	int i = 0, ret = 0;
 	struct dtb_node *node_ptr = node;
 	int property_size;
 	rt_uint32_t u32_value;
@@ -160,10 +160,10 @@ static int spacemit_rpmi_get_hsm_config(struct dtb_node *node, void *con, char *
 	if (pos) {
 		config->hsm_ops = pos->hsm_ops;
 		config->syssup_ops = pos->syssup_ops;
-		i = pos->init((void *)config);
+		ret = pos->init((void *)config);
 	}
 
-	return i;
+	return ret;
 }
 
 /* system suspend releated */
@@ -230,7 +230,7 @@ static struct rpmi_syssusp_platform_ops syssusp_ops = {
 	.system_suspend_resume = syssusp_resume
 };
 
-static int spacemit_rpmi_register_service(void *con, struct rpmi_context *cntx)
+static int spacemit_rpmi_register_hsm_service(void *con, struct rpmi_context *cntx)
 {
 	int ret;
 	struct rpmi_hsm* hsm = NULL;
@@ -278,7 +278,7 @@ static int spacemit_rpmi_register_service(void *con, struct rpmi_context *cntx)
 
 struct spacemit_rpmi_func rpmi_hsm_func = {
 	.rmpi_get_configuration = spacemit_rpmi_get_hsm_config,
-	.rpmi_register_service = spacemit_rpmi_register_service,
+	.rpmi_register_service = spacemit_rpmi_register_hsm_service,
 };
 
 int spacemit_rpmi_hsm_register(rt_list_t *node)
