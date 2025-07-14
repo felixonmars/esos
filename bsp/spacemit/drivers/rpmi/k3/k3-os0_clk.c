@@ -9,7 +9,7 @@ struct rpmi_clock_data k3_os0_clk_data[1] = {
 	},
 };
 
-static int  _k3_os0_clock_init(void *priv)
+static rt_int32_t  _k3_os0_clock_init(void *priv)
 {
 	/* platform releated, get the registers or other thing what you want */
 	struct spacemit_rpmi_clk_config *config = priv;
@@ -62,7 +62,7 @@ static struct spacemit_rpmi_clk_ops k3_os0_clk_ops = {
 	.clk_ops = &k3_os0_clock_pops,
 };
 
-static int k3_os0_clk_init(void)
+static rt_int32_t k3_os0_clk_init(void)
 {
 
 	rt_list_init(&k3_os0_clk_ops.list);

@@ -7,9 +7,9 @@
 static rt_list_t rpmi_voltage_list = RT_LIST_OBJECT_INIT(rpmi_voltage_list);
 extern struct rt_mutex rpmi_voltage_mtx;
 
-static int spacemit_rpmi_get_voltage_config(struct dtb_node *node, void *con, char *match)
+static rt_int32_t spacemit_rpmi_get_voltage_config(struct dtb_node *node, void *con, char *match)
 {
-	int ret = 0;
+	rt_int32_t ret = 0;
 	struct spacemit_rpmi_config *c = (struct spacemit_rpmi_config *)con;
 	struct spacemit_rpmi_voltage_config *config = &c->voltage_config;
 	struct spacemit_rpmi_voltage_ops *pos = RT_NULL;
@@ -68,9 +68,9 @@ static struct rpmi_voltage_platform_ops spacemit_voltage_ops = {
 	.get_voltage_level = spacemit_get_voltage_level,
 };
 
-static int spacemit_rpmi_register_volatge_service(void *con, struct rpmi_context *cntx)
+static rt_int32_t spacemit_rpmi_register_volatge_service(void *con, struct rpmi_context *cntx)
 {
-	int ret;
+	rt_int32_t ret;
 	struct rpmi_service_group *group = NULL;
 	struct spacemit_rpmi_config *c = (struct spacemit_rpmi_config *)con;
 	struct spacemit_rpmi_voltage_config *config = &c->voltage_config;
@@ -96,7 +96,7 @@ struct spacemit_rpmi_func rpmi_voltage_func = {
 	.rpmi_register_service = spacemit_rpmi_register_volatge_service,
 };
 
-int spacemit_rpmi_voltage_register(rt_list_t *node)
+rt_int32_t spacemit_rpmi_voltage_register(rt_list_t *node)
 {
 	rt_mutex_take(&rpmi_voltage_mtx, RT_WAITING_FOREVER);
 	rt_list_insert_after(&rpmi_voltage_list, node);

@@ -3,12 +3,12 @@
 #include <riscv-ops.h>
 #include "k1x_mailbox.h"
 
-static void spacemit_mbox_irq(int irq, void *dev_id)
+static void spacemit_mbox_irq(rt_int32_t irq, void *dev_id)
 {
 	struct spacemit_mailbox *mbox = dev_id;
 	struct mbox_chan *chan;
-	unsigned int status, msg = 0;
-	int i;
+	rt_uint32_t status, msg = 0;
+	rt_int32_t i;
 
 	writel(0, (void *)&mbox->regs->ipc_iir);
 
@@ -52,11 +52,11 @@ static void spacemit_mbox_irq(int irq, void *dev_id)
 	return;
 }
 
-static int spacemit_chan_send_data(struct mbox_chan *chan, void *data)
+static rt_int32_t spacemit_chan_send_data(struct mbox_chan *chan, void *data)
 {
-	unsigned long flag;
+	rt_uint64_t flag;
 	struct spacemit_mailbox *mbox = ((struct spacemit_mb_con_priv *)chan->con_priv)->smb;
-	unsigned int chan_num = chan - mbox->controller.chans;
+	rt_uint32_t chan_num = chan - mbox->controller.chans;
 
 	flag = rt_spin_lock_irqsave(&mbox->lock);
 
@@ -64,22 +64,22 @@ static int spacemit_chan_send_data(struct mbox_chan *chan, void *data)
 
 	rt_spin_unlock_irqrestore(&mbox->lock, flag);
 
-        // mbox_dbg(mbox, "Channel %d sent 0x%08x\n", chan_num, *((unsigned int *)data));
+        // mbox_dbg(mbox, "Channel %d sent 0x%08x\n", chan_num, *((rt_uint32_t *)data));
 
         return 0;
 }
 
-static int spacemit_chan_startup(struct mbox_chan *chan)
+static rt_int32_t spacemit_chan_startup(struct mbox_chan *chan)
 {
 	return 0;
 }
 
 static void spacemit_chan_shutdown(struct mbox_chan *chan)
 {
-	unsigned int j;
-	unsigned long flag;
+	rt_uint32_t j;
+	rt_uint64_t flag;
 	struct spacemit_mailbox *mbox = ((struct spacemit_mb_con_priv *)chan->con_priv)->smb;
-	unsigned int chan_num = chan - mbox->controller.chans;
+	rt_uint32_t chan_num = chan - mbox->controller.chans;
 
 	flag = rt_spin_lock_irqsave(&mbox->lock);
 
@@ -99,7 +99,7 @@ static bool spacemit_chan_last_tx_done(struct mbox_chan *chan)
 static bool spacemit_chan_peek_data(struct mbox_chan *chan)
 {
 	struct spacemit_mailbox *mbox = ((struct spacemit_mb_con_priv *)chan->con_priv)->smb;
-	unsigned int chan_num = chan - mbox->controller.chans;
+	rt_uint32_t chan_num = chan - mbox->controller.chans;
 
 	return readl((void *)&mbox->regs->ipc_rdr) & (1 << chan_num);
 }
@@ -117,9 +117,9 @@ static struct dtb_compatible_array __compatible[] = {
 	{},
 };
 
-int spacemit_mailbox_init(void)
+rt_int32_t spacemit_mailbox_init(void)
 {
-	int i, j, irq, ret;
+	rt_int32_t i, j, irq, ret;
 	struct mbox_chan *chans;
 	struct spacemit_mailbox *mbox;
 	struct spacemit_mb_con_priv *con_priv;

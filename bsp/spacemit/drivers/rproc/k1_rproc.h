@@ -31,10 +31,10 @@ struct remoteproc_priv {
 
 /* Resource table for the given remote */
 struct remote_resource_table {
-	unsigned int version;
-	unsigned int num;
-	unsigned int reserved[2];
-	unsigned int offset[NO_RESOURCE_ENTRIES];
+	rt_uint32_t version;
+	rt_uint32_t num;
+	rt_uint32_t reserved[2];
+	rt_uint32_t offset[NO_RESOURCE_ENTRIES];
 	/* rpmsg vdev entry */
 	struct fw_rsc_vdev rpmsg_vdev;
 	struct fw_rsc_vdev_vring rpmsg_vring0;

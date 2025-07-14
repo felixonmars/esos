@@ -16,7 +16,7 @@ extern "C" {
 typedef void *usart_handle_t;
 
 /*----- USART Control Codes: Mode -----*/
-typedef enum
+typedef volatile enum
 {
     USART_MODE_ASYNCHRONOUS         = 0,   ///< USART (Asynchronous)
     USART_MODE_SYNCHRONOUS_MASTER,         ///< Synchronous Master
@@ -27,7 +27,7 @@ typedef enum
 } usart_mode_e;
 
 /*----- USART Control Codes: Mode Parameters: Data Bits -----*/
-typedef enum
+typedef volatile enum
 {
     USART_DATA_BITS_5             = 0,    ///< 5 Data bits
     USART_DATA_BITS_6,                    ///< 6 Data bit
@@ -37,7 +37,7 @@ typedef enum
 } usart_data_bits_e;
 
 /*----- USART Control Codes: Mode Parameters: Parity -----*/
-typedef enum
+typedef volatile enum
 {
     USART_PARITY_NONE            = 0,       ///< No Parity (default)
     USART_PARITY_EVEN,                      ///< Even Parity
@@ -47,7 +47,7 @@ typedef enum
 } usart_parity_e;
 
 /*----- USART Control Codes: Mode Parameters: Stop Bits -----*/
-typedef enum
+typedef volatile enum
 {
     USART_STOP_BITS_1            = 0,    ///< 1 Stop bit (default)
     USART_STOP_BITS_2,                   ///< 2 Stop bits
@@ -56,28 +56,28 @@ typedef enum
 } usart_stop_bits_e;
 
 /*----- USART Control Codes: Mode Parameters: Clock Polarity (Synchronous mode) -----*/
-typedef enum
+typedef volatile enum
 {
     USART_CPOL0                  = 0,    ///< CPOL = 0 (default). data are captured on rising edge (low->high transition)
     USART_CPOL1                          ///< CPOL = 1. data are captured on falling edge (high->lowh transition)
 } usart_cpol_e;
 
 /*----- USART Control Codes: Mode Parameters: Clock Phase (Synchronous mode) -----*/
-typedef enum
+typedef volatile enum
 {
     USART_CPHA0                  = 0,   ///< CPHA = 0 (default). sample on first (leading) edge
     USART_CPHA1                         ///< CPHA = 1. sample on second (trailing) edge
 } usart_cpha_e;
 
 /*----- USART Control Codes: flush data type-----*/
-typedef enum
+typedef volatile enum
 {
     USART_FLUSH_WRITE,
     USART_FLUSH_READ
 } usart_flush_type_e;
 
 /*----- USART Control Codes: flow control type-----*/
-typedef enum
+typedef volatile enum
 {
     USART_FLOWCTRL_NONE,
     USART_FLOWCTRL_CTS,
@@ -86,7 +86,7 @@ typedef enum
 } usart_flowctrl_type_e;
 
 /*----- USART Modem Control -----*/
-typedef enum
+typedef volatile enum
 {
     USART_RTS_CLEAR,                  ///< Deactivate RTS
     USART_RTS_SET,                    ///< Activate RTS
@@ -95,7 +95,7 @@ typedef enum
 } usart_modem_ctrl_e;
 
 /*----- USART Modem Status -----*/
-typedef struct
+typedef volatile struct
 {
     rt_uint32_t cts : 1;                     ///< CTS state: 1=Active, 0=Inactive
     rt_uint32_t dsr : 1;                     ///< DSR state: 1=Active, 0=Inactive
@@ -104,7 +104,7 @@ typedef struct
 } usart_modem_stat_t;
 
 /*----- USART Control Codes: on-off intrrupte type-----*/
-typedef enum
+typedef volatile enum
 {
     USART_INTR_WRITE,
     USART_INTR_READ
@@ -113,7 +113,7 @@ typedef enum
 /**
 \brief USART Status
 */
-typedef struct  {
+typedef volatile struct  {
     rt_uint32_t tx_busy          : 1;        ///< Transmitter busy flag
     rt_uint32_t rx_busy          : 1;        ///< Receiver busy flag
     rt_uint32_t tx_underflow     : 1;        ///< Transmit data underflow detected (cleared on start of next send operation)(Synchronous Slave)
@@ -126,7 +126,7 @@ typedef struct  {
 } usart_status_t;
 
 /****** USART Event *****/
-typedef enum
+typedef volatile enum
 {
     USART_EVENT_SEND_COMPLETE       = 0,  ///< Send completed; however USART may still transmit data
     USART_EVENT_RECEIVE_COMPLETE    = 1,  ///< Receive completed
@@ -150,7 +150,7 @@ typedef void (*usart_event_cb_t)(rt_int32_t idx, usart_event_e event);   ///< Po
 /**
 \brief USART Driver Capabilities.
 */
-typedef struct  {
+typedef volatile struct  {
     rt_uint32_t asynchronous       : 1;      ///< supports UART (Asynchronous) mode
     rt_uint32_t synchronous_master : 1;      ///< supports Synchronous Master mode
     rt_uint32_t synchronous_slave  : 1;      ///< supports Synchronous Slave mode

@@ -31,22 +31,22 @@ struct k1x_spi {
 	struct rt_spi_bus bus;
 	struct clk *clk;
 	struct clk *reset;
-	unsigned int width;
-	unsigned int freq;
-	unsigned int mode;
-	int flags;
-	int n_bytes;
-	int (*write)(struct k1x_spi *priv);
-	int (*read)(struct k1x_spi *priv);
-	int data_length;
+	rt_uint32_t width;
+	rt_uint32_t freq;
+	rt_uint32_t mode;
+	rt_int32_t flags;
+	rt_int32_t n_bytes;
+	rt_int32_t (*write)(struct k1x_spi *priv);
+	rt_int32_t (*read)(struct k1x_spi *priv);
+	rt_int32_t data_length;
 	void *tx;
 	void *tx_end;
 	void *rx;
 	void *rx_end;
-	int len;
+	rt_int32_t len;
 	struct rt_completion	complete;
 	struct rt_spi_message *msg;
-	int irq;
+	rt_int32_t irq;
 	struct rt_device dev;
 	struct rt_dma_chan *tx_chan;
 	struct rt_dma_chan *rx_chan;
@@ -65,7 +65,7 @@ static bool k1x_spi_txfifo_full(struct k1x_spi *priv)
 	return !(readl(priv->base + REG_SSP_STATUS) & BIT_SSP_TNF);
 }
 
-int k1x_spi_flush(struct k1x_spi *priv)
+rt_int32_t k1x_spi_flush(struct k1x_spi *priv)
 {
 	unsigned long limit = 1 << 13;
 
@@ -78,7 +78,7 @@ int k1x_spi_flush(struct k1x_spi *priv)
 	return limit;
 }
 
-static int null_writer(struct k1x_spi *priv)
+static rt_int32_t null_writer(struct k1x_spi *priv)
 {
 	rt_uint8_t n_bytes = priv->n_bytes;
 
@@ -92,7 +92,7 @@ static int null_writer(struct k1x_spi *priv)
 	return 1;
 }
 
-static int null_reader(struct k1x_spi *priv)
+static rt_int32_t null_reader(struct k1x_spi *priv)
 {
 	rt_uint8_t n_bytes = priv->n_bytes;
 
@@ -105,7 +105,7 @@ static int null_reader(struct k1x_spi *priv)
 	return priv->rx == priv->rx_end;
 }
 
-static int u8_writer(struct k1x_spi *priv)
+static rt_int32_t u8_writer(struct k1x_spi *priv)
 {
 	if (k1x_spi_txfifo_full(priv)
 		|| (priv->tx == priv->tx_end))
@@ -117,7 +117,7 @@ static int u8_writer(struct k1x_spi *priv)
 	return 1;
 }
 
-static int u8_reader(struct k1x_spi *priv)
+static rt_int32_t u8_reader(struct k1x_spi *priv)
 {
 	while ((readl(priv->base + REG_SSP_STATUS) & BIT_SSP_RNE)
 		&& (priv->rx < priv->rx_end)) {
@@ -127,7 +127,7 @@ static int u8_reader(struct k1x_spi *priv)
 	return priv->rx == priv->rx_end;
 }
 
-static int u16_writer(struct k1x_spi *priv)
+static rt_int32_t u16_writer(struct k1x_spi *priv)
 {
 	if (k1x_spi_txfifo_full(priv)
 		|| (priv->tx == priv->tx_end))
@@ -139,7 +139,7 @@ static int u16_writer(struct k1x_spi *priv)
 	return 1;
 }
 
-static int u16_reader(struct k1x_spi *priv)
+static rt_int32_t u16_reader(struct k1x_spi *priv)
 {
 	while ((readl(priv->base + REG_SSP_STATUS) & BIT_SSP_RNE)
 		&& (priv->rx < priv->rx_end)) {
@@ -150,7 +150,7 @@ static int u16_reader(struct k1x_spi *priv)
 	return priv->rx == priv->rx_end;
 }
 
-static int u32_writer(struct k1x_spi *priv)
+static rt_int32_t u32_writer(struct k1x_spi *priv)
 {
 	if (k1x_spi_txfifo_full(priv)
 		|| (priv->tx == priv->tx_end))
@@ -162,7 +162,7 @@ static int u32_writer(struct k1x_spi *priv)
 	return 1;
 }
 
-static int u32_reader(struct k1x_spi *priv)
+static rt_int32_t u32_reader(struct k1x_spi *priv)
 {
 	while ((readl(priv->base + REG_SSP_STATUS) & BIT_SSP_RNE)
 		&& (priv->rx < priv->rx_end)) {
@@ -217,7 +217,7 @@ void spi_dma_callback(struct rt_dma_chan *chan, rt_size_t size)
 	rt_completion_done(&priv->complete);
 }
 
-static int k1x_spi_transfer_config(struct k1x_spi *priv)
+static rt_int32_t k1x_spi_transfer_config(struct k1x_spi *priv)
 {
 	rt_uint32_t top_ctrl;
 	rt_uint32_t fifo_ctrl;
@@ -441,7 +441,7 @@ static rt_uint32_t k1x_spi_xfer(struct rt_spi_device *dev, struct rt_spi_message
 	struct rt_spi_bus *bus = dev->bus;
 	struct k1x_spi *priv = to_k1x_spi(bus);
 	rt_uint32_t val = 0;
-	int ret = 0;
+	rt_int32_t ret = 0;
 
 	priv->msg = msg;
 	k1x_spi_transfer_config(priv);
@@ -474,7 +474,7 @@ static struct rt_spi_ops spacemit_spi_ops = {
 	.xfer	= k1x_spi_xfer,
 };
 
-static void spacemit_spi_int_handler(int irq, void *devid)
+static void spacemit_spi_int_handler(rt_int32_t irq, void *devid)
 {
 	rt_uint32_t int_en, status;
 	struct k1x_spi *priv = devid;
@@ -513,7 +513,7 @@ static struct dtb_compatible_array __compatible[] = {
 	{}
 };
 
-int k1x_spi_dma_setup(struct k1x_spi *spacemit_spi)
+rt_int32_t k1x_spi_dma_setup(struct k1x_spi *spacemit_spi)
 {
 	if (spacemit_spi->support_dma) {
 		spacemit_spi->tx_chan = rt_dma_chan_request(&spacemit_spi->dev, "tx");
@@ -532,19 +532,19 @@ int k1x_spi_dma_setup(struct k1x_spi *spacemit_spi)
 	return 0;
 }
 
-static int spacemit_spi_probe(void)
+static rt_int32_t spacemit_spi_probe(void)
 {
-	int i;
+	rt_int32_t i;
 	struct k1x_spi *spacemit_spi;
 	struct rt_spi_bus *bus;
 	struct dtb_node *compatible_node;
 	struct dtb_node *dtb_head_node = get_dtb_node_head();
 
-	int property_size;
+	rt_int32_t property_size;
 	rt_uint32_t u32_value;
 	void * property_ptr;
 
-	int ret = 0;
+	rt_int32_t ret = 0;
 
 	for (i = 0; i < sizeof(__compatible) / sizeof(__compatible[0]); ++i) {
 		compatible_node = dtb_node_find_compatible_node(dtb_head_node,

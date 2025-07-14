@@ -15,8 +15,8 @@ struct pinctrl_gpio_range;
  */
 struct pinctrl_state {
 	rt_list_t node;
-        const char *name;
-        rt_list_t settings;
+	const char *name;
+	rt_list_t settings;
 };
 
 /**
@@ -76,8 +76,8 @@ struct pinctrl_dev {
  * @func: the function selector to program
  */
 struct pinctrl_setting_mux {
-	unsigned group;
-	unsigned func;
+	rt_uint32_t group;
+	rt_uint32_t func;
 };
 
 /**
@@ -89,9 +89,9 @@ struct pinctrl_setting_mux {
  * @num_configs: the number of entries in array @configs
  */
 struct pinctrl_setting_configs {
-	unsigned group_or_pin;
-	unsigned long *configs;
-	unsigned num_configs;
+	rt_uint32_t group_or_pin;
+	rt_uint64_t *configs;
+	rt_uint32_t num_configs;
 };
 
 /**
@@ -135,7 +135,7 @@ struct pin_desc {
 	const char *name;
 	bool dynamic_name;
 	/* These fields only added when supporting pinmux drivers */
-	unsigned mux_usecount;
+	rt_uint32_t mux_usecount;
 	const char *mux_owner;
 	const struct pinctrl_setting_mux *mux_setting;
 	const char *gpio_owner;
@@ -150,11 +150,11 @@ struct pin_desc {
 struct pinctrl_maps {
 	rt_list_t node;
 	struct pinctrl_map const *maps;
-	unsigned num_maps;
+	rt_uint32_t num_maps;
 };
 
 static inline struct pin_desc *pin_desc_get(struct pinctrl_dev *pctldev,
-                                            unsigned int pin)
+                                            rt_uint32_t pin)
 {
 	return radix_tree_lookup(&pctldev->pin_desc_tree, pin);
 }

@@ -17,7 +17,7 @@
 static  usart_handle_t uart_handle;
 static struct rt_serial_device  serial;
 
-static void usart_irqhandler(int vector, void *param)
+static void usart_irqhandler(rt_int32_t vector, void *param)
 {
     rt_hw_serial_isr(&serial,RT_SERIAL_EVENT_RX_IND);
 }
@@ -68,7 +68,7 @@ rt_int32_t target_usart_init(rt_int32_t idx, rt_uint32_t *base, rt_uint32_t *irq
  */
 static rt_err_t uart_configure(struct rt_serial_device *serial, struct serial_configure *cfg)
 {
-    int ret;
+    rt_int32_t ret;
     usart_handle_t uart;
     rt_uint32_t bauds;
     usart_parity_e parity;
@@ -101,7 +101,7 @@ static rt_err_t uart_configure(struct rt_serial_device *serial, struct serial_co
     return RT_EOK;
 }
 
-static rt_err_t uart_control(struct rt_serial_device *serial, int cmd, void *arg)
+static rt_err_t uart_control(struct rt_serial_device *serial, rt_int32_t cmd, void *arg)
 {
     usart_handle_t uart;
 
@@ -124,7 +124,7 @@ static rt_err_t uart_control(struct rt_serial_device *serial, int cmd, void *arg
     return (RT_EOK);
 }
 
-static int uart_putc(struct rt_serial_device *serial, char c)
+static rt_int32_t uart_putc(struct rt_serial_device *serial, char c)
 {
     usart_handle_t uart;
 
@@ -136,9 +136,9 @@ static int uart_putc(struct rt_serial_device *serial, char c)
     return (1);
 }
 
-static int uart_getc(struct rt_serial_device *serial)
+static rt_int32_t uart_getc(struct rt_serial_device *serial)
 {
-    int ch;
+    rt_int32_t ch;
     usart_handle_t uart;
 
     RT_ASSERT(serial != RT_NULL);
@@ -159,9 +159,9 @@ const struct rt_uart_ops _uart_ops =
     uart_getc,
 };
 
-int rt_hw_usart_init(void)
+rt_int32_t rt_hw_usart_init(void)
 {
-    int i, ret;
+	rt_int32_t i, ret;
     ck_usart_priv_t *priv;
     struct clk *clk, *rst;
     struct serial_configure config = RT_SERIAL_CONFIG_DEFAULT;

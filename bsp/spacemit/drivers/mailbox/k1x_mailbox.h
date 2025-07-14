@@ -8,13 +8,13 @@
 #define SPACEMIT_NUM_CHANNELS   4
 #define SPACEMIT_TX_ACK_OFFSET  4
 
-typedef struct mbox_reg_desc {
-	unsigned int ipc_dw;
-	unsigned int ipc_wdr;
-	unsigned int ipc_isrw;
-	unsigned int ipc_icr;
-	unsigned int ipc_iir;
-	unsigned int ipc_rdr;
+typedef volatile struct mbox_reg_desc {
+	rt_uint32_t ipc_dw;
+	rt_uint32_t ipc_wdr;
+	rt_uint32_t ipc_isrw;
+	rt_uint32_t ipc_icr;
+	rt_uint32_t ipc_iir;
+	rt_uint32_t ipc_rdr;
 } mbox_reg_desc_t;
 
 struct spacemit_mailbox {

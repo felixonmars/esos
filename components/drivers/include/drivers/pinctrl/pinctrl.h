@@ -14,7 +14,7 @@ struct gpio_chip;
  * @name: a name for this pin
  */
 struct pinctrl_pin_desc {
-	unsigned number;
+	rt_uint32_t number;
 	const char *name;
 };
 
@@ -37,11 +37,11 @@ struct pinctrl_pin_desc {
 struct pinctrl_gpio_range {
 	rt_list_t node;
         const char *name;
-        unsigned int id;
-        unsigned int base;
-        unsigned int pin_base;
-        unsigned const *pins;
-        unsigned int npins;
+        rt_uint32_t id;
+        rt_uint32_t base;
+        rt_uint32_t pin_base;
+        rt_uint32_t const *pins;
+        rt_uint32_t npins;
         struct gpio_chip *gc;
 };
 
@@ -67,16 +67,16 @@ struct pinctrl_gpio_range {
 struct pinctrl_ops {
 	int (*get_groups_count) (struct pinctrl_dev *pctldev);
 	const char *(*get_group_name) (struct pinctrl_dev *pctldev,
-			unsigned selector);
+			rt_uint32_t selector);
 	int (*get_group_pins) (struct pinctrl_dev *pctldev,
-			unsigned selector,
-			const unsigned **pins,
-			unsigned *num_pins);
+			rt_uint32_t selector,
+			const rt_uint32_t **pins,
+			rt_uint32_t *num_pins);
 	int (*dt_node_to_map) (struct pinctrl_dev *pctldev,
 			struct dtb_node *np_config,
-			struct pinctrl_map **map, unsigned *num_maps);
+			struct pinctrl_map **map, rt_uint32_t *num_maps);
 	void (*dt_free_map) (struct pinctrl_dev *pctldev,
-			struct pinctrl_map *map, unsigned num_maps);
+			struct pinctrl_map *map, rt_uint32_t num_maps);
 };
 
 /**
@@ -97,7 +97,7 @@ struct pinctrl_ops {
 struct pinctrl_desc {
 	const char *name;
 	struct pinctrl_pin_desc const *pins;
-	unsigned int npins;
+	rt_uint32_t npins;
 	const struct pinctrl_ops *pctlops;
 	const struct pinmux_ops *pmxops;
 	const struct pinconf_ops *confops;

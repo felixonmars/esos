@@ -1,8 +1,8 @@
 #include <rtthread.h>
 #include <rtdevice.h>
 
-static unsigned int _get_table_div(const struct clk_div_table *table,
-                                                        unsigned int val)
+static rt_uint32_t _get_table_div(const struct clk_div_table *table,
+                                                        rt_uint32_t val)
 {
         const struct clk_div_table *clkt;
 
@@ -12,8 +12,8 @@ static unsigned int _get_table_div(const struct clk_div_table *table,
         return 0;
 }
 
-static unsigned int _get_div(const struct clk_div_table *table,
-                             unsigned int val, unsigned long flags, unsigned char width)
+static rt_uint32_t _get_div(const struct clk_div_table *table,
+                             rt_uint32_t val, rt_uint64_t flags, unsigned char width)
 {
 	if (flags & CLK_DIVIDER_ONE_BASED)
 		return val;
@@ -27,12 +27,12 @@ static unsigned int _get_div(const struct clk_div_table *table,
 	return val + 1;
 }
 
-unsigned long divider_recalc_rate(struct clk_hw *hw, unsigned long parent_rate,
-                                  unsigned int val,
+rt_uint64_t divider_recalc_rate(struct clk_hw *hw, rt_uint64_t parent_rate,
+                                  rt_uint32_t val,
                                   const struct clk_div_table *table,
-                                  unsigned long flags, unsigned long width)
+                                  rt_uint64_t flags, rt_uint64_t width)
 {
-	unsigned int div;
+	rt_uint32_t div;
 
 	div = _get_div(table, val, flags, width);
 	if (!div) {
@@ -44,6 +44,6 @@ unsigned long divider_recalc_rate(struct clk_hw *hw, unsigned long parent_rate,
 		return parent_rate;
 	}
 
-	return DIV_ROUND_UP_ULL((unsigned long)parent_rate, div);
+	return DIV_ROUND_UP_ULL((rt_uint64_t)parent_rate, div);
 }
 

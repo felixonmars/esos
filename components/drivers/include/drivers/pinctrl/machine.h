@@ -32,8 +32,8 @@ struct pinctrl_map_mux {
  */
 struct pinctrl_map_configs {
 	const char *group_or_pin;
-	unsigned long *configs;
-	unsigned num_configs;
+	rt_uint64_t *configs;
+	rt_uint32_t num_configs;
 };
 
 /**

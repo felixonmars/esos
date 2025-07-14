@@ -57,12 +57,12 @@ static inline struct pxa_pwm_chip *to_pxa_pwm_chip(struct rt_device_pwm *dev)
  * duty_ns   = 10^9 * (PRESCALE + 1) * DC / PWM_CLK_RATE
  */
 int pxa_pwm_config(struct rt_device_pwm *dev,
-				unsigned long long duty_ns, unsigned long long period_ns)
+				rt_uint64_t duty_ns, rt_uint64_t period_ns)
 {
 	struct pxa_pwm_chip *pc = to_pxa_pwm_chip(dev);
 	rt_uint64_t c = 0;
-	unsigned long period_cycles, prescale, pv, dc;
-	unsigned long offset = 0;
+	rt_uint32_t period_cycles, prescale, pv, dc;
+	rt_uint32_t offset = 0;
 
 	c = clk_get_rate(pc->clk);
 	c = c * period_ns;

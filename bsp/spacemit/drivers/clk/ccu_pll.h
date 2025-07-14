@@ -12,21 +12,21 @@
 #include "ccu-spacemit.h"
 
 struct ccu_pll_rate_tbl {
-	unsigned long long rate;
-	unsigned int reg5;
-	unsigned int reg6;
-	unsigned int reg7;
-	unsigned int reg8;
-	unsigned int div_int;
-	unsigned int div_frac;
+	rt_uint64_t rate;
+	rt_uint32_t reg5;
+	rt_uint32_t reg6;
+	rt_uint32_t reg7;
+	rt_uint32_t reg8;
+	rt_uint32_t div_int;
+	rt_uint32_t div_frac;
 };
 
 struct ccu_pll_config {
 	struct ccu_pll_rate_tbl * rate_tbl;
-	unsigned int tbl_size;
-	unsigned int *lock_base;
-	unsigned int reg_lock;
-	unsigned int lock_enable_bit;
+	rt_uint32_t tbl_size;
+	rt_uint32_t *lock_base;
+	rt_uint32_t reg_lock;
+	rt_uint32_t lock_enable_bit;
 };
 
 #define PLL_RATE(_rate, _reg5, _reg6, _reg7, _reg8, _div_int, _div_frac)		\

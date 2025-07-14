@@ -18,11 +18,11 @@ static void ccu_mix_disable(struct clk_hw *hw)
 	struct ccu_mix *mix = hw_to_ccu_mix(hw);
 	struct ccu_common * common = &mix->common;
 	struct ccu_gate_config *gate = mix->gate;
-	unsigned long rate;
-	unsigned long rate_delay;
+	rt_uint64_t rate;
+	rt_uint64_t rate_delay;
 	rt_tick_t tick_delay, now;
-	unsigned int tmp;
-	unsigned long flags;
+	rt_uint32_t tmp;
+	rt_uint64_t flags;
 
 	if (!gate)
 		return;
@@ -85,13 +85,13 @@ static int ccu_mix_enable(struct clk_hw *hw)
 	struct ccu_mix *mix = hw_to_ccu_mix(hw);
 	struct ccu_common * common = &mix->common;
 	struct ccu_gate_config *gate = mix->gate;
-	unsigned long rate;
-	unsigned int tmp;
-	unsigned int val = 0;
+	rt_uint64_t rate;
+	rt_uint32_t tmp;
+	rt_uint32_t val = 0;
 	int timeout_power = 1;
-	unsigned long rate_delay = 10;
+	rt_uint64_t rate_delay = 10;
 	rt_tick_t tick_delay, now;
-	unsigned long flags;
+	rt_uint64_t flags;
 
 	if (!gate)
 		return 0;
@@ -185,8 +185,8 @@ static int ccu_mix_is_enabled(struct clk_hw *hw)
 	struct ccu_mix *mix = hw_to_ccu_mix(hw);
 	struct ccu_common * common = &mix->common;
 	struct ccu_gate_config *gate = mix->gate;
-	unsigned int tmp;
-	unsigned long flags;
+	rt_uint32_t tmp;
+	rt_uint64_t flags;
 
 	if (!gate)
 		return 1;
@@ -208,14 +208,14 @@ static int ccu_mix_is_enabled(struct clk_hw *hw)
 	return (tmp & gate->gate_mask) == gate->val_enable;
 }
 
-static unsigned long ccu_mix_recalc_rate(struct clk_hw *hw,
-					unsigned long parent_rate)
+static rt_uint64_t ccu_mix_recalc_rate(struct clk_hw *hw,
+					rt_uint64_t parent_rate)
 {
 	struct ccu_mix *mix = hw_to_ccu_mix(hw);
 	struct ccu_common * common = &mix->common;
 	struct ccu_div_config *div = mix->div;
-	unsigned long val;
-	unsigned int reg;
+	rt_uint64_t val;
+	rt_uint32_t reg;
 
 	if (!div){
 		if (mix->factor)
@@ -244,7 +244,7 @@ static int ccu_mix_trigger_fc(struct clk_hw *hw)
 {
 	struct ccu_mix *mix = hw_to_ccu_mix(hw);
 	struct ccu_common * common = &mix->common;
-	unsigned long val = 0;
+	rt_uint64_t val = 0;
 
 	int ret = 0, timeout = 50;
 
@@ -286,20 +286,20 @@ static int ccu_mix_trigger_fc(struct clk_hw *hw)
 
 }
 
-static long ccu_mix_round_rate(struct clk_hw *hw, unsigned long rate,
-				unsigned long *prate)
+static long ccu_mix_round_rate(struct clk_hw *hw, rt_uint64_t rate,
+				rt_uint64_t *prate)
 {
 	return rate;
 }
 
-unsigned long ccu_mix_calc_best_rate(struct clk_hw *hw, unsigned long rate, unsigned int *mux_val, unsigned int *div_val)
+rt_uint64_t ccu_mix_calc_best_rate(struct clk_hw *hw, rt_uint64_t rate, rt_uint32_t *mux_val, rt_uint32_t *div_val)
 {
 	struct ccu_mix *mix = hw_to_ccu_mix(hw);
 	struct ccu_common * common = &mix->common;
 	struct ccu_div_config *div = mix->div? mix->div: NULL;
 	struct clk_hw *parent;
-	unsigned long parent_rate = 0, best_rate = 0;
-	unsigned int i, j, div_max;
+	rt_uint64_t parent_rate = 0, best_rate = 0;
+	rt_uint32_t i, j, div_max;
 
 	for (i = 0; i < common->num_parents; i++) {
 
@@ -330,24 +330,23 @@ static int ccu_mix_determine_rate(struct clk_hw *hw, struct clk_rate_request *re
 	return 0;
 }
 
-static int ccu_mix_set_rate(struct clk_hw *hw, unsigned long rate,
-			   unsigned long parent_rate)
+static int ccu_mix_set_rate(struct clk_hw *hw, rt_uint64_t rate,
+			   rt_uint64_t parent_rate)
 {
 	struct ccu_mix *mix = hw_to_ccu_mix(hw);
 	struct ccu_common * common = &mix->common;
 	struct ccu_div_config *div = mix->div? mix->div: NULL;
 	struct ccu_mux_config *mux = mix->mux? mix->mux: NULL;
-	unsigned long best_rate;
-	unsigned long flags;
-	unsigned int cur_mux, cur_div, mux_val = 0, div_val = 0;
-	unsigned int reg = 0;
+	rt_uint64_t flags;
+	rt_uint32_t cur_mux, cur_div, mux_val = 0, div_val = 0;
+	rt_uint32_t reg = 0;
 	int ret = 0;
 
 	if(!div && !mux){
 		return 0;
 	}
 
-	best_rate = ccu_mix_calc_best_rate(hw, rate, &mux_val, &div_val);
+	ccu_mix_calc_best_rate(hw, rate, &mux_val, &div_val);
 	if (!rt_strcmp(common->name, tswi8_clk_name)){
 		if(mux){
 		cur_mux = twsi8_reg_val >> mux->shift;
@@ -417,7 +416,7 @@ static unsigned char ccu_mix_get_parent(struct clk_hw *hw)
 	struct ccu_mix *mix = hw_to_ccu_mix(hw);
 	struct ccu_common * common = &mix->common;
 	struct ccu_mux_config *mux = mix->mux;
-	unsigned int reg;
+	rt_uint32_t reg;
 	unsigned char parent;
 
 	if(!mux)
@@ -454,8 +453,8 @@ static int ccu_mix_set_parent(struct clk_hw *hw, unsigned char index)
 	struct ccu_mix *mix = hw_to_ccu_mix(hw);
 	struct ccu_common * common = &mix->common;
 	struct ccu_mux_config *mux = mix->mux;
-	unsigned int reg = 0;
-	unsigned long flags;
+	rt_uint32_t reg = 0;
+	rt_uint64_t flags;
 	int ret = 0;
 
 	if(!mux)

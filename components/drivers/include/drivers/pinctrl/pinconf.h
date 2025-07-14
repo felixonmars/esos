@@ -24,10 +24,10 @@ struct pinctrl_dev;
  */
 struct pinconf_ops {
 	bool is_generic;
-	int (*pin_config_get) (struct pinctrl_dev *pctldev, unsigned pin, unsigned long *config);
-	int (*pin_config_set) (struct pinctrl_dev *pctldev, unsigned pin, unsigned long config);
-	int (*pin_config_group_get) (struct pinctrl_dev *pctldev, unsigned selector, unsigned long *config);
-	int (*pin_config_group_set) (struct pinctrl_dev *pctldev, unsigned selector, unsigned long config);
+	int (*pin_config_get) (struct pinctrl_dev *pctldev, rt_uint32_t pin, rt_uint64_t *config);
+	int (*pin_config_set) (struct pinctrl_dev *pctldev, rt_uint32_t pin, rt_uint64_t config);
+	int (*pin_config_group_get) (struct pinctrl_dev *pctldev, rt_uint32_t selector, rt_uint64_t *config);
+	int (*pin_config_group_set) (struct pinctrl_dev *pctldev, rt_uint32_t selector, rt_uint64_t config);
 };
 
 #endif /* __RT_PINCONF_H__ */

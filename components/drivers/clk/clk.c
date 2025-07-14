@@ -20,9 +20,9 @@ struct clk {
 	/* struct device *dev; */
 	/* const char *dev_id; */
 	const char *con_id;
-	unsigned long min_rate;
-	unsigned long max_rate;
-	unsigned int exclusive_count;
+	rt_uint64_t min_rate;
+	rt_uint64_t max_rate;
+	rt_uint32_t exclusive_count;
 	struct hlist_node clks_node;
 };
 
@@ -47,22 +47,22 @@ struct clk_core {
 	struct clk_parent_map   *parents;
 	unsigned char           num_parents;
 	unsigned char           new_parent_index;
-	unsigned long           rate;
-	unsigned long           req_rate;
-	unsigned long           new_rate;
+	rt_uint64_t           rate;
+	rt_uint64_t           req_rate;
+	rt_uint64_t           new_rate;
 	struct clk_core         *new_parent;
 	struct clk_core         *new_child;
-	unsigned long           flags;
+	rt_uint64_t           flags;
 	unsigned char           orphan;
-	unsigned int            enable_count;
-	unsigned int            prepare_count;
-	unsigned int            protect_count;
-	unsigned long           min_rate;
-	unsigned long           max_rate;
+	rt_uint32_t            enable_count;
+	rt_uint32_t            prepare_count;
+	rt_uint32_t            protect_count;
+	rt_uint64_t           min_rate;
+	rt_uint64_t           max_rate;
 	struct hlist_head       children;
 	struct hlist_node       child_node;
 	struct hlist_head       clks;
-	unsigned int            notifier_count;
+	rt_uint32_t            notifier_count;
 };
 
 /**
@@ -94,7 +94,7 @@ static void clk_prepare_unlock(void)
 	rt_mutex_release(&clk_prepare_mutex);
 }
 
-static unsigned long clk_enable_lock(void)
+static rt_uint64_t clk_enable_lock(void)
 {
 	rt_base_t flags;
 
@@ -103,7 +103,7 @@ static unsigned long clk_enable_lock(void)
 	return flags;
 }
 
-static void clk_enable_unlock(unsigned long flags)
+static void clk_enable_unlock(rt_uint64_t flags)
 {
         rt_spin_unlock_irqrestore(&enable_lock, flags);
 }
@@ -465,7 +465,7 @@ static struct clk_core *clk_core_get(struct clk_core *core, unsigned char p_inde
 	return hw->core;
 }
 
-static unsigned long clk_core_get_rate_nolock(struct clk_core *core)
+static rt_uint64_t clk_core_get_rate_nolock(struct clk_core *core)
 {
 	if (!core)
 		return 0;
@@ -481,7 +481,7 @@ static unsigned long clk_core_get_rate_nolock(struct clk_core *core)
 	return 0;
 }
 
-unsigned long clk_hw_get_rate(const struct clk_hw *hw)
+rt_uint64_t clk_hw_get_rate(const struct clk_hw *hw)
 {
         return clk_core_get_rate_nolock(hw->core);
 }
@@ -697,7 +697,7 @@ static struct clk_core *clk_core_get_parent_by_index(struct clk_core *core,
 }
 
 struct clk_hw *
-clk_hw_get_parent_by_index(const struct clk_hw *hw, unsigned int index)
+clk_hw_get_parent_by_index(const struct clk_hw *hw, rt_uint32_t index)
 {
         struct clk_core *parent;
 
@@ -860,10 +860,10 @@ static void __clk_set_parent_after(struct clk_core *core,
 	}
 }
 
-static unsigned long clk_recalc(struct clk_core *core,
-                                unsigned long parent_rate)
+static rt_uint64_t clk_recalc(struct clk_core *core,
+                                rt_uint64_t parent_rate)
 {
-	unsigned long rate = parent_rate;
+	rt_uint64_t rate = parent_rate;
 
 	if (core->ops->recalc_rate/* && !clk_pm_runtime_get(core) */) {
 		rate = core->ops->recalc_rate(core->hw, parent_rate);
@@ -886,10 +886,10 @@ static unsigned long clk_recalc(struct clk_core *core,
  * if necessary.
  */
 static void __clk_recalc_rates(struct clk_core *core, bool update_req,
-                               unsigned long msg)
+                               rt_uint64_t msg)
 {
-//	unsigned long old_rate;
-	unsigned long parent_rate = 0;
+//	rt_uint64_t old_rate;
+	rt_uint64_t parent_rate = 0;
 	struct clk_core *child;
 
 //	old_rate = core->rate;
@@ -963,7 +963,7 @@ static int __clk_core_init(struct clk_core *core)
 {
 	int ret = 0;
 	struct clk_core *parent;
-	unsigned long rate;
+	rt_uint64_t rate;
 
 	clk_prepare_lock();
 
@@ -1223,7 +1223,7 @@ struct clk_hw *
 of_clk_hw_onecell_get(struct fdt_phandle_args *clkspec, void *data)
 {
 	struct clk_hw_onecell_data *hw_data = data;
-	unsigned int idx = clkspec->args[0];
+	rt_uint32_t idx = clkspec->args[0];
 
 	if (idx >= hw_data->num) {
 		rt_kprintf("%s: invalid index %u\n", __func__, idx);
@@ -1475,8 +1475,8 @@ void clk_disable_unprepare(struct clk *clk)
 }
 
 static void clk_core_get_boundaries(struct clk_core *core,
-                                    unsigned long *min_rate,
-                                    unsigned long *max_rate)
+                                    rt_uint64_t *min_rate,
+                                    rt_uint64_t *max_rate)
 {
 	struct clk *clk_user;
 
@@ -1494,7 +1494,7 @@ static void clk_core_get_boundaries(struct clk_core *core,
 
 static void clk_core_init_rate_req(struct clk_core * const core,
                                    struct clk_rate_request *req,
-                                   unsigned long rate)
+                                   rt_uint64_t rate)
 {
 	struct clk_core *parent;
 
@@ -1604,12 +1604,11 @@ static int clk_core_determine_round_nolock(struct clk_core *core,
 static bool clk_core_has_parent(struct clk_core *core, const struct clk_core *parent)
 {
 	struct clk_core *tmp;
-	unsigned int i;
+	rt_uint32_t i;
 
 	/* Optimize for the case where the parent is already the parent. */
 	if (core->parent == parent)
 		return true;
-	
 	for (i = 0; i < core->num_parents; i++) {
 		tmp = clk_core_get_parent_by_index(core, i);
 		if (!tmp)
@@ -1627,7 +1626,7 @@ clk_core_forward_rate_req(struct clk_core *core,
                           const struct clk_rate_request *old_req,
                           struct clk_core *parent,
                           struct clk_rate_request *req,
-                          unsigned long parent_rate)
+                          rt_uint64_t parent_rate)
 {
         if (!clk_core_has_parent(core, parent))
 		return;
@@ -1685,8 +1684,8 @@ static void clk_core_rate_restore_protect(struct clk_core *core, int count)
 	core->protect_count = count;
 }
 
-static unsigned long clk_core_req_round_rate_nolock(struct clk_core *core,
-                                                     unsigned long req_rate)
+static rt_uint64_t clk_core_req_round_rate_nolock(struct clk_core *core,
+                                                     rt_uint64_t req_rate)
 {
 	int ret, cnt;
 	struct clk_rate_request req;
@@ -1752,7 +1751,7 @@ static int clk_fetch_parent_index(struct clk_core *core,
         return i;
 }
 
-static void clk_calc_subtree(struct clk_core *core, unsigned long new_rate,
+static void clk_calc_subtree(struct clk_core *core, rt_uint64_t new_rate,
                              struct clk_core *new_parent, unsigned char p_index)
 {
         struct clk_core *child;
@@ -1776,14 +1775,14 @@ static void clk_calc_subtree(struct clk_core *core, unsigned long new_rate,
  * changed.
  */
 static struct clk_core *clk_calc_new_rates(struct clk_core *core,
-                                           unsigned long rate)
+                                           rt_uint64_t rate)
 {
         struct clk_core *top = core;
         struct clk_core *old_parent, *parent;
-        unsigned long best_parent_rate = 0;
-        unsigned long new_rate;
-        unsigned long min_rate;
-        unsigned long max_rate;
+        rt_uint64_t best_parent_rate = 0;
+        rt_uint64_t new_rate;
+        rt_uint64_t min_rate;
+        rt_uint64_t max_rate;
         int p_index = 0;
         long ret;
 
@@ -1860,7 +1859,7 @@ out:
  * abort the change.
  */
 static struct clk_core *clk_propagate_rate_change(struct clk_core *core,
-                                                  unsigned long event)
+                                                  rt_uint64_t event)
 {
         struct clk_core *child, *tmp_clk, *fail_clk = NULL;
         int ret = NOTIFY_DONE;
@@ -1904,8 +1903,8 @@ static void clk_change_rate(struct clk_core *core)
 {
         struct clk_core *child;
         struct hlist_node *tmp;
-//        unsigned long old_rate;
-        unsigned long best_parent_rate = 0;
+//        rt_uint64_t old_rate;
+        rt_uint64_t best_parent_rate = 0;
         bool skip_set_rate = false;
         struct clk_core *old_parent;
         struct clk_core *parent = NULL;
@@ -1981,10 +1980,10 @@ static void clk_change_rate(struct clk_core *core)
 }
 
 static int clk_core_set_rate_nolock(struct clk_core *core,
-                                    unsigned long req_rate)
+                                    rt_uint64_t req_rate)
 {
 	struct clk_core *top/*, *fail_clk */;
-	unsigned long rate;
+	rt_uint64_t rate;
 	int ret = 0;
 
 	if (!core)
@@ -2024,7 +2023,7 @@ static int clk_core_set_rate_nolock(struct clk_core *core,
 	return ret;
 }
 
-int clk_set_rate(struct clk *clk, unsigned long rate)
+int clk_set_rate(struct clk *clk, rt_uint64_t rate)
 {
 	int ret;
 
@@ -2047,7 +2046,7 @@ int clk_set_rate(struct clk *clk, unsigned long rate)
 	return ret;
 }
 
-static unsigned long clk_core_get_rate_recalc(struct clk_core *core)
+static rt_uint64_t clk_core_get_rate_recalc(struct clk_core *core)
 {
 	if (core && (core->flags & CLK_GET_RATE_NOCACHE))
 		__clk_recalc_rates(core, false, 0);
@@ -2055,9 +2054,9 @@ static unsigned long clk_core_get_rate_recalc(struct clk_core *core)
 	return clk_core_get_rate_nolock(core);
 }
 
-unsigned long clk_get_rate(struct clk *clk)
+rt_uint64_t clk_get_rate(struct clk *clk)
 {
-	unsigned long rate;
+	rt_uint64_t rate;
 
 	if (!clk)
 		return 0;
@@ -2072,7 +2071,7 @@ unsigned long clk_get_rate(struct clk *clk)
 static int __clk_set_parent(struct clk_core *core, struct clk_core *parent,
                             unsigned char p_index)
 {
-	unsigned long flags;
+	rt_uint64_t flags;
 	int ret = 0;
 	struct clk_core *old_parent;
 
@@ -2102,7 +2101,6 @@ static int clk_core_set_parent_nolock(struct clk_core *core,
 {
 	int ret = 0;
 	int p_index = 0;
-	unsigned long p_rate;
 
 	if (!core)
 		return 0;
@@ -2129,7 +2127,7 @@ static int clk_core_set_parent_nolock(struct clk_core *core,
 					__func__, parent->name, core->name);
 			return p_index;
 		}
-		p_rate = parent->rate;
+		parent->rate;
 	}
 
 	/* do the re-parent */
@@ -2150,7 +2148,7 @@ int clk_hw_set_parent(struct clk_hw *hw, struct clk_hw *parent)
 	return clk_core_set_parent_nolock(hw->core, parent->core);
 }
 
-unsigned int clk_hw_get_num_parents(const struct clk_hw *hw)
+rt_uint32_t clk_hw_get_num_parents(const struct clk_hw *hw)
 {
 	return hw->core->num_parents;
 }

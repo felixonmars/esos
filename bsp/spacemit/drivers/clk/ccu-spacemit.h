@@ -181,16 +181,16 @@ enum {
 struct ccu_common {
 	void *base;
 	enum ccu_base_type base_type;
-	unsigned int	reg_type;
-	unsigned int	reg_ctrl;
-	unsigned int	reg_sel;
-	unsigned int	reg_xtc;
-	unsigned int	fc;
+	rt_uint32_t	reg_type;
+	rt_uint32_t	reg_ctrl;
+	rt_uint32_t	reg_sel;
+	rt_uint32_t	reg_xtc;
+	rt_uint32_t	fc;
 	bool	is_pll;
 	const char		*name;
 	const struct clk_ops	*ops;
 	const char		* const *parent_names;
-	unsigned char num_parents;
+	rt_uint8_t num_parents;
 	unsigned long	flags;
 	struct rt_spinlock lock;
 	struct clk_hw	hw;
@@ -211,7 +211,7 @@ struct spacemit_k1x_clk {
 
 struct clk_hw_table {
 	char	*name;
-	unsigned int	clk_hw_id;
+	rt_uint32_t	clk_hw_id;
 };
 
 extern rt_ubase_t g_cru_lock;

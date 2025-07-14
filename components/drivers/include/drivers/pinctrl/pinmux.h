@@ -42,16 +42,16 @@ struct pinctrl_dev;
  *      to the GPIO controllers that need pin muxing.
  */
 struct pinmux_ops {
-	int (*request) (struct pinctrl_dev *pctldev, unsigned offset);
-	int (*free) (struct pinctrl_dev *pctldev, unsigned offset);
+	int (*request) (struct pinctrl_dev *pctldev, rt_uint32_t offset);
+	int (*free) (struct pinctrl_dev *pctldev, rt_uint32_t offset);
 	int (*get_functions_count) (struct pinctrl_dev *pctldev);
-	const char *(*get_function_name) (struct pinctrl_dev *pctldev, unsigned selector);
-	int (*get_function_groups) (struct pinctrl_dev *pctldev, unsigned selector, const char * const **groups, unsigned * const num_groups);
-	int (*enable) (struct pinctrl_dev *pctldev, unsigned func_selector, unsigned group_selector);
-	void (*disable) (struct pinctrl_dev *pctldev, unsigned func_selector, unsigned group_selector);
-	int (*gpio_request_enable) (struct pinctrl_dev *pctldev, struct pinctrl_gpio_range *range, unsigned offset);
-	void (*gpio_disable_free) (struct pinctrl_dev *pctldev, struct pinctrl_gpio_range *range, unsigned offset);
-	int (*gpio_set_direction) (struct pinctrl_dev *pctldev, struct pinctrl_gpio_range *range, unsigned offset, bool input);
+	const char *(*get_function_name) (struct pinctrl_dev *pctldev, rt_uint32_t selector);
+	int (*get_function_groups) (struct pinctrl_dev *pctldev, rt_uint32_t selector, const char * const **groups, rt_uint32_t * const num_groups);
+	int (*enable) (struct pinctrl_dev *pctldev, rt_uint32_t func_selector, rt_uint32_t group_selector);
+	void (*disable) (struct pinctrl_dev *pctldev, rt_uint32_t func_selector, rt_uint32_t group_selector);
+	int (*gpio_request_enable) (struct pinctrl_dev *pctldev, struct pinctrl_gpio_range *range, rt_uint32_t offset);
+	void (*gpio_disable_free) (struct pinctrl_dev *pctldev, struct pinctrl_gpio_range *range, rt_uint32_t offset);
+	int (*gpio_set_direction) (struct pinctrl_dev *pctldev, struct pinctrl_gpio_range *range, rt_uint32_t offset, bool input);
 };
 
 #endif /* __RT_PINMUX_H__ */

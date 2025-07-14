@@ -4,8 +4,8 @@
 int pinmux_check_ops(struct pinctrl_dev *pctldev)
 {
 	const struct pinmux_ops *ops = pctldev->desc->pmxops;
-	unsigned nfuncs;
-	unsigned selector = 0;
+	rt_uint32_t nfuncs;
+	rt_uint32_t selector = 0;
 
 	/* Check that we implement required operations */
 	if (!ops ||
@@ -46,13 +46,12 @@ static int pinmux_func_name_to_selector(struct pinctrl_dev *pctldev,
                                         const char *function)
 {
 	const struct pinmux_ops *ops = pctldev->desc->pmxops;
-	unsigned nfuncs = ops->get_functions_count(pctldev);
-	unsigned selector = 0;
+	rt_uint32_t nfuncs = ops->get_functions_count(pctldev);
+	rt_uint32_t selector = 0;
 
 	/* See if this pctldev has this function */
 	while (selector < nfuncs) {
 		const char *fname = ops->get_function_name(pctldev, selector);
-		
 		if (!rt_strcmp(function, fname))
 			return selector;
 
@@ -71,7 +70,7 @@ int pinmux_map_to_setting(struct pinctrl_map const *map,
 	struct pinctrl_dev *pctldev = setting->pctldev;
 	const struct pinmux_ops *pmxops = pctldev->desc->pmxops;
 	char const * const *groups;
-	unsigned num_groups;
+	rt_uint32_t num_groups;
 	int ret;
 	const char *group;
 	int i;
@@ -188,8 +187,8 @@ void pinmux_disable_setting(struct pinctrl_setting const *setting)
 	const struct pinctrl_ops *pctlops = pctldev->desc->pctlops;
 	const struct pinmux_ops *ops = pctldev->desc->pmxops;
 	int ret;
-	const unsigned *pins;
-	unsigned num_pins;
+	const rt_uint32_t *pins;
+	rt_uint32_t num_pins;
 	int i;
 	struct pin_desc *desc;
 
@@ -318,8 +317,8 @@ int pinmux_enable_setting(struct pinctrl_setting const *setting)
 	const struct pinctrl_ops *pctlops = pctldev->desc->pctlops;
 	const struct pinmux_ops *ops = pctldev->desc->pmxops;
 	int ret;
-	const unsigned *pins;
-	unsigned num_pins;
+	const rt_uint32_t *pins;
+	rt_uint32_t num_pins;
 	int i;
 	struct pin_desc *desc;
 
@@ -381,7 +380,7 @@ extern char *rt_kasprintf(const char *fmt, ...);
  */
 int pinmux_request_gpio(struct pinctrl_dev *pctldev,
                         struct pinctrl_gpio_range *range,
-                        unsigned pin, unsigned gpio)
+                        rt_uint32_t pin, rt_uint32_t gpio)
 {
 	char *owner;
 	int ret;
@@ -404,7 +403,7 @@ int pinmux_request_gpio(struct pinctrl_dev *pctldev,
  * @pin: the affected currently GPIO-muxed in pin
  * @range: applicable GPIO range
  */
-void pinmux_free_gpio(struct pinctrl_dev *pctldev, unsigned pin,
+void pinmux_free_gpio(struct pinctrl_dev *pctldev, rt_uint32_t pin,
                       struct pinctrl_gpio_range *range)
 {
 	const char *owner;

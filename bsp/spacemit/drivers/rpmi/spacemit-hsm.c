@@ -83,15 +83,15 @@ static struct rpmi_hsm_platform_ops hsm_ops = {
 	.hart_suspend_finalize = hsm_hart_suspend_finalize
 };
 
-static int spacemit_rpmi_get_hsm_config(struct dtb_node *node, void *con, char *match)
+static rt_int32_t spacemit_rpmi_get_hsm_config(struct dtb_node *node, void *con, char *match)
 {
-	int i = 0, ret = 0;
+	rt_int32_t i = 0, ret = 0;
 	struct dtb_node *node_ptr = node;
-	int property_size;
+	rt_int32_t property_size;
 	rt_uint32_t u32_value;
 	rt_uint32_t *u32_ptr;
 	const void* prop_data;
-	int prop_len;
+	rt_int32_t prop_len;
 	struct spacemit_rpmi_config *c = (struct spacemit_rpmi_config *)con;
 	struct spacemit_rpmi_hsm_config *config = &c->hsm_config;
 	struct spacemit_rpmi_hsm_ops *pos = RT_NULL;
@@ -230,9 +230,9 @@ static struct rpmi_syssusp_platform_ops syssusp_ops = {
 	.system_suspend_resume = syssusp_resume
 };
 
-static int spacemit_rpmi_register_hsm_service(void *con, struct rpmi_context *cntx)
+static rt_int32_t spacemit_rpmi_register_hsm_service(void *con, struct rpmi_context *cntx)
 {
-	int ret;
+	rt_int32_t ret;
 	struct rpmi_hsm* hsm = NULL;
 	struct rpmi_service_group *group = NULL;
 	struct spacemit_rpmi_config *c = (struct spacemit_rpmi_config *)con;
@@ -281,7 +281,7 @@ struct spacemit_rpmi_func rpmi_hsm_func = {
 	.rpmi_register_service = spacemit_rpmi_register_hsm_service,
 };
 
-int spacemit_rpmi_hsm_register(rt_list_t *node)
+rt_int32_t spacemit_rpmi_hsm_register(rt_list_t *node)
 {
 	rt_mutex_take(&rpmi_hsm_mtx, RT_WAITING_FOREVER);
 	rt_list_insert_after(&rpmi_hsm_list, node);

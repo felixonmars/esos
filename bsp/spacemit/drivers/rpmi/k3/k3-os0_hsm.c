@@ -62,7 +62,7 @@ struct rpmi_hsm_platform_ops k3_os0_hsm_pops = {
 	.hart_suspend_finalize = k3_hsm_hart_suspend_finalize
 };
 
-static int _k3_os0_hsm_init(void *priv)
+static rt_int32_t _k3_os0_hsm_init(void *priv)
 {
 	/* platform releated, get the registers or other thing what you want */
 	return 0;
@@ -122,7 +122,7 @@ static struct spacemit_rpmi_hsm_ops k3_os0_hsm_ops = {
 	.syssup_ops = &k3_os0_syssup_ops,
 };
 
-static int k3_os0_hsm_init(void)
+static rt_int32_t k3_os0_hsm_init(void)
 {
 
 	rt_list_init(&k3_os0_hsm_ops.list);

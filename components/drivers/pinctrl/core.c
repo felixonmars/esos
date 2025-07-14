@@ -18,14 +18,14 @@ static rt_list_t pinctrl_maps = RT_LIST_OBJECT_INIT(pinctrl_maps);
 /* Simplified asprintf. */
 char *rt_kvasprintf(const char *fmt, va_list ap)
 {
-	unsigned int len;
+	rt_uint32_t len;
 	char *p;
 	va_list aq;
 
 	va_copy(aq, ap);
 	len = rt_vsnprintf(NULL, 0, fmt, aq);
 	va_end(aq);
-	
+
 	p = rt_malloc(len+1);
 	if (!p)
 		return RT_NULL;
@@ -248,7 +248,7 @@ void pinctrl_unregister_map(struct pinctrl_map const *map)
 	rt_mutex_release(&pinctrl_maps_mutex);
 }
 
-int pinctrl_register_map(struct pinctrl_map const *maps, unsigned num_maps,
+int pinctrl_register_map(struct pinctrl_map const *maps, rt_uint32_t num_maps,
                          bool dup, bool locked)
 {
 	int i, ret;
@@ -466,13 +466,12 @@ struct pinctrl *pinctrl_get(struct dtb_node *dev)
 /* Deletes a range of pin descriptors */
 static void pinctrl_free_pindescs(struct pinctrl_dev *pctldev,
                                   const struct pinctrl_pin_desc *pins,
-                                  unsigned num_pins)
+                                  rt_uint32_t num_pins)
 {
 	int i;
 
 	for (i = 0; i < num_pins; i++) {
 		struct pin_desc *pindesc;
-		
 		pindesc = radix_tree_lookup(&pctldev->pin_desc_tree,
 				pins[i].number);
 		if (pindesc != NULL) {
@@ -486,7 +485,7 @@ static void pinctrl_free_pindescs(struct pinctrl_dev *pctldev,
 }
 
 static int pinctrl_register_one_pin(struct pinctrl_dev *pctldev,
-                                    unsigned number, const char *name)
+                                    rt_uint32_t number, const char *name)
 {
 	struct pin_desc *pindesc;
 
@@ -521,15 +520,14 @@ static int pinctrl_register_one_pin(struct pinctrl_dev *pctldev,
 	radix_tree_insert(&pctldev->pin_desc_tree, number, pindesc);
 	/* rt_kprintf("registered pin %d (%s) on %s\n",
 			number, pindesc->name, pctldev->desc->name); */
-	
 	return 0;
 }
 
 static int pinctrl_register_pins(struct pinctrl_dev *pctldev,
                                  struct pinctrl_pin_desc const *pins,
-                                 unsigned num_descs)
+                                 rt_uint32_t num_descs)
 {
-	unsigned i;
+	rt_uint32_t i;
 	int ret = 0;
 
 	for (i = 0; i < num_descs; i++) {
@@ -764,8 +762,8 @@ int pinctrl_get_group_selector(struct pinctrl_dev *pctldev,
                                const char *pin_group)
 {
 	const struct pinctrl_ops *pctlops = pctldev->desc->pctlops;
-	unsigned ngroups = pctlops->get_groups_count(pctldev);
-	unsigned group_selector = 0;
+	rt_uint32_t ngroups = pctlops->get_groups_count(pctldev);
+	rt_uint32_t group_selector = 0;
 
 	while (group_selector < ngroups) {
 		const char *gname = pctlops->get_group_name(pctldev, group_selector);
@@ -791,7 +789,7 @@ int pinctrl_get_group_selector(struct pinctrl_dev *pctldev,
  */
 int pin_get_from_name(struct pinctrl_dev *pctldev, const char *name)
 {
-	unsigned i, pin;
+	rt_uint32_t i, pin;
 
 	/* The pin number can be retrived from the pin controller descriptor */
 	for (i = 0; i < pctldev->desc->npins; i++) {
@@ -838,7 +836,7 @@ void pinctrl_add_gpio_range(struct pinctrl_dev *pctldev,
 
 void pinctrl_add_gpio_ranges(struct pinctrl_dev *pctldev,
                              struct pinctrl_gpio_range *ranges,
-                             unsigned nranges)
+                             rt_uint32_t nranges)
 {
 	int i;
 
@@ -876,7 +874,7 @@ struct pinctrl_dev *pinctrl_find_and_add_gpio_range(const char *devname,
  * controller, return the range or NULL
  */
 static struct pinctrl_gpio_range *
-pinctrl_match_gpio_range(struct pinctrl_dev *pctldev, unsigned gpio)
+pinctrl_match_gpio_range(struct pinctrl_dev *pctldev, rt_uint32_t gpio)
 {
 	struct pinctrl_gpio_range *range = NULL;
 
@@ -907,7 +905,7 @@ pinctrl_match_gpio_range(struct pinctrl_dev *pctldev, unsigned gpio)
  * -EPROBE_DEFER if the GPIO range could not be found in any device since it
  * may still have not been registered.
  */
-static int pinctrl_get_device_gpio_range(unsigned gpio,
+static int pinctrl_get_device_gpio_range(rt_uint32_t gpio,
                                          struct pinctrl_dev **outdev,
                                          struct pinctrl_gpio_range **outrange)
 {
@@ -941,7 +939,7 @@ static int pinctrl_get_device_gpio_range(unsigned gpio,
  * certain GPIO pin doesn't have back-end pinctrl device. If the return value
  * is false, it means that pinctrl device may not be ready.
  */
-static bool pinctrl_ready_for_gpio_range(unsigned gpio)
+static bool pinctrl_ready_for_gpio_range(rt_uint32_t gpio)
 {
 	struct pinctrl_dev *pctldev;
 	struct pinctrl_gpio_range *range = NULL;
@@ -982,9 +980,9 @@ static bool pinctrl_ready_for_gpio_range(unsigned gpio)
  * result of successful pinctrl_get_device_gpio_range calls)!
  */
 static inline int gpio_to_pin(struct pinctrl_gpio_range *range,
-                                unsigned int gpio)
+                                rt_uint32_t gpio)
 {
-	unsigned int offset = gpio - range->base;
+	rt_uint32_t offset = gpio - range->base;
 	if (range->pins)
 		return range->pins[offset];
 	else
@@ -999,7 +997,7 @@ static inline int gpio_to_pin(struct pinctrl_gpio_range *range,
  * as part of their gpio_request() semantics, platforms and individual drivers
  * shall *NOT* request GPIO pins to be muxed in.
  */
-int pinctrl_request_gpio(unsigned gpio)
+int pinctrl_request_gpio(rt_uint32_t gpio)
 {
 	struct pinctrl_dev *pctldev;
 	struct pinctrl_gpio_range *range;
@@ -1029,7 +1027,7 @@ int pinctrl_request_gpio(unsigned gpio)
  * as part of their gpio_free() semantics, platforms and individual drivers
  * shall *NOT* request GPIO pins to be muxed out.
  */
-void pinctrl_free_gpio(unsigned gpio)
+void pinctrl_free_gpio(rt_uint32_t gpio)
 {
 	struct pinctrl_dev *pctldev;
 	struct pinctrl_gpio_range *range;

@@ -28,52 +28,52 @@
 /* unified pllx_swcr1 for pll1~3 */
 union pllx_swcr1 {
 	struct {
-		unsigned int reg5:8;
-		unsigned int reg6:8;
-		unsigned int reg7:8;
-		unsigned int reg8:8;
+		rt_uint32_t reg5:8;
+		rt_uint32_t reg6:8;
+		rt_uint32_t reg7:8;
+		rt_uint32_t reg8:8;
 	} b;
-	unsigned int v;
+	rt_uint32_t v;
 };
 
 /* unified pllx_swcr2 for pll1~3 */
 union pllx_swcr2 {
 	struct {
-		unsigned int div1_en:1;
-		unsigned int div2_en:1;
-		unsigned int div3_en:1;
-		unsigned int div4_en:1;
-		unsigned int div5_en:1;
-		unsigned int div6_en:1;
-		unsigned int div7_en:1;
-		unsigned int div8_en:1;
-		unsigned int reserved1:4;
-		unsigned int atest_en:1;
-		unsigned int cktest_en:1;
-		unsigned int dtest_en:1;
-		unsigned int rdo:2;
-		unsigned int mon_cfg:4;
-		unsigned int reserved2:11;
+		rt_uint32_t div1_en:1;
+		rt_uint32_t div2_en:1;
+		rt_uint32_t div3_en:1;
+		rt_uint32_t div4_en:1;
+		rt_uint32_t div5_en:1;
+		rt_uint32_t div6_en:1;
+		rt_uint32_t div7_en:1;
+		rt_uint32_t div8_en:1;
+		rt_uint32_t reserved1:4;
+		rt_uint32_t atest_en:1;
+		rt_uint32_t cktest_en:1;
+		rt_uint32_t dtest_en:1;
+		rt_uint32_t rdo:2;
+		rt_uint32_t mon_cfg:4;
+		rt_uint32_t reserved2:11;
 	} b;
-	unsigned int v;
+	rt_uint32_t v;
 };
 
 /* unified pllx_swcr3 for pll1~3 */
 union pllx_swcr3{
 	struct {
-		unsigned int div_frc:24;
-		unsigned int div_int:7;
-		unsigned int pll_en:1;
+		rt_uint32_t div_frc:24;
+		rt_uint32_t div_int:7;
+		rt_uint32_t pll_en:1;
 	} b;
 
-	unsigned int v;
+	rt_uint32_t v;
 };
 
 static int ccu_pll_is_enabled(struct clk_hw *hw)
 {
 	struct ccu_pll *p = hw_to_ccu_pll(hw);
 	union pllx_swcr3 swcr3;
-	unsigned int enabled;
+	rt_uint32_t enabled;
 
 	swcr3.v = pll_readl_pll_swcr3(p->common);
 	enabled = swcr3.b.pll_en;
@@ -82,10 +82,10 @@ static int ccu_pll_is_enabled(struct clk_hw *hw)
 }
 
 /* frequency unit Mhz, return pll vco freq */
-static unsigned long __get_vco_freq(struct clk_hw *hw)
+static rt_uint64_t __get_vco_freq(struct clk_hw *hw)
 {
-	unsigned int reg5, reg6, reg7, reg8, size, i;
-	unsigned int div_int, div_frc;
+	rt_uint32_t reg5, reg6, reg7, reg8, size, i;
+	rt_uint32_t div_int, div_frc;
 	struct ccu_pll_rate_tbl *freq_pll_regs_table;
 	struct ccu_pll *p = hw_to_ccu_pll(hw);
 	union pllx_swcr1 swcr1;
@@ -122,11 +122,11 @@ static unsigned long __get_vco_freq(struct clk_hw *hw)
 
 static int ccu_pll_enable(struct clk_hw *hw)
 {
-	unsigned int delaytime = PLL_DELAYTIME;
+	rt_uint32_t delaytime = PLL_DELAYTIME;
 	struct ccu_pll *p = hw_to_ccu_pll(hw);
 	union pllx_swcr3 swcr3;
 	rt_tick_t tick_delay, now;
-	unsigned long flags;
+	rt_uint64_t flags;
 
 	if (ccu_pll_is_enabled(hw))
 		return 0;
@@ -170,7 +170,7 @@ static int ccu_pll_enable(struct clk_hw *hw)
 
 static void ccu_pll_disable(struct clk_hw *hw)
 {
-	unsigned long flags;
+	rt_uint64_t flags;
 	struct ccu_pll *p = hw_to_ccu_pll(hw);
 	union pllx_swcr3 swcr3;
 
@@ -188,19 +188,19 @@ static void ccu_pll_disable(struct clk_hw *hw)
  * clock off -> change rate setting -> clock on
  * This function doesn't really change rate, but cache the config
  */
-static int ccu_pll_set_rate(struct clk_hw *hw, unsigned long rate,
-			       unsigned long parent_rate)
+static int ccu_pll_set_rate(struct clk_hw *hw, rt_uint64_t rate,
+			       rt_uint64_t parent_rate)
 {
-	unsigned int i, reg5 = 0, reg6 = 0, reg7 = 0, reg8 = 0;
-	unsigned int div_int, div_frc;
-	unsigned long new_rate = rate, old_rate;
+	rt_uint32_t i, reg5 = 0, reg6 = 0, reg7 = 0, reg8 = 0;
+	rt_uint32_t div_int, div_frc;
+	rt_uint64_t new_rate = rate, old_rate;
 	struct ccu_pll *p = hw_to_ccu_pll(hw);
 	struct ccu_pll_config *params = &p->pll;
 	union pllx_swcr1 swcr1;
 	union pllx_swcr3 swcr3;
 	bool found = false;
 	bool pll_enabled = false;
-	unsigned long flags;
+	rt_uint64_t flags;
 
 	if (ccu_pll_is_enabled(hw)) {
 		pll_enabled = true;
@@ -260,18 +260,18 @@ static int ccu_pll_set_rate(struct clk_hw *hw, unsigned long rate,
 	return 0;
 }
 
-static unsigned long ccu_pll_recalc_rate(struct clk_hw *hw,
-					 unsigned long parent_rate)
+static rt_uint64_t ccu_pll_recalc_rate(struct clk_hw *hw,
+					 rt_uint64_t parent_rate)
 {
 	return __get_vco_freq(hw);
 }
 
-static long ccu_pll_round_rate(struct clk_hw *hw, unsigned long rate,
-			       unsigned long *prate)
+static long ccu_pll_round_rate(struct clk_hw *hw, rt_uint64_t rate,
+			       rt_uint64_t *prate)
 {
 	struct ccu_pll *p = hw_to_ccu_pll(hw);
-	unsigned long max_rate = 0;
-	unsigned int i;
+	rt_uint64_t max_rate = 0;
+	rt_uint32_t i;
 	struct ccu_pll_config *params = &p->pll;
 
 	if (rate > PLL_MAX_FREQ || rate < PLL_MIN_FREQ) {

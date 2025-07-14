@@ -36,11 +36,11 @@ struct clk_core;
 
 struct clk_onecell_data {
 	struct clk **clks;
-	unsigned int clk_num;
+	rt_uint32_t clk_num;
 };
 
 struct clk_hw_onecell_data {
-	unsigned int num;
+	rt_uint32_t num;
 	struct clk_hw *hws[128];
 };
 
@@ -63,10 +63,10 @@ struct clk_hw_onecell_data {
  */
 struct clk_rate_request {
 	struct clk_core *core;
-	unsigned long rate;
-	unsigned long min_rate;
-	unsigned long max_rate;
-	unsigned long best_parent_rate;
+	rt_uint64_t rate;
+	rt_uint64_t min_rate;
+	rt_uint64_t max_rate;
+	rt_uint64_t best_parent_rate;
 	struct clk_hw *best_parent_hw;
 };
 
@@ -106,7 +106,7 @@ struct clk_init_data {
 	const struct clk_parent_data    *parent_data;
 	const struct clk_hw             **parent_hws;
 	unsigned char                   num_parents;
-	unsigned long           flags;
+	rt_uint64_t           flags;
 };
 
 /**
@@ -132,8 +132,8 @@ struct clk_hw {
 };
 
 struct clk_div_table {
-	unsigned int    val;
-	unsigned int    div;
+	rt_uint32_t    val;
+	rt_uint32_t    div;
 };
 
 /**
@@ -208,9 +208,9 @@ struct clk_divider {
  */
 struct clk_fixed_rate {
 	struct          clk_hw hw;
-	unsigned long   fixed_rate;
-	/* unsigned long   fixed_accuracy; */
-	unsigned long   flags;
+	rt_uint64_t   fixed_rate;
+	/* rt_uint64_t   fixed_accuracy; */
+	rt_uint64_t   flags;
 };
 
 #define BITS_PER_LONG 32
@@ -246,10 +246,10 @@ struct clk_fixed_rate {
  })
 
 #define DIV_ROUND_DOWN_ULL(ll, d) \
-        ({ unsigned long long _tmp = (ll); do_div(_tmp, d); _tmp; })
+        ({ rt_uint64_t _tmp = (ll); do_div(_tmp, d); _tmp; })
 
 #define DIV_ROUND_UP_ULL(ll, d) \
-        DIV_ROUND_DOWN_ULL((unsigned long long)(ll) + (d) - 1, (d))
+        DIV_ROUND_DOWN_ULL((rt_uint64_t)(ll) + (d) - 1, (d))
 
 #define clk_div_mask(width)     ((1 << (width)) - 1)
 #define to_clk_divider(_hw) rt_container_of(_hw, struct clk_divider, hw)
@@ -399,19 +399,19 @@ struct clk_ops {
         void            (*disable_unused)(struct clk_hw *hw);
         int             (*save_context)(struct clk_hw *hw);
         void            (*restore_context)(struct clk_hw *hw);
-        unsigned long   (*recalc_rate)(struct clk_hw *hw,
-                                        unsigned long parent_rate);
-        long            (*round_rate)(struct clk_hw *hw, unsigned long rate,
-                                        unsigned long *parent_rate);
+        rt_uint64_t   (*recalc_rate)(struct clk_hw *hw,
+                                        rt_uint64_t parent_rate);
+        long            (*round_rate)(struct clk_hw *hw, rt_uint64_t rate,
+                                        rt_uint64_t *parent_rate);
         int             (*determine_rate)(struct clk_hw *hw,
                                           struct clk_rate_request *req);
         int             (*set_parent)(struct clk_hw *hw, unsigned char index);
         unsigned char   (*get_parent)(struct clk_hw *hw);
-        int             (*set_rate)(struct clk_hw *hw, unsigned long rate,
-                                    unsigned long parent_rate);
+        int             (*set_rate)(struct clk_hw *hw, rt_uint64_t rate,
+                                    rt_uint64_t parent_rate);
         int             (*set_rate_and_parent)(struct clk_hw *hw,
-                                    unsigned long rate,
-                                    unsigned long parent_rate, unsigned char index);
+                                    rt_uint64_t rate,
+                                    rt_uint64_t parent_rate, unsigned char index);
         int             (*init)(struct clk_hw *hw);
         void            (*terminate)(struct clk_hw *hw);
 };
@@ -447,7 +447,7 @@ struct clk_ops {
 const char *__clk_get_name(const struct clk *clk);
 struct clk_hw *__clk_get_hw(struct clk *clk);
 const char *clk_hw_get_name(const struct clk_hw *hw);
-unsigned long clk_hw_get_rate(const struct clk_hw *hw);
+rt_uint64_t clk_hw_get_rate(const struct clk_hw *hw);
 void clk_disable_unprepare(struct clk *clk);
 int clk_prepare_enable(struct clk *clk);
 struct clk *of_clk_get_by_name(struct dtb_node *np, const char *name);
@@ -458,23 +458,23 @@ int of_clk_add_hw_provider(struct dtb_node *np,
 struct clk_hw *
 of_clk_hw_onecell_get(struct fdt_phandle_args *clkspec, void *data);
 struct clk * of_clk_hw_register(struct dtb_node *node, struct clk_hw *hw);
-unsigned long divider_recalc_rate(struct clk_hw *hw, unsigned long parent_rate,
-				unsigned int val,
+rt_uint64_t divider_recalc_rate(struct clk_hw *hw, rt_uint64_t parent_rate,
+				rt_uint32_t val,
 				const struct clk_div_table *table,
-				unsigned long flags, unsigned long width);
+				rt_uint64_t flags, rt_uint64_t width);
 struct clk_hw *
-clk_hw_get_parent_by_index(const struct clk_hw *hw, unsigned int index);
-unsigned long clk_get_rate(struct clk *clk);
-int clk_set_rate(struct clk *clk, unsigned long rate);
+clk_hw_get_parent_by_index(const struct clk_hw *hw, rt_uint32_t index);
+rt_uint64_t clk_get_rate(struct clk *clk);
+int clk_set_rate(struct clk *clk, rt_uint64_t rate);
 struct clk *clk_hw_get_clk(struct clk_hw *hw, const char *con_id);
 int clk_hw_set_parent(struct clk_hw *hw, struct clk_hw *parent);
-unsigned int clk_hw_get_num_parents(const struct clk_hw *hw);
+rt_uint32_t clk_hw_get_num_parents(const struct clk_hw *hw);
 
 struct clk_hw *__clk_hw_register_fixed_rate(/*struct device *dev, */
 		struct dtb_node *np, const char *name,
 		const char *parent_name, const struct clk_hw *parent_hw,
-		const struct clk_parent_data *parent_data, unsigned long flags,
-		unsigned long fixed_rate/*, unsigned long fixed_accuracy */,
-		unsigned long clk_fixed_flags/*, bool devm */);
+		const struct clk_parent_data *parent_data, rt_uint64_t flags,
+		rt_uint64_t fixed_rate/*, rt_uint64_t fixed_accuracy */,
+		rt_uint64_t clk_fixed_flags/*, bool devm */);
 
 #endif /* __RT_THREAD_CLK_PROVIDER_H__ */

@@ -32,9 +32,9 @@
 struct spacemit_rpmi_hsm_config {
 	rt_uint32_t hartids[HSM_SUSPEND_MAX_HARTIDS];
 	struct rpmi_hsm_suspend_type stype[MAX_HSM_SUSPEND_TYPE];
-	int hartcnt;
-	int type_cnt;
-	int support_syssup;
+	rt_int32_t hartcnt;
+	rt_int32_t type_cnt;
+	rt_int32_t support_syssup;
 	struct dtb_node *node;
 	struct rpmi_hsm_platform_ops *hsm_ops;
 	struct rpmi_syssusp_platform_ops *syssup_ops;
@@ -44,7 +44,7 @@ struct spacemit_rpmi_hsm_config {
 
 struct spacemit_rpmi_hsm_ops {
 	char *name;
-	int (*init)(void *priv);
+	rt_int32_t (*init)(void *priv);
 	struct rpmi_hsm_platform_ops *hsm_ops;
 	struct rpmi_syssusp_platform_ops *syssup_ops;
 	rt_list_t list;
@@ -52,7 +52,7 @@ struct spacemit_rpmi_hsm_ops {
 
 /* RPMI clock structures */
 struct spacemit_rpmi_clk_config {
-	int num_clk;
+	rt_int32_t num_clk;
 	struct rpmi_clock_data *clk_data;
 	struct dtb_node *node;
 	struct rpmi_clock_platform_ops *ops;
@@ -62,14 +62,14 @@ struct spacemit_rpmi_clk_config {
 
 struct spacemit_rpmi_clk_ops {
 	char *name;
-	int (*init)(void *priv);
+	rt_int32_t (*init)(void *priv);
 	struct rpmi_clock_platform_ops *clk_ops;
 	rt_list_t list;
 };
 
 /* RPMI voltage structures */
 struct spacemit_rpmi_voltage_config {
-	int domain_count;
+	rt_int32_t domain_count;
 	struct rpmi_voltage_data *voltage_data;
 	struct dtb_node *node;
 	struct rpmi_voltage_platform_ops *ops;
@@ -79,14 +79,14 @@ struct spacemit_rpmi_voltage_config {
 
 struct spacemit_rpmi_voltage_ops {
 	char *name;
-	int (*init)(void *priv);
+	rt_int32_t (*init)(void *priv);
 	struct rpmi_voltage_platform_ops *voltage_ops;
 	rt_list_t list;
 };
 
 /* RPMI sysreset structures */
 struct spacemit_rpmi_sysreset_config {
-	int reset;
+	rt_int32_t reset;
 };
 
 struct spacemit_rpmi_config {

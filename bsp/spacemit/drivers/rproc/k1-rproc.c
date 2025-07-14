@@ -72,7 +72,7 @@ struct spacemit_rproc {
 	struct rpmsg_device *rpmsgdev;
 };
 
-static void *get_resource_table (int proc_id, int rsc_id, int *len)
+static void *get_resource_table (rt_int32_t proc_id, rt_int32_t rsc_id, rt_int32_t *len)
 {
 	*len = sizeof(resources[proc_id][rsc_id]);
 	return &resources[proc_id][rsc_id];
@@ -109,7 +109,7 @@ static void spacemit_proc_remove(struct remoteproc *rproc)
 
 static void * spacemit_proc_mmap(struct remoteproc *rproc, metal_phys_addr_t *pa,
 			metal_phys_addr_t *da, size_t size,
-			unsigned int attribute, struct metal_io_region **io)
+			rt_uint32_t attribute, struct metal_io_region **io)
 {
 	struct remoteproc_mem *mem;
 	metal_phys_addr_t lpa, lda;
@@ -183,11 +183,11 @@ struct remoteproc_ops spacemit_proc_ops = {
 
 static struct remoteproc *platform_create_proc(struct spacemit_rproc *rproc)
 {
-	int ret, i = 0;
+	rt_int32_t ret, i = 0;
 	char *string;
-	int size;
+	rt_int32_t size;
 	void *rsc_table;
-	int rsc_size;
+	rt_int32_t rsc_size;
 	struct remoteproc *_rproc;
 	metal_phys_addr_t pa;
 
@@ -262,8 +262,8 @@ static struct remoteproc *platform_create_proc(struct spacemit_rproc *rproc)
 }
 
 struct rpmsg_device *
-platform_create_rpmsg_vdev(struct spacemit_rproc *proc, unsigned int vdev_index,
-		unsigned int role,
+platform_create_rpmsg_vdev(struct spacemit_rproc *proc, rt_uint32_t vdev_index,
+		rt_uint32_t role,
 		void (*rst_cb)(struct virtio_device *vdev),
 		rpmsg_ns_bind_cb ns_bind_cb)
 {
@@ -272,7 +272,7 @@ platform_create_rpmsg_vdev(struct spacemit_rproc *proc, unsigned int vdev_index,
 	struct rpmsg_virtio_device *rpmsg_vdev;
 	struct virtio_device *vdev;
 	struct metal_io_region *shbuf_io;
-	int ret;
+	rt_int32_t ret;
 
 	rpmsg_vdev = metal_allocate_memory(sizeof(*rpmsg_vdev));
 	if (!rpmsg_vdev)
@@ -322,7 +322,7 @@ err1:
 
 static void spacemit_platform_poll(void *priv)
 {
-	int ret;
+	rt_int32_t ret;
 	rt_uint32_t e;
 	struct spacemit_rproc *sproc = (struct spacemit_rproc *)priv;
 	struct remoteproc *rproc = sproc->rproc;
@@ -332,23 +332,22 @@ static void spacemit_platform_poll(void *priv)
 				3, /* channel 0 & channel 1 */
 				RT_EVENT_FLAG_OR | RT_EVENT_FLAG_CLEAR,
 				RT_WAITING_FOREVER, &e);
-		
 		ret = remoteproc_get_notification(rproc, RSC_NOTIFY_ID_ANY);
 		if (ret)
 			return;
 	}
 }
 
-extern int init_system(void);
+extern rt_int32_t init_system(void);
 
 struct rpmsg_device *rpdev;
 
-static int spacemit_rproc_probe(void)
+static rt_int32_t spacemit_rproc_probe(void)
 {
-	int i, irq;
+	rt_int32_t i, irq;
 	rt_thread_t tid;
 	struct spacemit_rproc *rproc;
-	int property_size;
+	rt_int32_t property_size;
 	rt_uint32_t u32_value;
 	rt_uint32_t *u32_ptr;
 	struct dtb_node *compatible_node;

@@ -4,15 +4,15 @@
 
 #define to_clk_fixed_rate(_hw) rt_container_of(_hw, struct clk_fixed_rate, hw)
 
-static unsigned long clk_fixed_rate_recalc_rate(struct clk_hw *hw,
-                unsigned long parent_rate)
+static rt_uint64_t clk_fixed_rate_recalc_rate(struct clk_hw *hw,
+               rt_uint64_t parent_rate)
 {
 	return to_clk_fixed_rate(hw)->fixed_rate;
 }
 
 #if 0
-static unsigned long clk_fixed_rate_recalc_accuracy(struct clk_hw *hw,
-                unsigned long parent_accuracy)
+staticrt_uint64_t clk_fixed_rate_recalc_accuracy(struct clk_hw *hw,
+               rt_uint64_t parent_accuracy)
 {
 	struct clk_fixed_rate *fixed = to_clk_fixed_rate(hw);
 
@@ -31,9 +31,9 @@ const struct clk_ops clk_fixed_rate_ops = {
 struct clk_hw *__clk_hw_register_fixed_rate(/*struct device *dev, */
                 struct dtb_node *np, const char *name,
                 const char *parent_name, const struct clk_hw *parent_hw,
-                const struct clk_parent_data *parent_data, unsigned long flags,
-                unsigned long fixed_rate/*, unsigned long fixed_accuracy */,
-                unsigned long clk_fixed_flags/*, bool devm */)
+                const struct clk_parent_data *parent_data,rt_uint64_t flags,
+               rt_uint64_t fixed_rate/*,rt_uint64_t fixed_accuracy */,
+               rt_uint64_t clk_fixed_flags/*, bool devm */)
 {
 	struct clk_fixed_rate *fixed;
 	struct clk_hw *hw;

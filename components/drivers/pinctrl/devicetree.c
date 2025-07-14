@@ -18,12 +18,12 @@ struct pinctrl_dt_map {
 	rt_list_t node;
 	struct pinctrl_dev *pctldev;
 	struct pinctrl_map *map;
-	unsigned num_maps;
+	rt_uint32_t num_maps;
 };
 
 
 static void dt_free_map(struct pinctrl_dev *pctldev,
-                     struct pinctrl_map *map, unsigned num_maps)
+                     struct pinctrl_map *map, rt_uint32_t num_maps)
 {
 	if (pctldev) {
 		const struct pinctrl_ops *ops = pctldev->desc->pctlops;
@@ -51,7 +51,7 @@ void pinctrl_dt_free_maps(struct pinctrl *p)
 
 static int dt_remember_or_free_map(struct pinctrl *p, const char *statename,
                                    struct pinctrl_dev *pctldev,
-                                   struct pinctrl_map *map, unsigned num_maps)
+                                   struct pinctrl_map *map, rt_uint32_t num_maps)
 {
 	int i;
 	struct pinctrl_dt_map *dt_map;
@@ -88,7 +88,7 @@ static int dt_to_map_one_config(struct pinctrl *p, const char *statename,
 	const struct pinctrl_ops *ops;
 	int ret;
 	struct pinctrl_map *map;
-	unsigned num_maps;
+	rt_uint32_t num_maps;
 	struct dtb_node *head;
 
 	head = get_dtb_node_head();

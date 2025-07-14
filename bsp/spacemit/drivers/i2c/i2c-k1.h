@@ -173,7 +173,7 @@ enum spacemit_i2c_xfer_phase {
 #define SPACEMIT_I2C_APB_CLOCK_26M		(26000000)
 #define SPACEMIT_I2C_APB_CLOCK_52M		(52000000)
 
-typedef long unsigned int i2c_size_t;
+typedef rt_uint32_t i2c_size_t;
 #define min(x,y) ({ \
         typeof(x) _x = (x);     \
         typeof(y) _y = (y);     \
@@ -192,23 +192,23 @@ typedef long unsigned int i2c_size_t;
 /* i2c-spacemit driver's main struct */
 struct spacemit_i2c_dev {
 	struct rt_i2c_bus_device dev;
-	char * name;
+	char *name;
 	//struct i2c_adapter	adapt;
 	struct rt_i2c_msg		*msgs;
-	int			num;
+	rt_int32_t			num;
 	//struct resource		resrc;
 	struct rt_mutex		mtx;
 	struct rt_spinlock	filo_lock;
-	int			drv_retries;
+	rt_int32_t			drv_retries;
 
 	/* virtual base address mapped for register */
 	void *mapbase;
 
 	struct clk		*clk;
 	struct clk		*rst;
-	int			irq;
-	int			clk_freq_in;
-	int			clk_freq_out;
+	rt_int32_t			irq;
+	rt_int32_t			clk_freq_in;
+	rt_int32_t			clk_freq_out;
 	bool			clk_always_on;
 
 	/* i2c speed mode selection */
@@ -228,13 +228,13 @@ struct spacemit_i2c_dev {
 	rt_uint32_t			slave_addr_rw;
 
 	struct rt_i2c_msg		*cur_msg;
-	int			msg_idx;
+	rt_int32_t			msg_idx;
 	rt_uint8_t			*msg_buf;
 	bool			is_rx;
-	size_t			rx_cnt;
-	size_t			tx_cnt;
+	rt_uint32_t			rx_cnt;
+	rt_uint32_t			tx_cnt;
 	bool			is_xfer_start;
-	int			rx_total;
+	rt_int32_t			rx_total;
 	bool			smbus_rcv_len;
 
 	struct rt_completion	complete;
@@ -247,7 +247,7 @@ struct spacemit_i2c_dev {
 
 	/* debugfs interface for user-space */
 	struct dentry		*dbgfs;
-	char			dbgfs_name[32];
+	rt_int8_t			dbgfs_name[32];
 	enum spacemit_i2c_xfer_mode	dbgfs_mode;
 
 	/* hwlock address */

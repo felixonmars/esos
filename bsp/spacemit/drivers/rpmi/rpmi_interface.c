@@ -46,7 +46,7 @@ void* rpmi_env_memcpy(void* dst, const void* src, rpmi_size_t len)
 	return rt_memcpy(dst, src, len);
 }
 
-void* rpmi_env_memset(void* dst, int val, rpmi_size_t len)
+void* rpmi_env_memset(void* dst, rt_int32_t val, rpmi_size_t len)
 {
 	return rt_memset(dst, val, len);
 }
@@ -65,7 +65,7 @@ rpmi_size_t rpmi_env_strlen(const char* str)
 void* rpmi_env_alloc_lock(void)
 {
 	char tmp[32];
-	static int count;
+	static rt_int32_t count;
 
 	rt_snprintf(tmp, 32, "rpmi_lock:%d", count++);
 

@@ -132,8 +132,8 @@ static int gpiochip_add_to_list(struct gpio_chip *chip)
  *      pin controller) to accumulate in this range
  */
 int gpiochip_add_pin_range(struct gpio_chip *chip, const char *pinctl_name,
-                           unsigned int gpio_offset, unsigned int pin_offset,
-                           unsigned int npins)
+                           rt_uint32_t gpio_offset, rt_uint32_t pin_offset,
+                           rt_uint32_t npins)
 {
 	struct gpio_pin_range *pin_range;
 	int ret;

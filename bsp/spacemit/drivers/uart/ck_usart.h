@@ -62,7 +62,7 @@ extern "C" {
 
 typedef struct
 {
-    rt_uint32_t base;
+    uintptr_t base;
     rt_uint32_t irq;
     struct clk *clk, *rst;
     usart_event_cb_t cb_event;           ///< Event callback

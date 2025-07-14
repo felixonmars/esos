@@ -19,10 +19,10 @@ static struct dtb_compatible_array __compatible[] = {
 	{}
 };
 
-static int spacemit_rpmi_get_config_from_dt(struct dtb_node *node, struct spacemit_rpmi_config *config)
+static rt_int32_t spacemit_rpmi_get_config_from_dt(struct dtb_node *node, struct spacemit_rpmi_config *config)
 {
 	const void* prop_data;
-	int prop_len;
+	rt_int32_t prop_len;
 
 	/* get the configuration */
 	prop_data = dtb_node_get_property(node, "shmem-base", &prop_len);
@@ -93,11 +93,11 @@ static void spacemit_rpmi_poll(void *priv)
 	}
 }
 
-static int spacemit_rpmi_create_foundation(char *name, struct spacemit_rpmi_priv *priv, int number_service)
+static rt_int32_t spacemit_rpmi_create_foundation(char *name, struct spacemit_rpmi_priv *priv, rt_int32_t number_service)
 {
 	char *tmp;
 	char *string;
-	int size;
+	rt_int32_t size;
 	struct rpmi_shmem* shmem = NULL;
 	struct rpmi_transport* transport = NULL;
 
@@ -160,9 +160,9 @@ static int spacemit_rpmi_create_foundation(char *name, struct spacemit_rpmi_priv
 	return 0;
 }
 
-int rt_hw_rpmi_init(void)
+rt_int32_t rt_hw_rpmi_init(void)
 {
-	int i, j, ret, c= 0;
+	rt_int32_t i, j, ret, c= 0;
 	struct spacemit_rpmi_priv *priv;
 	struct dtb_node *compatible_node;
 	struct dtb_node *dtb_head_node = get_dtb_node_head();

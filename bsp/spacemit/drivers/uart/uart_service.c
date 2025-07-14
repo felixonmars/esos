@@ -29,7 +29,7 @@
 
 struct uart_service {
 	char ser_name[32];
-	unsigned int irq;
+	rt_uint32_t irq;
 	rt_sem_t sem;
 	char sem_name[32];
 	rt_thread_t tid;

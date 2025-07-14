@@ -20,7 +20,7 @@ int pinconf_check_ops(struct pinctrl_dev *pctldev)
 	return 0;
 }
 
-int pinconf_validate_map(struct pinctrl_map const *map, int i)
+int pinconf_validate_map(struct pinctrl_map const *map, rt_uint32_t i)
 {
 	if (!map->data.configs.group_or_pin) {
 		rt_kprintf("failed to register map %s (%d): no group/pin given\n",
@@ -42,7 +42,7 @@ int pinconf_map_to_setting(struct pinctrl_map const *map,
                           struct pinctrl_setting *setting)
 {
 	struct pinctrl_dev *pctldev = setting->pctldev;
-	int pin;
+	rt_uint32_t pin;
 
 	switch (setting->type) {
 		case PIN_MAP_TYPE_CONFIGS_PIN:

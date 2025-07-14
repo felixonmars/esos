@@ -240,9 +240,9 @@ rt_int32_t csi_usart_getchar(usart_handle_t handle, rt_uint8_t *ch)
   \return      error code
 */
 /* yong */
-int csi_uart_getchar(usart_handle_t handle)
+rt_int32_t csi_uart_getchar(usart_handle_t handle)
 {
-    volatile int ch;
+    volatile rt_int32_t ch;
 
     ck_usart_priv_t *usart_priv = handle;
     ck_usart_reg_t *addr = (ck_usart_reg_t *)(usart_priv->base);
@@ -385,7 +385,7 @@ usart_handle_t csi_usart_initialize(rt_int32_t idx, usart_event_cb_t cb_event)
     return usart_priv;
 }
 
-int alloc_usart_memory(rt_uint32_t num)
+rt_int32_t alloc_usart_memory(rt_uint32_t num)
 {
 	usart_instance = rt_calloc(num, sizeof(ck_usart_priv_t));
 	if (!usart_instance) {

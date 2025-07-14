@@ -9,7 +9,7 @@ struct rpmi_voltage_data k3_os0_voltage_data[1] = {
 	},
 };
 
-static int  _k3_os0_voltage_init(void *priv)
+static rt_int32_t  _k3_os0_voltage_init(void *priv)
 {
 	/* platform releated, get the registers or other thing what you want */
 	struct spacemit_rpmi_voltage_config *config = priv;
@@ -55,7 +55,7 @@ static struct spacemit_rpmi_voltage_ops k3_os0_voltage_ops = {
 	.voltage_ops = &k3_os0_voltage_pops,
 };
 
-static int k3_os0_voltage_init(void)
+static rt_int32_t k3_os0_voltage_init(void)
 {
 	rt_list_init(&k3_os0_voltage_ops.list);
 

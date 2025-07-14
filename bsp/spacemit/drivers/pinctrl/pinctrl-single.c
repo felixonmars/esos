@@ -6,7 +6,7 @@
 #define DRIVER_NAME                     "pinctrl-single"
 #define PCS_MUX_PINS_NAME               "pinctrl-single,pins"
 #define PCS_MUX_BITS_NAME               "pinctrl-single,bits"
-#define PCS_REG_NAME_LEN                ((sizeof(unsigned long) * 2) + 3)
+#define PCS_REG_NAME_LEN                ((sizeof(rt_uint64_t) * 2) + 3)
 #define PCS_OFF_DISABLED                ~0U
 #define BITS_PER_BYTE           8
 #define ENOTSUPP        524     /* Operation is not supported */
@@ -25,8 +25,8 @@
 struct pcs_pingroup {
 	struct dtb_node *np;
 	const char *name;
-	unsigned *gpins;
-	unsigned ngpins;
+	rt_uint32_t *gpins;
+	rt_uint32_t ngpins;
 	rt_list_t node;
 };
 
@@ -36,9 +36,9 @@ struct pcs_pingroup {
  * @val:        register value
  */
 struct pcs_func_vals {
-	void *reg;
-	unsigned val;
-	unsigned mask;
+	uintptr_t *reg;
+	rt_uint32_t val;
+	rt_uint32_t mask;
 };
 
 /**
@@ -52,10 +52,10 @@ struct pcs_func_vals {
  */
 struct pcs_conf_vals {
 	enum pin_config_param param;
-	unsigned val;
-	unsigned enable;
-	unsigned disable;
-	unsigned mask;
+	rt_uint32_t val;
+	rt_uint32_t enable;
+	rt_uint32_t disable;
+	rt_uint32_t mask;
 };
 
 /**
@@ -80,7 +80,7 @@ struct pcs_conf_type {
 struct pcs_function {
 	const char *name;
 	struct pcs_func_vals *vals;
-	unsigned nvals;
+	rt_uint32_t nvals;
 	const char **pgnames;
 	int npgnames;
 	struct pcs_conf_vals *conf;
@@ -96,9 +96,9 @@ struct pcs_function {
  * @node:       list node
  */
 struct pcs_gpiofunc_range {
-	unsigned offset;
-	unsigned npins;
-	unsigned gpiofunc;
+	rt_uint32_t offset;
+	rt_uint32_t npins;
+	rt_uint32_t gpiofunc;
 	rt_list_t node;
 };
 
@@ -159,19 +159,19 @@ struct pcs_name {
  * @write:      register write function to use
  */
 struct pcs_device {
-	rt_uint32_t base[2];
+	uintptr_t base[2];
 	rt_uint32_t size;
 	struct dtb_node *dev;
 	struct pinctrl_dev *pctl;
 	struct rt_mutex mutex;
 	uint32_t width;
 	uint32_t fmask;
-	unsigned fshift;
+	rt_uint32_t fshift;
 	uint32_t foff;
-	unsigned fmax;
+	rt_uint32_t fmax;
 	bool bits_per_mux;
 	bool is_pinconf;
-	unsigned bits_per_pin;
+	rt_uint32_t bits_per_pin;
 	struct pcs_name *names;
 	struct pcs_data pins;
 	struct radix_tree_root pgtree;
@@ -179,11 +179,11 @@ struct pcs_device {
 	rt_list_t pingroups;
 	rt_list_t functions;
 	rt_list_t gpiofuncs;
-	unsigned ngroups;
-	unsigned nfuncs;
+	rt_uint32_t ngroups;
+	rt_uint32_t nfuncs;
 	struct pinctrl_desc desc;
-	unsigned (*read)(void *reg);
-	void (*write)(unsigned val, void *reg);
+	rt_uint32_t (*read)(void *reg);
+	void (*write)(rt_uint32_t val, void *reg);
 };
 
 static enum pin_config_param pcs_bias[] = {
@@ -197,32 +197,32 @@ static struct dtb_compatible_array __compatible[] = {
 	{ },
 };
 
-static unsigned pcs_readb(void *reg)
+static rt_uint32_t pcs_readb(void *reg)
 {
 	return 0;
 }
 
-static unsigned pcs_readw(void *reg)
+static rt_uint32_t pcs_readw(void *reg)
 {
 	return 0;
 }
 
-static unsigned pcs_readl(void *reg)
+static rt_uint32_t pcs_readl(void *reg)
 {
         return readl(reg);
 }
 
-static void pcs_writeb(unsigned val, void *reg)
+static void pcs_writeb(rt_uint32_t val, void *reg)
 {
 	return;
 }
 
-static void pcs_writew(unsigned val, void *reg)
+static void pcs_writew(rt_uint32_t val, void *reg)
 {
 	return;
 }
 
-static void pcs_writel(unsigned val, void *reg)
+static void pcs_writel(rt_uint32_t val, void *reg)
 {
         writel(val, reg);
 }
@@ -237,7 +237,7 @@ static int pcs_get_groups_count(struct pinctrl_dev *pctldev)
 }
 
 static const char *pcs_get_group_name(struct pinctrl_dev *pctldev,
-                                        unsigned gselector)
+                                        rt_uint32_t gselector)
 {
 	struct pcs_device *pcs;
 	struct pcs_pingroup *group;
@@ -253,9 +253,9 @@ static const char *pcs_get_group_name(struct pinctrl_dev *pctldev,
 }
 
 static int pcs_get_group_pins(struct pinctrl_dev *pctldev,
-                                        unsigned gselector,
-                                        const unsigned **pins,
-                                        unsigned *npins)
+                                        rt_uint32_t gselector,
+                                        const rt_uint32_t **pins,
+                                        rt_uint32_t *npins)
 {
 	struct pcs_device *pcs;
 	struct pcs_pingroup *group;
@@ -274,7 +274,7 @@ static int pcs_get_group_pins(struct pinctrl_dev *pctldev,
 }
 
 static void pcs_dt_free_map(struct pinctrl_dev *pctldev,
-                                struct pinctrl_map *map, unsigned num_maps)
+                                struct pinctrl_map *map, rt_uint32_t num_maps)
 {
 	rt_free(map);
 }
@@ -288,9 +288,9 @@ static void pcs_dt_free_map(struct pinctrl_dev *pctldev,
  *
  * Note that this is OK as long as the pins are in a static array.
  */
-static int pcs_get_pin_by_offset(struct pcs_device *pcs, unsigned offset)
+static int pcs_get_pin_by_offset(struct pcs_device *pcs, rt_uint32_t offset)
 {
-	unsigned index;
+	rt_uint32_t index;
 
 	if (offset >= pcs->size) {
 		rt_kprintf("mux offset out of range: 0x%x (0x%x)\n", offset, pcs->size);
@@ -319,12 +319,11 @@ static struct pcs_function *pcs_add_function(struct pcs_device *pcs,
                                         struct dtb_node *np,
                                         const char *name,
                                         struct pcs_func_vals *vals,
-                                        unsigned nvals,
+                                        rt_uint32_t nvals,
                                         const char **pgnames,
-                                        unsigned npgnames)
+                                        rt_uint32_t npgnames)
 {
 	struct pcs_function *function;
-	
 	function = rt_malloc(sizeof(*function));
 	if (!function)
 		return NULL;
@@ -373,8 +372,8 @@ static void pcs_remove_function(struct pcs_device *pcs,
 static int pcs_add_pingroup(struct pcs_device *pcs,
                                         struct dtb_node *np,
                                         const char *name,
-                                        unsigned *gpins,
-                                        unsigned ngpins)
+                                        rt_uint32_t *gpins,
+                                        rt_uint32_t ngpins)
 {
 	struct pcs_pingroup *pingroup;
 
@@ -429,10 +428,10 @@ static void pcs_free_pingroups(struct pcs_device *pcs)
 static int pcs_parse_bits_in_pinctrl_entry(struct pcs_device *pcs,
                                                 struct dtb_node *np,
                                                 struct pinctrl_map **map,
-                                                unsigned *num_maps,
+                                                rt_uint32_t *num_maps,
                                                 const char **pgnames)
 {
-	unsigned *pins;
+	rt_uint32_t *pins;
 	struct pcs_func_vals *vals;
 	const rt_uint32_t *mux;
 	int size, rows, index = 0, found = 0, res = -RT_ENOMEM;
@@ -465,9 +464,9 @@ static int pcs_parse_bits_in_pinctrl_entry(struct pcs_device *pcs,
                 goto free_vals;
 
 	while (index < size) {
-		unsigned offset, val;
-		unsigned mask, bit_pos, val_pos, mask_pos, submask;
-		unsigned pin_num_from_lsb;
+		rt_uint32_t offset, val;
+		rt_uint32_t mask, bit_pos, val_pos, mask_pos, submask;
+		rt_uint32_t pin_num_from_lsb;
 		int pin;
 
 		offset = fdt32_to_cpu(*(mux++));
@@ -492,7 +491,7 @@ static int pcs_parse_bits_in_pinctrl_entry(struct pcs_device *pcs,
 			}
 
 			vals[found].mask = submask;
-			vals[found].reg = (void *)(pcs->base[0] + offset);
+			vals[found].reg = (uintptr_t *)(pcs->base[0] + offset);
 			vals[found].val = val_pos;
 
 			pin = pcs_get_pin_by_offset(pcs, offset);
@@ -500,7 +499,6 @@ static int pcs_parse_bits_in_pinctrl_entry(struct pcs_device *pcs,
 				rt_kprintf("could not add functions for %s %ux\n", np->name, offset);
 				break;
 			}
-			
 			pins[found++] = pin + pin_num_from_lsb;
 		}
 	}
@@ -546,7 +544,7 @@ free_vals:
  * Return value: 1 for matching enable bits, 0 for matching disable bits,
  *               and negative value for matching failure.
  */
-static int pcs_config_match(unsigned data, unsigned enable, unsigned disable)
+static int pcs_config_match(rt_uint32_t data, rt_uint32_t enable, rt_uint32_t disable)
 {
 	int ret = -RT_EINVAL;
 
@@ -559,8 +557,8 @@ static int pcs_config_match(unsigned data, unsigned enable, unsigned disable)
 }
 
 static void add_config(struct pcs_conf_vals **conf, enum pin_config_param param,
-                       unsigned value, unsigned enable, unsigned disable,
-                       unsigned mask)
+                       rt_uint32_t value, rt_uint32_t enable, rt_uint32_t disable,
+                       rt_uint32_t mask)
 {
 	(*conf)->param = param;
 	(*conf)->val = value;
@@ -570,8 +568,8 @@ static void add_config(struct pcs_conf_vals **conf, enum pin_config_param param,
 	(*conf)++;
 }
 
-static void add_setting(unsigned long **setting, enum pin_config_param param,
-                        unsigned arg)
+static void add_setting(rt_uint64_t **setting, enum pin_config_param param,
+                        rt_uint32_t arg)
 {
 	**setting = pinconf_to_config_packed(param, arg);
 	(*setting)++;
@@ -580,10 +578,10 @@ static void add_setting(unsigned long **setting, enum pin_config_param param,
 /* add pinconf setting with 2 parameters */
 static void pcs_add_conf2(struct pcs_device *pcs, struct dtb_node *np,
                           const char *name, enum pin_config_param param,
-                          struct pcs_conf_vals **conf, unsigned long **settings)
+                          struct pcs_conf_vals **conf, rt_uint64_t **settings)
 {
 	uint32_t value[2];
-	unsigned shift;
+	rt_uint32_t shift;
 	int ret;
 
 	ret = dtb_node_read_u32_array(np, name, value, 2);
@@ -602,7 +600,7 @@ static void pcs_add_conf2(struct pcs_device *pcs, struct dtb_node *np,
 /* add pinconf setting with 4 parameters */
 static void pcs_add_conf4(struct pcs_device *pcs, struct dtb_node *np,
                           const char *name, enum pin_config_param param,
-                          struct pcs_conf_vals **conf, unsigned long **settings)
+                          struct pcs_conf_vals **conf, rt_uint64_t **settings)
 {
 	uint32_t value[4];
 	int ret;
@@ -635,7 +633,7 @@ static int pcs_parse_pinconf(struct pcs_device *pcs, struct dtb_node *np,
 {
 	struct pinctrl_map *m = *map;
 	int i = 0, nconfs = 0;
-	unsigned long *settings = NULL, *s = NULL;
+	rt_uint64_t *settings = NULL, *s = NULL;
 	struct pcs_conf_vals *conf = NULL;
 	struct pcs_conf_type prop2[] = {
 		{ "pinctrl-single,drive-strength", PIN_CONFIG_DRIVE_STRENGTH, },
@@ -674,7 +672,7 @@ static int pcs_parse_pinconf(struct pcs_device *pcs, struct dtb_node *np,
 	func->nconfs = nconfs;
 	conf = &(func->conf[0]);
 	m++;
-	settings = rt_malloc(sizeof(unsigned long) * nconfs);
+	settings = rt_malloc(sizeof(rt_uint64_t) * nconfs);
 	if (!settings)
 		return -RT_ENOMEM;
 
@@ -718,10 +716,10 @@ static int pcs_parse_pinconf(struct pcs_device *pcs, struct dtb_node *np,
 static int pcs_parse_one_pinctrl_entry(struct pcs_device *pcs,
                                                 struct dtb_node *np,
                                                 struct pinctrl_map **map,
-                                                unsigned *num_maps,
+                                                rt_uint32_t *num_maps,
                                                 const char **pgnames)
 {
-	unsigned *pins;
+	rt_uint32_t *pins;
 	struct pcs_func_vals *vals;
 	const rt_uint32_t *mux;
 	int size, rows, index = 0, found = 0, res = -RT_ENOMEM;
@@ -745,7 +743,7 @@ static int pcs_parse_one_pinctrl_entry(struct pcs_device *pcs,
 		goto free_vals;
 
 	while (index < size) {
-		unsigned offset, val;
+		rt_uint32_t offset, val;
 		int pin;
 
 		offset = fdt32_to_cpu(*(mux++));
@@ -810,7 +808,7 @@ free_vals:
  * @num_maps: number of maps
  */
 static int pcs_dt_node_to_map(struct pinctrl_dev *pctldev, struct dtb_node *np_config,
-		struct pinctrl_map **map, unsigned *num_maps)
+		struct pinctrl_map **map, rt_uint32_t *num_maps)
 {
 	struct pcs_device *pcs;
 	const char **pgnames;
@@ -873,7 +871,7 @@ static int pcs_get_functions_count(struct pinctrl_dev *pctldev)
 }
 
 static const char *pcs_get_function_name(struct pinctrl_dev *pctldev,
-                                                unsigned fselector)
+                                                rt_uint32_t fselector)
 {
 	struct pcs_device *pcs;
 	struct pcs_function *func;
@@ -889,9 +887,9 @@ static const char *pcs_get_function_name(struct pinctrl_dev *pctldev,
 }
 
 static int pcs_get_function_groups(struct pinctrl_dev *pctldev,
-                                        unsigned fselector,
+                                        rt_uint32_t fselector,
                                         const char * const **groups,
-                                        unsigned * const ngroups)
+                                        rt_uint32_t * const ngroups)
 {
 	struct pcs_device *pcs;
 	struct pcs_function *func;
@@ -909,13 +907,13 @@ static int pcs_get_function_groups(struct pinctrl_dev *pctldev,
 	return 0;
 }
 
-static int pcs_get_function(struct pinctrl_dev *pctldev, unsigned pin,
+static int pcs_get_function(struct pinctrl_dev *pctldev, rt_uint32_t pin,
                             struct pcs_function **func)
 {
 	struct pcs_device *pcs = pinctrl_dev_get_drvdata(pctldev);
 	struct pin_desc *pdesc = pin_desc_get(pctldev, pin);
 	const struct pinctrl_setting_mux *setting;
-	unsigned fselector;
+	rt_uint32_t fselector;
 
 	/* If pin is not described in DTS & enabled, mux_setting is NULL. */
 	setting = pdesc->mux_setting;
@@ -931,8 +929,8 @@ static int pcs_get_function(struct pinctrl_dev *pctldev, unsigned pin,
 	return 0;
 }
 
-static int pcs_enable(struct pinctrl_dev *pctldev, unsigned fselector,
-        unsigned group)
+static int pcs_enable(struct pinctrl_dev *pctldev, rt_uint32_t fselector,
+        rt_uint32_t group)
 {
 	struct pcs_device *pcs;
 	struct pcs_function *func;
@@ -951,7 +949,7 @@ static int pcs_enable(struct pinctrl_dev *pctldev, unsigned fselector,
 
 	for (i = 0; i < func->nvals; i++) {
 		struct pcs_func_vals *vals;
-		unsigned val, mask;
+		rt_uint32_t val, mask;
 
 		vals = &func->vals[i];
 		val = pcs->read(vals->reg);
@@ -969,8 +967,8 @@ static int pcs_enable(struct pinctrl_dev *pctldev, unsigned fselector,
 	return 0;
 }
 
-static void pcs_disable(struct pinctrl_dev *pctldev, unsigned fselector,
-                                        unsigned group)
+static void pcs_disable(struct pinctrl_dev *pctldev, rt_uint32_t fselector,
+                                        rt_uint32_t group)
 {
 	struct pcs_device *pcs;
 	struct pcs_function *func;
@@ -1002,7 +1000,7 @@ static void pcs_disable(struct pinctrl_dev *pctldev, unsigned fselector,
 
 	for (i = 0; i < func->nvals; i++) {
 		struct pcs_func_vals *vals;
-		unsigned val;
+		rt_uint32_t val;
 
 		vals = &func->vals[i];
 		val = pcs->read(vals->reg);
@@ -1013,13 +1011,13 @@ static void pcs_disable(struct pinctrl_dev *pctldev, unsigned fselector,
 }
 
 static int pcs_request_gpio(struct pinctrl_dev *pctldev,
-                            struct pinctrl_gpio_range *range, unsigned pin)
+                            struct pinctrl_gpio_range *range, rt_uint32_t pin)
 {
 	struct pcs_device *pcs = pinctrl_dev_get_drvdata(pctldev);
 	struct pcs_gpiofunc_range *frange = NULL;
 	rt_list_t *pos, *tmp;
 	int mux_bytes = 0;
-	unsigned data;
+	rt_uint32_t data;
 
 	/* If function mask is null, return directly. */
 	if (!pcs->fmask)
@@ -1049,13 +1047,13 @@ static const struct pinmux_ops pcs_pinmux_ops = {
 	.gpio_request_enable = pcs_request_gpio,
 };
 
-static int pcs_pinconf_get(struct pinctrl_dev *pctldev, unsigned pin, unsigned long *config);
-static int pcs_pinconf_set(struct pinctrl_dev *pctldev, unsigned pin, unsigned long config);
+static int pcs_pinconf_get(struct pinctrl_dev *pctldev, rt_uint32_t pin, rt_uint64_t *config);
+static int pcs_pinconf_set(struct pinctrl_dev *pctldev, rt_uint32_t pin, rt_uint64_t config);
 
 /* Clear BIAS value */
-static void pcs_pinconf_clear_bias(struct pinctrl_dev *pctldev, unsigned pin)
+static void pcs_pinconf_clear_bias(struct pinctrl_dev *pctldev, rt_uint32_t pin)
 {
-	unsigned long config;
+	rt_uint64_t config;
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(pcs_bias); i++) {
@@ -1068,9 +1066,9 @@ static void pcs_pinconf_clear_bias(struct pinctrl_dev *pctldev, unsigned pin)
  * Check whether PIN_CONFIG_BIAS_DISABLE is valid.
  * It's depend on that PULL_DOWN & PULL_UP configs are all invalid.
  */
-static bool pcs_pinconf_bias_disable(struct pinctrl_dev *pctldev, unsigned pin)
+static bool pcs_pinconf_bias_disable(struct pinctrl_dev *pctldev, rt_uint32_t pin)
 {
-	unsigned long config;
+	rt_uint64_t config;
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(pcs_bias); i++) {
@@ -1085,12 +1083,12 @@ out:
 }
 
 static int pcs_pinconf_get(struct pinctrl_dev *pctldev,
-                                unsigned pin, unsigned long *config)
+                                rt_uint32_t pin, rt_uint64_t *config)
 {
 	struct pcs_device *pcs = pinctrl_dev_get_drvdata(pctldev);
 	struct pcs_function *func;
 	enum pin_config_param param;
-	unsigned offset = 0, data = 0, i, j, ret;
+	rt_uint32_t offset = 0, data = 0, i, j, ret;
 
 	ret = pcs_get_function(pctldev, pin, &func);
 	if (ret)
@@ -1143,16 +1141,15 @@ static int pcs_pinconf_get(struct pinctrl_dev *pctldev,
 		}
 		return 0;
 	}
-	
 	return -ENOTSUPP;
 }
 
 static int pcs_pinconf_set(struct pinctrl_dev *pctldev,
-                                unsigned pin, unsigned long config)
+                                rt_uint32_t pin, rt_uint64_t config)
 {
         struct pcs_device *pcs = pinctrl_dev_get_drvdata(pctldev);
         struct pcs_function *func;
-        unsigned offset = 0, shift = 0, i, data, ret;
+        rt_uint32_t offset = 0, shift = 0, i, data, ret;
         rt_uint16_t arg;
 
         ret = pcs_get_function(pctldev, pin, &func);
@@ -1200,10 +1197,10 @@ static int pcs_pinconf_set(struct pinctrl_dev *pctldev,
 }
 
 static int pcs_pinconf_group_get(struct pinctrl_dev *pctldev,
-                                unsigned group, unsigned long *config)
+                                rt_uint32_t group, rt_uint64_t *config)
 {
-	const unsigned *pins;
-	unsigned npins, old = 0;
+	const rt_uint32_t *pins;
+	rt_uint32_t npins, old = 0;
 	int i, ret;
 
 	ret = pcs_get_group_pins(pctldev, group, &pins, &npins);
@@ -1223,12 +1220,12 @@ static int pcs_pinconf_group_get(struct pinctrl_dev *pctldev,
 }
 
 static int pcs_pinconf_group_set(struct pinctrl_dev *pctldev,
-                                unsigned group, unsigned long config)
+                                rt_uint32_t group, rt_uint64_t config)
 {
-	const unsigned *pins;
-	unsigned npins;
+	const rt_uint32_t *pins;
+	rt_uint32_t npins;
 	int i, ret;
-	
+
 	ret = pcs_get_group_pins(pctldev, group, &pins, &npins);
 	if (ret)
 		return ret;
@@ -1254,8 +1251,8 @@ static const struct pinconf_ops pcs_pinconf_ops = {
  * @pcs: pcs driver instance
  * @offset: register offset from base
  */
-static int pcs_add_pin(struct pcs_device *pcs, unsigned offset,
-                unsigned pin_pos)
+static int pcs_add_pin(struct pcs_device *pcs, rt_uint32_t offset,
+                rt_uint32_t pin_pos)
 {
 	struct pinctrl_pin_desc *pin;
 	struct pcs_name *pn;
@@ -1269,7 +1266,7 @@ static int pcs_add_pin(struct pcs_device *pcs, unsigned offset,
 
 	pin = &pcs->pins.pa[i];
 	pn = &pcs->names[i];
-	rt_sprintf(pn->name, "%lx.%d", (unsigned long)pcs->base[0] + offset, pin_pos);
+	rt_sprintf(pn->name, "%lx.%d", (rt_uint64_t)pcs->base[0] + offset, pin_pos);
 	pin->name = pn->name;
 	pin->number = i;
 	pcs->pins.cur++;
@@ -1314,7 +1311,7 @@ static int pcs_allocate_pin_table(struct pcs_device *pcs)
 	pcs->desc.npins = nr_pins;
 
 	for (i = 0; i < pcs->desc.npins; i++) {
-		unsigned offset;
+		rt_uint32_t offset;
 		int res;
 		int byte_num;
 		int pin_pos = 0;
@@ -1376,7 +1373,7 @@ int spacemit_pcs_init(void)
 	rt_uint32_t *u32_ptr;
 	struct pcs_device *pcs;
 	int property_size;
-	unsigned long u32_value;
+	rt_uint64_t u32_value;
 	struct dtb_node *dtb_head_node = get_dtb_node_head();
 	struct dtb_node *compatible_node;
 

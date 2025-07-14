@@ -12,12 +12,12 @@ static struct dtb_compatible_array __compatible[] = {
 	{},
 };
 
-static void spacemit_mbox_irq(int irq, void *dev_id)
+static void spacemit_mbox_irq(rt_int32_t irq, void *dev_id)
 {
 	struct spacemit_mailbox *mbox = dev_id;
 	struct mbox_chan *chan;
-	unsigned int status, msg;
-	int i, j;
+	rt_uint32_t status, msg;
+	rt_int32_t i, j;
 
 	status = readl((void *)&mbox->regs->mbox_irq[1].irq_status)
 		& readl((void *)&mbox->regs->mbox_irq[1].irq_en_set);
@@ -64,11 +64,11 @@ static void spacemit_mbox_irq(int irq, void *dev_id)
 	rt_spin_unlock(&mbox->lock);
 }
 
-static int spacemit_chan_send_data(struct mbox_chan *chan, void *data)
+static rt_int32_t spacemit_chan_send_data(struct mbox_chan *chan, void *data)
 {
-	unsigned int j;
+	rt_uint32_t j;
 	struct spacemit_mailbox *mbox = ((struct spacemit_mb_con_priv *)chan->con_priv)->smb;
-	unsigned int chan_num = chan - mbox->controller.chans;
+	rt_uint32_t chan_num = chan - mbox->controller.chans;
 
         /* send data */
 	writel('c', (void *)&mbox->regs->mbox_msg[chan_num]);
@@ -89,11 +89,11 @@ static int spacemit_chan_send_data(struct mbox_chan *chan, void *data)
 	rt_spin_unlock(&mbox->lock);
 }
 
-static int spacemit_chan_startup(struct mbox_chan *chan)
+static rt_int32_t spacemit_chan_startup(struct mbox_chan *chan)
 {
 	struct spacemit_mailbox *mbox = ((struct spacemit_mb_con_priv *)chan->con_priv)->smb;
-	unsigned int chan_num = chan - mbox->controller.chans;
-	unsigned int msg, j;
+	rt_uint32_t chan_num = chan - mbox->controller.chans;
+	rt_uint32_t msg, j;
 
 	/* clear the fifo */
 	while (readl((void *)&mbox->regs->msg_status[chan_num])) {
@@ -120,8 +120,8 @@ static int spacemit_chan_startup(struct mbox_chan *chan)
 static void spacemit_chan_shutdown(struct mbox_chan *chan)
 {
 	struct spacemit_mailbox *mbox = ((struct spacemit_mb_con_priv *)chan->con_priv)->smb;
-	unsigned int chan_num = chan - mbox->controller.chans;
-	unsigned int msg, j;
+	rt_uint32_t chan_num = chan - mbox->controller.chans;
+	rt_uint32_t msg, j;
 
 	if (chan->cl->tx_prepare != NULL)
 		return;
@@ -155,7 +155,7 @@ static bool spacemit_chan_last_tx_done(struct mbox_chan *chan)
 static bool spacemit_chan_peek_data(struct mbox_chan *chan)
 {
 	struct spacemit_mailbox *mbox = chan->con_priv;
-	unsigned int chan_num = chan - mbox->controller.chans;
+	rt_uint32_t chan_num = chan - mbox->controller.chans;
 
 	return readl((void *)&mbox->regs->msg_status[chan_num]);
 }
@@ -168,9 +168,9 @@ static const struct mbox_chan_ops spacemit_chan_ops = {
 	.peek_data    = spacemit_chan_peek_data,
 };
 
-int spacemit_mailbox_init(void)
+rt_int32_t spacemit_mailbox_init(void)
 {
-	int i, j, irq, ret;
+	rt_int32_t i, j, irq, ret;
 	struct mbox_chan *chans;
 	struct spacemit_mailbox *mbox;
 	struct spacemit_mb_con_priv *con_priv;
