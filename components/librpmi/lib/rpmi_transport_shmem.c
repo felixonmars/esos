@@ -5,6 +5,7 @@
  */
 
 #include <librpmi.h>
+#include <rtconfig.h>
 
 #ifdef DEBUG
 #define DPRINTF(msg...)		rpmi_env_printf(msg)
@@ -96,6 +97,11 @@ static enum rpmi_error shmem_enqueue(struct rpmi_transport *trans,
 	rpmi_uint32_t tailidx;
 	int rc;
 
+#ifdef SOC_SPACEMIT_K3
+	/* flush the cache */
+	asm volatile ("fence");
+#endif
+
 	rc = rpmi_shmem_read(shmem, queue_base + trans->slot_size,
 			     &tailidx, sizeof(tailidx));
 	if (rc) {
@@ -122,6 +128,11 @@ static enum rpmi_error shmem_enqueue(struct rpmi_transport *trans,
 		return RPMI_ERR_FAILED;
 	}
 
+#ifdef SOC_SPACEMIT_K3
+	/* flush the cache */
+	asm volatile ("fence");
+#endif
+
 	return 0;
 }
 
@@ -135,6 +146,11 @@ static enum rpmi_error shmem_dequeue(struct rpmi_transport *trans,
 	struct rpmi_shmem *shmem = shtrans->shmem;
 	rpmi_uint32_t headidx;
 	int rc;
+
+#ifdef SOC_SPACEMIT_K3
+	/* flush the dcache */
+	asm volatile ("fence");
+#endif
 
 	rc = rpmi_shmem_read(shmem, queue_base, &headidx, sizeof(headidx));
 	if (rc) {
@@ -161,6 +177,10 @@ static enum rpmi_error shmem_dequeue(struct rpmi_transport *trans,
 		return RPMI_ERR_FAILED;
 	}
 
+#ifdef SOC_SPACEMIT_K3
+	/* flush the dcache */
+	asm volatile ("fence");
+#endif
 	return 0;
 }
 
