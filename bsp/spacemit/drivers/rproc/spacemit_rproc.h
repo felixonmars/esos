@@ -5,7 +5,6 @@
 #include <openamp/virtio.h>
 #include <openamp/rpmsg.h>
 #include <openamp/open_amp.h>
-#include <riscv-clic.h>
 #include <rtdevice.h>
 #include <rtdef.h>
 

@@ -1,7 +1,8 @@
 #include <rthw.h>
 #include <rtthread.h>
 #include <rtdevice.h>
-#include "k1_rproc.h"
+#include <rtconfig.h>
+#include "spacemit_rproc.h"
 
 /* Place resource table in special ELF section */
 #define __section_t(S)          __attribute__((__section__(#S)))
@@ -41,8 +42,13 @@ struct remote_resource_table __resource resources[1][1] = {
 
 			/* Virtio device entry */
 			{
+#if defined(SOC_SPACEMIT_K1_X)
 				RSC_VDEV, VIRTIO_ID_RPMSG_, 0, (1 << VIRTIO_RPMSG_F_NS), (1 << VIRTIO_F_ACCESS_PLATFORM), 0, 0,
 				NUM_VRINGS, {0, 0},
+#elif defined(SOC_SPACEMIT_K3)
+				RSC_VDEV, VIRTIO_ID_RPMSG_, 0, (1 << VIRTIO_RPMSG_F_NS), 0, 0, 0,
+				NUM_VRINGS, {0, 0},
+#endif
 			},
 
 			/* Vring rsc entry - part of vdev rsc entry */
@@ -54,13 +60,17 @@ struct remote_resource_table __resource resources[1][1] = {
 };
 
 static struct dtb_compatible_array __compatible[] = {
+#if defined(SOC_SPACEMIT_K1_X)
 	{ .compatible = "spacemit,k1x-rproc0" },
+#elif defined(SOC_SPACEMIT_K3)
+	{ .compatible = "spacemit,k3-rproc0" },
+#endif
 	{}
 };
 
 struct spacemit_rproc {
 	struct dtb_node *node;
-	rt_uint32_t shmem_pa_base;
+	metal_phys_addr_t shmem_pa_base;
 	rt_uint32_t shmem_buf_offset;
 	rt_uint32_t shmem_size;
 	rt_uint32_t procid, rscid, vdevid;
@@ -295,7 +305,7 @@ platform_create_rpmsg_vdev(struct spacemit_rproc *proc, rt_uint32_t vdev_index,
 	}
 
 	metal_dbg("initializing rpmsg shared buffer pool\r\n");
-	
+
 	/* Only RPMsg virtio master needs to initialize the shared buffers pool */
 	rpmsg_virtio_init_shm_pool(&proc->shpool, shbuf,
 			(proc->shmem_size - proc->shmem_buf_offset));
@@ -310,7 +320,7 @@ platform_create_rpmsg_vdev(struct spacemit_rproc *proc, rt_uint32_t vdev_index,
 	}
 
 	metal_dbg("initializing rpmsg vdev\r\n");
-	
+
 	return rpmsg_virtio_get_rpmsg_device(rpmsg_vdev);
 err2:
 	remoteproc_remove_virtio(rproc, vdev);
@@ -320,6 +330,9 @@ err1:
 	return NULL;
 }
 
+extern rt_int32_t init_system(void);
+struct rpmsg_device *rpdev;
+
 static void spacemit_platform_poll(void *priv)
 {
 	rt_int32_t ret;
@@ -327,29 +340,37 @@ static void spacemit_platform_poll(void *priv)
 	struct spacemit_rproc *sproc = (struct spacemit_rproc *)priv;
 	struct remoteproc *rproc = sproc->rproc;
 
+	/* create remote proc device */
+	sproc->rpmsgdev = platform_create_rpmsg_vdev(sproc, sproc->vdevid, VIRTIO_DEV_DEVICE, NULL, NULL);
+	if (!sproc->rpmsgdev) {
+		rt_kprintf("%s:%d, create rpmsg vdev failed\n", __func__, __LINE__);
+		return;
+	}
+
+	rpdev = sproc->rpmsgdev;
+
 	while(1) {
 		ret = rt_event_recv(sproc->event,
 				3, /* channel 0 & channel 1 */
 				RT_EVENT_FLAG_OR | RT_EVENT_FLAG_CLEAR,
 				RT_WAITING_FOREVER, &e);
+
 		ret = remoteproc_get_notification(rproc, RSC_NOTIFY_ID_ANY);
 		if (ret)
 			return;
 	}
 }
 
-extern rt_int32_t init_system(void);
-
-struct rpmsg_device *rpdev;
-
 static rt_int32_t spacemit_rproc_probe(void)
 {
 	rt_int32_t i, irq;
 	rt_thread_t tid;
+	rt_uint32_t val[2] = {0, 0};
 	struct spacemit_rproc *rproc;
 	rt_int32_t property_size;
 	rt_uint32_t u32_value;
 	rt_uint32_t *u32_ptr;
+	const void *prop_data;
 	struct dtb_node *compatible_node;
 	struct dtb_node *dtb_head_node = get_dtb_node_head();
 
@@ -370,12 +391,10 @@ static rt_int32_t spacemit_rproc_probe(void)
 			}
 
 			rproc->node = compatible_node;
-	
+
 			/* get the shmem_pa_base */
-			for_each_property_cell(compatible_node, "shared_mem_pa_base",
-					u32_value, u32_ptr, property_size) {
-				rproc->shmem_pa_base = u32_value;
-			}
+			dtb_node_read_u32_array(compatible_node, "shared_mem_pa_base", val, 2);
+			rproc->shmem_pa_base = (((rt_uint64_t)val[0]) << 32) | val[1];
 
 			/* get the shmem buf offset */
 			for_each_property_cell(compatible_node, "shared_mem_buf_offset",
@@ -410,15 +429,6 @@ static rt_int32_t spacemit_rproc_probe(void)
 			/* create remote proc instanse */
 			rproc->rproc = platform_create_proc(rproc);
 
-			/* create remote proc device */
-			rproc->rpmsgdev = platform_create_rpmsg_vdev(rproc, rproc->vdevid, VIRTIO_DEV_DEVICE, NULL, NULL);
-			if (!rproc->rpmsgdev) {
-				rt_kprintf("%s:%d, create rpmsg vdev failed\n", __func__, __LINE__);
-				return -RT_EINVAL;
-			}
-
-			rpdev = rproc->rpmsgdev;
-
 			/* create the rpmsg poll thread */
 			tid = rt_thread_create(__compatible[i].compatible,
 					spacemit_platform_poll,
@@ -433,10 +443,12 @@ static rt_int32_t spacemit_rproc_probe(void)
 
 			rt_thread_startup(tid);
 
+#ifdef SOC_SPACEMIT_K1_X
 			/* eable the mailbox irq */
 			irq = dtb_node_irq_get(compatible_node, 0);
 
 			rt_hw_interrupt_umask(irq);
+#endif
 		}
 	}
 
