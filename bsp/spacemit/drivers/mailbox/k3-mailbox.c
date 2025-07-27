@@ -18,6 +18,8 @@ static void spacemit_mbox_irq(rt_int32_t irq, void *dev_id)
 	struct mbox_chan *chan;
 	rt_uint32_t status, msg;
 	rt_int32_t i, j;
+	rt_base_t level;
+	mbox_msg_status_t mstatus;
 
 	status = readl((void *)&mbox->regs->mbox_irq[1].irq_status)
 		& readl((void *)&mbox->regs->mbox_irq[1].irq_en_set);
@@ -25,21 +27,21 @@ static void spacemit_mbox_irq(rt_int32_t irq, void *dev_id)
 	if (!(status & 0xff))
 		return;
 
-	rt_spin_lock(&mbox->lock);
+	level = rt_spin_lock_irqsave(&mbox->lock);
 
 	for (i = 0; i < SPACEMIT_NUM_CHANNELS; ++i) {
 		chan = &mbox->controller.chans[i];
 
 		/* not full irq */
 		if (status & (1 << (i * 2 + 1))) {
-			j = readl((void *)&mbox->regs->mbox_irq[1].irq_status_clr);
-			j |= (1 << (i * 2 + 1));
-			writel(j, (void *)&mbox->regs->mbox_irq[1].irq_status_clr);
-
 			/* disable not full irq */
 			j = readl((void *)&mbox->regs->mbox_irq[1].irq_en_clr);
 			j |= (1 << (i * 2 + 1));
 			writel(j, (void *)&mbox->regs->mbox_irq[1].irq_en_clr);
+
+			j = readl((void *)&mbox->regs->mbox_irq[1].irq_status_clr);
+			j |= (1 << (i * 2 + 1));
+			writel(j, (void *)&mbox->regs->mbox_irq[1].irq_status_clr);
 
 			if (chan->txdone_method & TXDONE_BY_IRQ)
 				mbox_chan_txdone(chan, 0);
@@ -49,10 +51,19 @@ static void spacemit_mbox_irq(rt_int32_t irq, void *dev_id)
 		if (status & (1 << (i * 2))) {
 
 			/* clear the fifo */
-			while (readl((void *)&mbox->regs->msg_status[i])) {
+			while (1) {
 				msg = readl((void *)&mbox->regs->mbox_msg[i]);
+				mstatus.val = readl((void *)&mbox->regs->msg_status[i]);
 				mbox_chan_received_data(chan, &msg);
+				if (mstatus.bits.num_msg == 0) {
+					break;
+				}
 			}
+
+			/* disable the new irq */
+			j = readl((void *)&mbox->regs->mbox_irq[1].irq_en_clr);
+			j |= (1 << (i * 2));
+			writel(j, (void *)&mbox->regs->mbox_irq[1].irq_en_clr);
 
 			/* clear the irq pending */
 			j = readl((void *)&mbox->regs->mbox_irq[1].irq_status_clr);
@@ -61,20 +72,32 @@ static void spacemit_mbox_irq(rt_int32_t irq, void *dev_id)
 		}
         }
 
-	rt_spin_unlock(&mbox->lock);
+	rt_spin_unlock_irqrestore(&mbox->lock, level);
 }
 
 static rt_int32_t spacemit_chan_send_data(struct mbox_chan *chan, void *data)
 {
 	rt_uint32_t j;
+	rt_base_t level;
 	struct spacemit_mailbox *mbox = ((struct spacemit_mb_con_priv *)chan->con_priv)->smb;
 	rt_uint32_t chan_num = chan - mbox->controller.chans;
 
-        /* send data */
-	writel('c', (void *)&mbox->regs->mbox_msg[chan_num]);
+	level = rt_spin_lock_irqsave(&mbox->lock);
 
-	/* enable the not full interrupt */
-	rt_spin_lock(&mbox->lock);
+	/* disable new msg irq */
+	j = readl((void *)&mbox->regs->mbox_irq[1].irq_en_clr);
+	j |= (1 << (chan_num * 2));
+	writel(j, (void *)&mbox->regs->mbox_irq[1].irq_en_clr);
+
+	/* clear pending */
+	j = readl((void *)&mbox->regs->mbox_irq[1].irq_status_clr);
+	j |= (1 << (chan_num * 2));
+	writel(j, (void *)&mbox->regs->mbox_irq[1].irq_status_clr);
+
+	/* enable other end new msg irq */
+	j = readl((void *)&mbox->regs->mbox_irq[0].irq_en_set);
+	j = (1 << (chan_num * 2));
+	writel(j, (void *)&mbox->regs->mbox_irq[0].irq_en_set);
 
 	/* set not full thresh */
 	j = readl((void *)&mbox->regs->mbox_thresh[1].thresh0);
@@ -86,7 +109,12 @@ static rt_int32_t spacemit_chan_send_data(struct mbox_chan *chan, void *data)
 	j |= (1 << (chan_num * 2 + 1));
 	writel(j, (void *)&mbox->regs->mbox_irq[1].irq_en_set);
 
-	rt_spin_unlock(&mbox->lock);
+        /* send data */
+	writel('c', (void *)&mbox->regs->mbox_msg[chan_num]);
+
+	rt_spin_unlock_irqrestore(&mbox->lock, level);
+
+	return 0;
 }
 
 static rt_int32_t spacemit_chan_startup(struct mbox_chan *chan)
@@ -94,25 +122,21 @@ static rt_int32_t spacemit_chan_startup(struct mbox_chan *chan)
 	struct spacemit_mailbox *mbox = ((struct spacemit_mb_con_priv *)chan->con_priv)->smb;
 	rt_uint32_t chan_num = chan - mbox->controller.chans;
 	rt_uint32_t msg, j;
+	mbox_msg_status_t status;
+	rt_base_t level;
+
+	level = rt_spin_lock_irqsave(&mbox->lock);
 
 	/* clear the fifo */
-	while (readl((void *)&mbox->regs->msg_status[chan_num])) {
+	while (1) {
 		msg = readl((void *)&mbox->regs->mbox_msg[chan_num]);
+		status.val = readl((void *)&mbox->regs->msg_status[chan_num]);
+		if (status.bits.num_msg == 0) {
+			break;
+		}
 	}
 
-	rt_spin_lock(&mbox->lock);
-
-	/* clear pending */
-	j = readl((void *)&mbox->regs->mbox_irq[1].irq_status_clr);
-	j |= (1 << (chan_num * 2));
-	writel(j, (void *)&mbox->regs->mbox_irq[1].irq_status_clr);
-
-	/* enable new msg irq */
-	j = readl((void *)&mbox->regs->mbox_irq[1].irq_en_set);
-	j |= (1 << (chan_num * 2));
-	writel(j, (void *)&mbox->regs->mbox_irq[1].irq_en_set);
-
-	rt_spin_unlock(&mbox->lock);
+	rt_spin_unlock_irqrestore(&mbox->lock, level);
 
         return 0;
 }
@@ -122,11 +146,13 @@ static void spacemit_chan_shutdown(struct mbox_chan *chan)
 	struct spacemit_mailbox *mbox = ((struct spacemit_mb_con_priv *)chan->con_priv)->smb;
 	rt_uint32_t chan_num = chan - mbox->controller.chans;
 	rt_uint32_t msg, j;
+	mbox_msg_status_t status;
+	rt_base_t level;
 
 	if (chan->cl->tx_prepare != NULL)
 		return;
 
-	rt_spin_lock(&mbox->lock);
+	level = rt_spin_lock_irqsave(&mbox->lock);
 
 	/* disable new msg irq */
 	j = readl((void *)&mbox->regs->mbox_irq[1].irq_en_clr);
@@ -134,8 +160,12 @@ static void spacemit_chan_shutdown(struct mbox_chan *chan)
 	writel(j, (void *)&mbox->regs->mbox_irq[1].irq_en_clr);
 
 	/* flush the fifo */
-	while (readl((void *)&mbox->regs->msg_status[chan_num])) {
+	while (1) {
 		msg = readl((void *)&mbox->regs->mbox_msg[chan_num]);
+		status.val = readl((void *)&mbox->regs->msg_status[chan_num]);
+		if (status.bits.num_msg == 0) {
+			break;
+		}
 	}
 
 	/* clear pending */
@@ -143,7 +173,7 @@ static void spacemit_chan_shutdown(struct mbox_chan *chan)
 	j |= (1 << (chan_num * 2));
 	writel(j, (void *)&mbox->regs->mbox_irq[1].irq_status_clr);
 
-	rt_spin_unlock(&mbox->lock);
+	rt_spin_unlock_irqrestore(&mbox->lock, level);
 }
 
 static bool spacemit_chan_last_tx_done(struct mbox_chan *chan)

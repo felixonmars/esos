@@ -9,6 +9,9 @@ CPPPATH = [cwd]
 if GetDepend('SOC_SPACEMIT_K1_X') == False:
     SrcRemove(src, ['k1x-mailbox.c'])
 
+if GetDepend('SOC_SPACEMIT_K3') == False:
+    SrcRemove(src, ['k3-mailbox.c'])
+
 group = DefineGroup('MAILBOXDrivers', src, depend = ['BSP_USING_MAILBOX'], CPPPATH = CPPPATH)
 
 Return('group')
