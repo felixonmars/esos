@@ -59,7 +59,7 @@ if CPU == 'n308':
         DUMP_ACTION = OBJDUMP + ' -D -S $TARGET > rtt.asm\n'
         POST_ACTION = OBJCPY + ' -O binary $TARGET rtthread.bin\n' + SIZE + ' $TARGET \n'
 
-elif CPU == 'rt24':
+else:
     EXEC_PATH   = os.getcwd() + '/../../tools/toolchain/spacemit-toolchain-elf-newlib-x86_64-v1.0.9/bin'
     if PLATFORM == 'gcc':
         # toolchains
@@ -75,7 +75,7 @@ elif CPU == 'rt24':
         STRIP   = PREFIX + 'strip'
         TARGET_EXT = 'elf'
 
-        DEVICE = ' -march=rv64imafdc -mabi=lp64d -mcmodel=medany '
+        DEVICE = ' -march=rv64imafdczifencei -mabi=lp64d -mcmodel=medany '
 
         CFLAGS  = DEVICE + '-ffreestanding -flax-vector-conversions -Wno-cpp -fno-common -ffunction-sections -fdata-sections -fstrict-volatile-bitfields -fdiagnostics-color=always'
         AFLAGS  = ' -c' + DEVICE + ' -x assembler-with-cpp -D__ASSEMBLY__ '
@@ -93,4 +93,3 @@ elif CPU == 'rt24':
 
         DUMP_ACTION = OBJDUMP + ' -D -S $TARGET > rtt.asm\n'
         POST_ACTION = OBJCPY + ' -O binary $TARGET rtthread.bin\n' + SIZE + ' $TARGET \n'
-
