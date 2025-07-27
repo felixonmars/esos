@@ -331,26 +331,23 @@
 		};
 
 		rproc0: rproc0@0 {
-			compatible = "spacemit,k1x-rproc0";
+			compatible = "spacemit,k3-rproc0";
 			reg = <0x0 0x0>;
-			shared_mem_pa_base = <0x30200000>;
-			shared_mem_buf_offset = <0x0>;
-			shared_mem_size	= <0xfc000>;
+			shared_mem_pa_base = <0x0 0xc0876000>;
+			shared_mem_buf_offset = <0x3fe8a000>;
+			shared_mem_size	= <0x3ff86000>;
 			proc_id = <0>;
 			rsc_id = <0>;
 			vdev_id = <0>;
-			mboxes = <&mailbox4 0>, <&mailbox4 1>;
+			mboxes = <&mailbox3 1>, <&mailbox3 2>;
 			mbox-names = "vq0", "vq1";
-
-			/* put here to enable the mailbox irq */
-			interrupt-parent = <&intc>;
-			interrupts = <0 30 0>;
-			status = "disabled";
+			status = "okay";
 		};
 
 		/* RPMI node, similar structure to rproc for mailbox communication */
 		rpmi: rpmi@1 {
 			compatible = "spacemit,k3-os0-rpmi";
+			reg = <0x0 0x0>;
 			status = "okay";
 			mboxes = <&mailbox3 0>;
 			mbox-names = "rpmi_mbox";

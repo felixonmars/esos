@@ -291,7 +291,7 @@
 		rproc0: rproc0@0 {
 			compatible = "spacemit,k1x-rproc0";
 			reg = <0x0 0x0>;
-			shared_mem_pa_base = <0x30200000>;
+			shared_mem_pa_base = <0x0 0x30200000>;
 			shared_mem_buf_offset = <0x0>;
 			shared_mem_size	= <0xfc000>;
 			proc_id = <0>;
@@ -304,93 +304,6 @@
 			interrupt-parent = <&intc>;
 			interrupts = <0 30 0>;
 			status = "okay";
-		};
-
-		/* RPMI node, similar structure to rproc for mailbox communication */
-		rpmi: rpmi@1 {
-			compatible = "spacemit,k1-os0-rpmi";
-			status = "disabled";
-			mboxes = <&mailbox 3>;
-			mbox-names = "rpmi_mbox";
-
-			/* Shared memory configuration */
-			shmem-base = <0x30500000>;
-			shmem-size = <0x4000>;
-
-			/* Message and queue configuration */
-			slot-size = <256>;
-			a2p-queue-size = <4096>;
-			p2a-queue-size = <4096>;
-
-			rpmi_hsm0: rpmi-hsm@0 {
-				compatible = "k1-os0-rpmi-hsm";
-				/* hartids*/
-				hartids = <0x0 0x1 0x2 0x3 0x4 0x5 0x6 0x7>;
-
-				risv,support-syssup;
-
-				status = "disabled";
-/**
- *				CPU_RET: cpu-retentive {
- *					compatible = "riscv,idle-state";
- *					riscv,sbi-suspend-param = <0x10000000>;
- *					entry-latency-us = <20>;
- *					exit-latency-us = <40>;
- *					min-residency-us = <80>;
- *				};
- */
-
-				CPU_NONRET: cpu-nonretentive {
-					compatible = "riscv,idle-state";
-					riscv,sbi-suspend-param = <0x90000000>;
-					local-timer-stop;
-					entry-latency-us = <250>;
-					exit-latency-us = <500>;
-					min-residency-us = <950>;
-				};
-/**
- *				CLUSTER_RET: cluster-retentive {
- *					compatible = "riscv,idle-state";
- *					riscv,sbi-suspend-param = <0x11000000>;
- *					local-timer-stop;
- *					entry-latency-us = <50>;
- *					exit-latency-us = <100>;
- *					min-residency-us = <250>;
- *					wakeup-latency-us = <130>;
- *				};
- */
-
-				CLUSTER_NONRET: cluster-nonretentive {
-					compatible = "riscv,idle-state";
-					riscv,sbi-suspend-param = <0x91000000>;
-					local-timer-stop;
-					entry-latency-us = <600>;
-					exit-latency-us = <1100>;
-					min-residency-us = <2700>;
-					wakeup-latency-us = <1500>;
-				};
-
-				HOME_SCREEN: home-screen {
-					compatible = "riscv,idle-state";
-					riscv,sbi-suspend-param = <0x92000000>;
-					local-timer-stop;
-					entry-latency-us = <600>;
-					exit-latency-us = <1100>;
-					min-residency-us = <2700>;
-					wakeup-latency-us = <1500>;
-				};
-			};
-
-			rpmi_sysreset0: rpmi-sysreset@0 {
-				compatible = "k1-os0-rpmi-sysreset";
-				status = "disabled";
-			};
-
-			rpmi_clock0: rpmi-clock@0 {
-				compatible = "k1-os0-rpmi-clock";
-				num_clks = <1>;	
-				status = "disabled";
-			};
 		};
 
 		rcan0: rcan0@c0870000 {
