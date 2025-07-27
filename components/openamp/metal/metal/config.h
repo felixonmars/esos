@@ -11,6 +11,7 @@
 
 #ifndef __METAL_CONFIG__H__
 #define __METAL_CONFIG__H__
+#include <rtconfig.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,10 +39,17 @@ extern "C" {
 /* #define METAL_PROCESSOR_@PROJECT_PROCESSOR_UPPER@ */
 #define METAL_PROCESSOR_RISCV
 
+#if defined(SOC_SPACEMIT_K1_X)
 /** Machine type (zynq, zynqmp, ...). */
 #define METAL_MACHINE		/* "@PROJECT_MACHINE@" */ "k1x"
 /* #define METAL_MACHINE_@PROJECT_MACHINE_UPPER@ */
 #define METAL_MACHINE_K1X
+#elif defined(SOC_SPACEMIT_K3)
+/** Machine type (zynq, zynqmp, ...). */
+#define METAL_MACHINE		/* "@PROJECT_MACHINE@" */ "k3"
+/* #define METAL_MACHINE_@PROJECT_MACHINE_UPPER@ */
+#define METAL_MACHINE_K3
+#endif
 
 /* #cmakedefine HAVE_STDATOMIC_H */
 /* #cmakedefine HAVE_FUTEX_H */

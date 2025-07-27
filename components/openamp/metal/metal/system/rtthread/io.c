@@ -13,6 +13,7 @@
 
 void metal_sys_io_mem_map(struct metal_io_region *io)
 {
+#if 0
 	unsigned long p;
 	unsigned long long psize;
 	size_t *va;
@@ -30,4 +31,5 @@ void metal_sys_io_mem_map(struct metal_io_region *io)
 			va += psize;
 		}
 	}
+#endif
 }
