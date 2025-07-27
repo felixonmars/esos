@@ -68,5 +68,6 @@ void rt_hw_cpu_dcache_ops(int ops, void* addr, int size)
 #if defined(__DCACHE_PRESENT) && (__DCACHE_PRESENT == 1)
 #endif
 #endif
+	asm volatile ("fence");
 }
 
