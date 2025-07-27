@@ -1,7 +1,7 @@
 #include <rtconfig.h>
 #include "riscv_encoding.h"
 
-.section    .data
+.section .dtb_table
 
 .global __irf_start
 __irf_start:

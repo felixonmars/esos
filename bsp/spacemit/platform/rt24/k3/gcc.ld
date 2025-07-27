@@ -16,7 +16,9 @@ ENTRY(_start)
 
 MEMORY
 {
-   RAM : ORIGIN = ENTRY_POINT, LENGTH = 2M
+   RAM : ORIGIN = ENTRY_POINT, LENGTH = 3M
+   RESOURCE_TABLE (rwx) : ORIGIN = 0x1007fc000, LENGTH = 16K
+   DTB_TABLE (rwx) : ORIGIN = 0xc087c000, LENGTH = 16k
 }
 
 SECTIONS
@@ -140,8 +142,22 @@ SECTIONS
 	__version_id_table_start__ = .;
 	*(.version_id_table)
     } > RAM
-    
+
     _end = .;
+
+    .resource_table :
+    {
+        . = ALIGN(4);
+        __resource_table_start__ = .;
+        *(.resource_table)
+    } > RESOURCE_TABLE
+
+    .dtb_table :
+    {
+        . = ALIGN(4);
+        __dtb_table_start__ = .;
+       *(.dtb_table)
+    } > DTB_TABLE
 
     /* Stabs debugging sections.  */
     .stab          0 : { *(.stab) }

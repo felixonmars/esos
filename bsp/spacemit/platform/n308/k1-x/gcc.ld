@@ -83,6 +83,13 @@ SECTIONS
         *(.sdata.*)
     } > RAM
 
+    .dtb_table :
+    {
+        . = ALIGN(4);
+        __dtb_table_start__ = .;
+       *(.dtb_table)
+    } > RAM
+
     . = ALIGN(8);
     .ctors :
     {
