@@ -27,7 +27,7 @@ int device_tree_setup(void *mem_addr)
 {
     if(mem_addr)
     {
-        if ((fdt = dtb_node_load_from_memory(mem_addr,1)) != NULL)
+        if ((fdt = dtb_node_load_from_memory(mem_addr, 0)) != NULL)
         {
             dtb_node_list = dtb_node_get_dtb_list(fdt);
             if (dtb_node_list != NULL)
