@@ -23,18 +23,11 @@ static rt_int32_t spacemit_rpmi_get_config_from_dt(struct dtb_node *node, struct
 {
 	const void* prop_data;
 	rt_int32_t prop_len;
+	rt_uint32_t val[2] = {0, 0};
 
-	/* get the configuration */
-	prop_data = dtb_node_get_property(node, "shmem-base", &prop_len);
-	if (!prop_data) {
-		rt_kprintf("%s:%d, get shmem-base failed\n", __func__, __LINE__);
-		return -RT_EINVAL;
-	}
+	dtb_node_read_u32_array(node, "shmem-base", val, 2);
 
-	config->shmem_base = fdt32_to_cpu(*(uint32_t*)prop_data);
-
-	/* k3 memory base */
-	config->shmem_base |= 0x100000000;
+	config->shmem_base = (((rt_uint64_t)val[0]) << 32) | val[1];
 
 	prop_data = dtb_node_get_property(node, "shmem-size", &prop_len);
 	if (!prop_data) {

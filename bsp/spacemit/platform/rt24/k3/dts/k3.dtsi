@@ -353,7 +353,7 @@
 			mbox-names = "rpmi_mbox";
 
 			/* Shared memory configuration */
-			shmem-base = <0x00800000>;
+			shmem-base = <0x1 0x800000>;
 			shmem-size = <0x4000>;
 
 			/* Message and queue configuration */
