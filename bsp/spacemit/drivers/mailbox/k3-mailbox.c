@@ -21,8 +21,8 @@ static void spacemit_mbox_irq(rt_int32_t irq, void *dev_id)
 	rt_base_t level;
 	mbox_msg_status_t mstatus;
 
-	status = readl((void *)&mbox->regs->mbox_irq[1].irq_status)
-		& readl((void *)&mbox->regs->mbox_irq[1].irq_en_set);
+	status = readl((void *)&mbox->regs->mbox_irq[USER1_MBOX_OFFSET].irq_status)
+		& readl((void *)&mbox->regs->mbox_irq[USER1_MBOX_OFFSET].irq_en_set);
 
 	if (!(status & 0xff))
 		return;
@@ -35,13 +35,13 @@ static void spacemit_mbox_irq(rt_int32_t irq, void *dev_id)
 		/* not full irq */
 		if (status & (1 << (i * 2 + 1))) {
 			/* disable not full irq */
-			j = readl((void *)&mbox->regs->mbox_irq[1].irq_en_clr);
+			j = readl((void *)&mbox->regs->mbox_irq[USER1_MBOX_OFFSET].irq_en_clr);
 			j |= (1 << (i * 2 + 1));
-			writel(j, (void *)&mbox->regs->mbox_irq[1].irq_en_clr);
+			writel(j, (void *)&mbox->regs->mbox_irq[USER1_MBOX_OFFSET].irq_en_clr);
 
-			j = readl((void *)&mbox->regs->mbox_irq[1].irq_status_clr);
+			j = readl((void *)&mbox->regs->mbox_irq[USER1_MBOX_OFFSET].irq_status_clr);
 			j |= (1 << (i * 2 + 1));
-			writel(j, (void *)&mbox->regs->mbox_irq[1].irq_status_clr);
+			writel(j, (void *)&mbox->regs->mbox_irq[USER1_MBOX_OFFSET].irq_status_clr);
 
 			if (chan->txdone_method & TXDONE_BY_IRQ)
 				mbox_chan_txdone(chan, 0);
@@ -54,21 +54,21 @@ static void spacemit_mbox_irq(rt_int32_t irq, void *dev_id)
 			while (1) {
 				msg = readl((void *)&mbox->regs->mbox_msg[i]);
 				mstatus.val = readl((void *)&mbox->regs->msg_status[i]);
-				mbox_chan_received_data(chan, &msg);
 				if (mstatus.bits.num_msg == 0) {
 					break;
 				}
 			}
-
+			mbox_chan_received_data(chan, &msg);
+#if 0
 			/* disable the new irq */
-			j = readl((void *)&mbox->regs->mbox_irq[1].irq_en_clr);
+			j = readl((void *)&mbox->regs->mbox_irq[USER1_MBOX_OFFSET].irq_en_clr);
 			j |= (1 << (i * 2));
-			writel(j, (void *)&mbox->regs->mbox_irq[1].irq_en_clr);
-
+			writel(j, (void *)&mbox->regs->mbox_irq[USER1_MBOX_OFFSET].irq_en_clr);
+#endif
 			/* clear the irq pending */
-			j = readl((void *)&mbox->regs->mbox_irq[1].irq_status_clr);
+			j = readl((void *)&mbox->regs->mbox_irq[USER1_MBOX_OFFSET].irq_status_clr);
 			j |= (1 << (i * 2));
-			writel(j, (void *)&mbox->regs->mbox_irq[1].irq_status_clr);
+			writel(j, (void *)&mbox->regs->mbox_irq[USER1_MBOX_OFFSET].irq_status_clr);
 		}
         }
 
@@ -83,34 +83,42 @@ static rt_int32_t spacemit_chan_send_data(struct mbox_chan *chan, void *data)
 	rt_uint32_t chan_num = chan - mbox->controller.chans;
 
 	level = rt_spin_lock_irqsave(&mbox->lock);
-
+#if 0
 	/* disable new msg irq */
-	j = readl((void *)&mbox->regs->mbox_irq[1].irq_en_clr);
+	j = readl((void *)&mbox->regs->mbox_irq[USER1_MBOX_OFFSET].irq_en_clr);
 	j |= (1 << (chan_num * 2));
-	writel(j, (void *)&mbox->regs->mbox_irq[1].irq_en_clr);
+	writel(j, (void *)&mbox->regs->mbox_irq[USER1_MBOX_OFFSET].irq_en_clr);
 
 	/* clear pending */
-	j = readl((void *)&mbox->regs->mbox_irq[1].irq_status_clr);
+	j = readl((void *)&mbox->regs->mbox_irq[USER1_MBOX_OFFSET].irq_status_clr);
 	j |= (1 << (chan_num * 2));
-	writel(j, (void *)&mbox->regs->mbox_irq[1].irq_status_clr);
+	writel(j, (void *)&mbox->regs->mbox_irq[USER1_MBOX_OFFSET].irq_status_clr);
+#endif
 
 	/* enable other end new msg irq */
-	j = readl((void *)&mbox->regs->mbox_irq[0].irq_en_set);
+	j = readl((void *)&mbox->regs->mbox_irq[USER0_MBOX_OFFSET].irq_en_set);
 	j = (1 << (chan_num * 2));
-	writel(j, (void *)&mbox->regs->mbox_irq[0].irq_en_set);
-
-	/* set not full thresh */
-	j = readl((void *)&mbox->regs->mbox_thresh[1].thresh0);
-	j |= 1 << (chan_num * 8 + 4);
-	writel(j, (void *)&mbox->regs->mbox_thresh[1].thresh0);
-
-	/* enable not full irq */
-	j = readl((void *)&mbox->regs->mbox_irq[1].irq_en_set);
-	j |= (1 << (chan_num * 2 + 1));
-	writel(j, (void *)&mbox->regs->mbox_irq[1].irq_en_set);
+	writel(j, (void *)&mbox->regs->mbox_irq[USER0_MBOX_OFFSET].irq_en_set);
 
         /* send data */
 	writel('c', (void *)&mbox->regs->mbox_msg[chan_num]);
+
+#if 0
+	/* set other end new msg irq thresh */
+	j = readl((void *)&mbox->regs->mbox_thresh[USER0_MBOX_OFFSET].thresh0);
+	j |= 3 << (chan_num * 8);
+	writel(j, (void *)&mbox->regs->mbox_thresh[USER0_MBOX_OFFSET].thresh0);
+#endif
+
+	/* set not full thresh */
+	j = readl((void *)&mbox->regs->mbox_thresh[USER1_MBOX_OFFSET].thresh0);
+	j |= 1 << (chan_num * 8 + 4);
+	writel(j, (void *)&mbox->regs->mbox_thresh[USER1_MBOX_OFFSET].thresh0);
+
+	/* enable not full irq */
+	j = readl((void *)&mbox->regs->mbox_irq[USER1_MBOX_OFFSET].irq_en_set);
+	j |= (1 << (chan_num * 2 + 1));
+	writel(j, (void *)&mbox->regs->mbox_irq[USER1_MBOX_OFFSET].irq_en_set);
 
 	rt_spin_unlock_irqrestore(&mbox->lock, level);
 
@@ -121,7 +129,7 @@ static rt_int32_t spacemit_chan_startup(struct mbox_chan *chan)
 {
 	struct spacemit_mailbox *mbox = ((struct spacemit_mb_con_priv *)chan->con_priv)->smb;
 	rt_uint32_t chan_num = chan - mbox->controller.chans;
-	rt_uint32_t msg, j;
+	rt_uint32_t msg;
 	mbox_msg_status_t status;
 	rt_base_t level;
 
@@ -155,9 +163,9 @@ static void spacemit_chan_shutdown(struct mbox_chan *chan)
 	level = rt_spin_lock_irqsave(&mbox->lock);
 
 	/* disable new msg irq */
-	j = readl((void *)&mbox->regs->mbox_irq[1].irq_en_clr);
+	j = readl((void *)&mbox->regs->mbox_irq[USER0_MBOX_OFFSET].irq_en_clr);
 	j |= (1 << (chan_num * 2));
-	writel(j, (void *)&mbox->regs->mbox_irq[1].irq_en_clr);
+	writel(j, (void *)&mbox->regs->mbox_irq[USER0_MBOX_OFFSET].irq_en_clr);
 
 	/* flush the fifo */
 	while (1) {
@@ -169,9 +177,9 @@ static void spacemit_chan_shutdown(struct mbox_chan *chan)
 	}
 
 	/* clear pending */
-	j = readl((void *)&mbox->regs->mbox_irq[1].irq_status_clr);
+	j = readl((void *)&mbox->regs->mbox_irq[USER0_MBOX_OFFSET].irq_status_clr);
 	j |= (1 << (chan_num * 2));
-	writel(j, (void *)&mbox->regs->mbox_irq[1].irq_status_clr);
+	writel(j, (void *)&mbox->regs->mbox_irq[USER0_MBOX_OFFSET].irq_status_clr);
 
 	rt_spin_unlock_irqrestore(&mbox->lock, level);
 }
@@ -243,6 +251,9 @@ rt_int32_t spacemit_mailbox_init(void)
 				con_priv[j].smb = mbox;
 				chans[j].con_priv = con_priv + j;
 			}
+
+			/* get the rcpu<->cpu mailbox */
+			mbox->rcpu_communicate = dtb_node_read_bool(compatible_node, "rcpu-communicate");
 
 			irq = dtb_node_irq_get(compatible_node, 0);
 

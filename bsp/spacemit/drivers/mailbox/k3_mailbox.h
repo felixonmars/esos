@@ -147,10 +147,14 @@ struct spacemit_mailbox {
 	struct mbox_controller controller;
 	mbox_reg_desc_t *regs;
 	struct rt_spinlock lock;
+	bool rcpu_communicate;
 };
 
 struct spacemit_mb_con_priv {
 	struct spacemit_mailbox *smb;
 };
+
+#define USER0_MBOX_OFFSET	((mbox->rcpu_communicate) ? 1:0)
+#define USER1_MBOX_OFFSET	((mbox->rcpu_communicate) ? 0:1)
 
 #endif /* __SPACEMIT_MAILBOX_K3_H__ */
