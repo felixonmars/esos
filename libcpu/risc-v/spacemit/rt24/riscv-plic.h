@@ -27,15 +27,13 @@
 
 /* Enable Register - 0x80 per target */
 #define PLIC_ENABLE_OFFSET (0x00002000UL)
-#define PLIC_ENABLE_SHIFT_PER_TARGET 7
+#define PLIC_ENABLE_SHIFT_PER_TARGET 27
 
 /* Priority Threshold Register - 0x1000 per target */
 #define PLIC_THRESHOLD_OFFSET (0x00200000UL)
-#define PLIC_THRESHOLD_SHIFT_PER_TARGET 27
 
 /* Claim Register - 0x1000 per target */
 #define PLIC_CLAIM_OFFSET (0x00200004UL)
-#define PLIC_CLAIM_SHIFT_PER_TARGET 12
 
 #if defined(__GNUC__) && !defined(__ASSEMBLER__)
 __attribute__((always_inline)) static inline void __plic_set_feature(unsigned int feature)
@@ -49,7 +47,7 @@ __attribute__((always_inline)) static inline void __plic_set_threshold(unsigned 
     unsigned int hart_id = read_csr(mhartid);
     volatile unsigned int *threshold_ptr = (volatile unsigned int *)(PLIC_BASE_ADDR +
                                                                      PLIC_THRESHOLD_OFFSET +
-                                                                     (hart_id << PLIC_THRESHOLD_SHIFT_PER_TARGET));
+                                                                     (hart_id << PLIC_ENABLE_SHIFT_PER_TARGET));
     *threshold_ptr = threshold;
 }
 
@@ -58,7 +56,7 @@ __attribute__((always_inline)) static inline void __plic_set_priority(unsigned i
     unsigned int hartid = read_csr(mhartid);
     volatile unsigned int *priority_ptr = (volatile unsigned int *)(PLIC_BASE_ADDR +
                                                                     PLIC_PRIORITY_OFFSET +
-								    (hartid << PLIC_THRESHOLD_SHIFT_PER_TARGET) +
+								    (hartid << PLIC_ENABLE_SHIFT_PER_TARGET) +
                                                                     (source << PLIC_PRIORITY_SHIFT_PER_SOURCE));
     *priority_ptr = priority;
 }
@@ -67,7 +65,7 @@ __attribute__((always_inline)) static inline void __plic_set_pending(unsigned in
 {
     unsigned int hartid = read_csr(mhartid);
     volatile unsigned int *current_ptr = (volatile unsigned int *)(PLIC_BASE_ADDR +
-								   (hartid << PLIC_THRESHOLD_SHIFT_PER_TARGET) +
+								   (hartid << PLIC_ENABLE_SHIFT_PER_TARGET) +
                                                                    PLIC_PENDING_OFFSET +
                                                                    ((source >> 5) << 2));
     *current_ptr = (1 << (source & 0x1F));
@@ -102,7 +100,7 @@ __attribute__((always_inline)) static inline unsigned int __plic_irq_claim(void)
     unsigned int hart_id = read_csr(mhartid);
     volatile unsigned int *claim_addr = (volatile unsigned int *)(PLIC_BASE_ADDR +
                                                                   PLIC_CLAIM_OFFSET +
-                                                                  (hart_id << PLIC_CLAIM_SHIFT_PER_TARGET));
+                                                                  (hart_id << PLIC_ENABLE_SHIFT_PER_TARGET));
     return *claim_addr;
 }
 
@@ -111,7 +109,7 @@ __attribute__((always_inline)) static inline void __plic_irq_complete(unsigned i
     unsigned int hart_id = read_csr(mhartid);
     volatile unsigned int *claim_addr = (volatile unsigned int *)(PLIC_BASE_ADDR +
                                                                   PLIC_CLAIM_OFFSET +
-                                                                  (hart_id << PLIC_CLAIM_SHIFT_PER_TARGET));
+                                                                  (hart_id << PLIC_ENABLE_SHIFT_PER_TARGET));
     *claim_addr = source;
 }
 #endif /* end of __GNUC__ */
