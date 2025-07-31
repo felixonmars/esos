@@ -8,7 +8,7 @@
  * 2020/12/12     bernard      The first version
  */
 
-INCLUDE "./platform/rt24/k3/link_stacksize.lds"
+INCLUDE "./platform/rt24/k3_core0/link_stacksize.lds"
 
 OUTPUT_ARCH( "riscv" )
 
@@ -142,7 +142,7 @@ SECTIONS
 	__version_id_table_start__ = .;
 	*(.version_id_table)
     } > RAM
-
+    
     _end = .;
 
     .resource_table :

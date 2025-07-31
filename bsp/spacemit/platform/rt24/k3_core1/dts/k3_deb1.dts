@@ -7,6 +7,7 @@
 #include "k3-pinctrl.h"
 
 &pmx_core {
+	status = "disabled";
         pinctrl-single,gpio-range = <
 		&range GPIO_49  2 (MUX_MODE0 | EDGE_NONE | PULL_UP | PAD_3V_DS4)
 	>;
@@ -21,9 +22,42 @@
 
 &gpio {
 	gpio-ranges = <&pmx_core 49  GPIO_49  2>;
+
+	status = "disabled";
 };
 
 &uart0 {
 	pinctrl-names = "default";
-//	pinctrl-0 = <&pinctrl_rcpu>;
+	status = "okay";
+};
+
+&mailbox3 {
+	status = "disabled";
+};
+
+&mailbox4 {
+	status = "okay";
+};
+
+&mailbox5 {
+	status = "disabled";
+};
+
+&mailbox6 {
+	status = "disabled";
+};
+
+&mailbox7 {
+	interrupts = <0 66 0>;
+	rcpu-communicate;
+	status = "okay";
+};
+
+&rproc0 {
+	status = "okay";
+	mboxes = <&mailbox4 0>, <&mailbox4 1>;
+};
+
+&rpmi {
+	status = "disabled";
 };

@@ -98,14 +98,14 @@
 			pinctrl-single,bit-per-mux;
 			pinctrl-single,register-width = <32>;
 			pinctrl-single,function-mask = <0xff77>;
-			status = "okay";
+			status = "disabled";
 
 			range: gpio-range {
 				#pinctrl-single,gpio-range-cells = <3>;
 			};
 		};
 
-                gpio: gpio@d4019000 {
+		gpio: gpio@d4019000 {
 			compatible = "spacemit,k3-gpio";
 			reg = <0xd4019000 0x800>;
 			banks = <4>;
@@ -148,7 +148,7 @@
 			interrupt-parent = <&intc>;
 			interrupts = <0 17 0>;
 			clocks = <&ccu CLK_RCPU_UART0>, <&ccu CLK_RST_RCPU_UART0>;
-			status = "okay";
+			status = "disabled";
 		};
 
 		uart1: serial1@c088d000 {
@@ -287,7 +287,7 @@
 			interrupt-parent = <&intc>;
 			interrupts = <0 68 0>;
 			#mbox-cells = <1>;
-			status = "okay";
+			status = "disabled";
 		};
 
 		mailbox4: mailbox4@cac91000 {
@@ -297,7 +297,7 @@
 			interrupt-parent = <&intc>;
 			interrupts = <0 69 0>;
 			#mbox-cells = <1>;
-			status = "okay";
+			status = "disabled";
 		};
 
 		mailbox5: mailbox5@cac91400 {
@@ -307,7 +307,7 @@
 			interrupt-parent = <&intc>;
 			interrupts = <0 70 0>;
 			#mbox-cells = <1>;
-			status = "okay";
+			status = "disabled";
 		};
 
 		mailbox6: mailbox6@cac91800 {
@@ -317,7 +317,7 @@
 			interrupt-parent = <&intc>;
 			interrupts = <0 71 0>;
 			#mbox-cells = <1>;
-			status = "okay";
+			status = "disabled";
 		};
 
 		mailbox7: mailbox7@c0760000 {
@@ -327,7 +327,7 @@
 			interrupt-parent = <&intc>;
 			interrupts = <0 65 0>;
 			#mbox-cells = <1>;
-			status = "okay";
+			status = "disabled";
 		};
 
 		rproc0: rproc0@0 {
@@ -339,17 +339,15 @@
 			proc_id = <0>;
 			rsc_id = <0>;
 			vdev_id = <0>;
-			mboxes = <&mailbox3 1>, <&mailbox3 2>;
 			mbox-names = "vq0", "vq1";
-			status = "okay";
+			status = "disabled";
 		};
 
 		/* RPMI node, similar structure to rproc for mailbox communication */
 		rpmi: rpmi@1 {
 			compatible = "spacemit,k3-os0-rpmi";
 			reg = <0x0 0x0>;
-			status = "okay";
-			mboxes = <&mailbox3 0>;
+			status = "disabled";
 			mbox-names = "rpmi_mbox";
 
 			/* Shared memory configuration */

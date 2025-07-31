@@ -5,9 +5,9 @@
 #include <openamp/rpmsg.h>
 #include <openamp/rpmsg_virtio.h>
 
-#define APPLICATION_NAME	"rpmsg:demo"
-#define RPMSG_ADDR_SRC		666
-#define RPMSG_ADDR_DST		888
+#define APPLICATION_NAME	"rpmsg:demo1"
+#define RPMSG_ADDR_SRC		999
+#define RPMSG_ADDR_DST		777
 
 extern struct rpmsg_device *rpdev;
 
@@ -16,7 +16,7 @@ struct double_os_demo {
 	struct rpmsg_endpoint endp;
 };
 
-static int rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, 
+static int rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data,
 			     size_t len, uint32_t src, void *priv)
 {
 	int r;
@@ -89,4 +89,4 @@ int double_os_demo_init(void)
 
 	return 0;
 }
-INIT_APP_EXPORT(double_os_demo_init);
+/* INIT_APP_EXPORT(double_os_demo_init); */
