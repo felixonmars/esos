@@ -5,6 +5,7 @@
 #include <rtdef.h>
 #include <rthw.h>
 #include <riscv-ops.h>
+#include <stdint.h>
 
 #define SysTimer_BASE	0xe4000000		/*!< SysTick Base Address */
 #define SysTimer_Mtimer_Pos			(0xbff8)
@@ -23,7 +24,7 @@
 static inline rt_uint64_t SysTimer_GetLoadValue(void)
 {
 	unsigned int hartid = read_csr(mhartid);
-	volatile rt_uint64_t *ptr = (rt_uint64_t *)(SysTimer_BASE + SysTimer_Mtimer_Pos + (hartid << SysTimer_SHIFT_PER_TARGET));
+	volatile rt_uint64_t *ptr = (rt_uint64_t *)(uintptr_t)(SysTimer_BASE + SysTimer_Mtimer_Pos + (hartid << SysTimer_SHIFT_PER_TARGET));
 
 	return *ptr;
 }
