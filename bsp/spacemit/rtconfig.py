@@ -57,7 +57,7 @@ if CPU == 'n308':
         CXXFLAGS = CFLAGS
 
         DUMP_ACTION = OBJDUMP + ' -D -S $TARGET > rtt.asm\n'
-        POST_ACTION = OBJCPY + ' -O binary $TARGET rtthread.bin\n' + SIZE + ' $TARGET \n'
+        POST_ACTION = OBJCPY + ' -O binary $TARGET rtthread.bin\n' + SIZE + ' $TARGET \n' + STRIP + ' $TARGET\n'
 
 else:
     EXEC_PATH   = os.getcwd() + '/../../tools/toolchain/spacemit-toolchain-elf-newlib-x86_64-v1.0.9/bin'
@@ -92,4 +92,4 @@ else:
         CXXFLAGS = CFLAGS
 
         DUMP_ACTION = OBJDUMP + ' -D -S $TARGET > rtt.asm\n'
-        POST_ACTION = OBJCPY + ' -O binary $TARGET rtthread.bin\n' + SIZE + ' $TARGET \n'
+        POST_ACTION = OBJCPY + ' -O binary $TARGET rtthread.bin\n' + SIZE + ' $TARGET \n' + STRIP + ' $TARGET\n'

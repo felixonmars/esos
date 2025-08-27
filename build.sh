@@ -73,10 +73,16 @@ function select_board()
 	for board in $(cd $BOARD_DIR/$TARGET_CHIP; find -mindepth 1 -maxdepth 1 -type d |grep -v default|sort); do
 		if [ `basename $BOARD_DIR/$TARGET_CHIP/$board` != ".git" ] ; then
 			boards[$count]=`basename $BOARD_DIR/$TARGET_CHIP/$board`
-			printf "	$count: ${boards[$count]}\n"
+			printf "\t$count: ${boards[$count]}\n"
 			let count=$count+1
 		fi
 	done
+
+	if [ "$TARGET_CHIP" = "rt24" ]; then
+		boards[$count]="k3_all_cores"
+		printf "\t$count: ${boards[$count]} (build both k3_core0 and k3_core1)\n"
+		let count=$count+1
+	fi
 
 	if [ "$count" -gt 0 ] ; then
 		while true; do
@@ -109,6 +115,9 @@ function select_entry_point()
  		TARGET_ENTRY_POINT=0x100200000
 	elif [ "x${TARGET_CHIP}_${TARGET_BOARD}" = "xrt24_k3_core1" ]; then
 		TARGET_ENTRY_POINT=0x100804000
+	elif [ "x${TARGET_CHIP}_${TARGET_BOARD}" = "xrt24_k3_all_cores" ]; then
+		# Skip entry point setting for all_cores, will be handled in build phase
+		return 0
 	else
 		mk_error "No valid entry point!"
 		return 1
@@ -122,7 +131,7 @@ function build_usage()
 	mk_info "usage of build script is as follows:
 	'$CMD_PROMPT config'                 set the SDK configuration
 	'$CMD_PROMPT all'                    build all component
-	'$CMD_PROMPT'                        build all component
+	'$CMD_PROMPT'                        build all component (supports k3_all_cores option)
 	'$CMD_PROMPT clean'                  clean the kernel\n"
 }
 
@@ -166,7 +175,10 @@ function config_sdk()
 
 	source ${ESOS_BASE_DEFCONF}
 
-	cp ${BOARD_DIR}/${TARGET_CHIP}/${TARGET_BOARD}/${TARGET_DEFCONFIG} ${BSP_DIR}/.config
+	# Skip config copy for k3_all_cores, will be handled in build phase
+	if [ "${TARGET_BOARD}" != "k3_all_cores" ]; then
+		cp ${BOARD_DIR}/${TARGET_CHIP}/${TARGET_BOARD}/${TARGET_DEFCONFIG} ${BSP_DIR}/.config
+	fi
 
 	show_target_config
 
@@ -221,6 +233,113 @@ function build_kernel()
 	cd -
 }
 
+function build_single_core()
+{
+	local core_name=$1
+	local output_suffix=$2
+
+	mk_info "Building ${core_name}..."
+
+	# Set target board for this core
+	TARGET_BOARD=${core_name}
+	select_entry_point
+	TARGET_DEFCONFIG=${TARGET_CHIP}_${TARGET_BOARD}_defconfig
+
+	# Update config files
+	echo "export TARGET_CHIP=${TARGET_CHIP}" > ${ESOS_BASE_DEFCONF}
+	echo "export TARGET_BOARD=${TARGET_BOARD}" >> ${ESOS_BASE_DEFCONF}
+	echo "export TARGET_DEFCONFIG=${TARGET_DEFCONFIG}" >> ${ESOS_BASE_DEFCONF}
+	echo "export TARGET_ENTRY_POINT=${TARGET_ENTRY_POINT}" >> ${ESOS_BASE_DEFCONF}
+
+	cp ${BOARD_DIR}/${TARGET_CHIP}/${TARGET_BOARD}/${TARGET_DEFCONFIG} ${BSP_DIR}/.config
+
+	# Build dtb
+	source ${ESOS_BASE_DEFCONF}
+	cd ${BSP_DIR}/platform/${TARGET_CHIP}/${TARGET_BOARD}/dts/
+	make
+	cd -
+
+	# Build src
+	source ${ESOS_BASE_DEFCONF}
+	cd ${BSP_DIR}
+	scons --useconfig=.config
+	scons
+	cd -
+
+	# Rename output files to avoid overwriting
+	if [ -f "${BSP_DIR}/rtthread-rt24.elf" ]; then
+		if [ "${output_suffix}" = "core0" ]; then
+			mv "${BSP_DIR}/rtthread-rt24.elf" "${BSP_DIR}/k3_os0_rcpu.elf"
+			mk_info "Output: ${BSP_DIR}/k3_os0_rcpu.elf"
+		elif [ "${output_suffix}" = "core1" ]; then
+			mv "${BSP_DIR}/rtthread-rt24.elf" "${BSP_DIR}/k3_os1_rcpu.elf"
+			mk_info "Output: ${BSP_DIR}/k3_os1_rcpu.elf"
+		fi
+	fi
+	if [ -f "${BSP_DIR}/rtthread.bin" ]; then
+		mv "${BSP_DIR}/rtthread.bin" "${BSP_DIR}/rtthread-${output_suffix}.bin"
+		mk_info "Output: ${BSP_DIR}/rtthread-${output_suffix}.bin"
+	fi
+}
+
+function build_all_cores()
+{
+	mk_info "Building all K3 cores (k3_core0 and k3_core1)..."
+
+	# Clean previous builds
+	clean_kernel
+
+	# Build core0
+	build_single_core "k3_core0" "core0"
+
+	# Clean for next build
+	cd ${BSP_DIR}
+	scons -c
+	cd -
+
+	# Build core1
+	build_single_core "k3_core1" "core1"
+
+	# Create ITB package
+	create_esos_itb
+
+	mk_info "All cores built successfully!"
+	mk_info "Generated files:"
+	mk_info "  - ${BSP_DIR}/k3_os0_rcpu.elf"
+	mk_info "  - ${BSP_DIR}/k3_os1_rcpu.elf"
+	mk_info "  - ${BSP_DIR}/esos.itb"
+}
+
+function create_esos_itb()
+{
+	mk_info "Creating ESOS ITB package..."
+
+	# Copy ITS template to build directory
+	if [ -f "${TOP_DIR}/esos.its" ]; then
+		cp "${TOP_DIR}/esos.its" "${BSP_DIR}/esos.its"
+		mk_info "Using ITS template: ${TOP_DIR}/esos.its"
+	else
+		mk_error "ITS template not found: ${TOP_DIR}/esos.its"
+		return 1
+	fi
+
+	# Generate ITB using mkimage
+	cd ${BSP_DIR}
+	if command -v mkimage >/dev/null 2>&1; then
+		mkimage -f esos.its esos.itb
+		mk_info "ITB created: ${BSP_DIR}/esos.itb"
+
+		# Copy ITB to output directory
+		OUTPUT_DIR="${TOP_DIR}/../output/esos"
+		mkdir -p "${OUTPUT_DIR}"
+		cp esos.itb "${OUTPUT_DIR}/"
+		mk_info "ITB copied to: ${OUTPUT_DIR}/esos.itb"
+	else
+		mk_warn "mkimage not found, ITB not created. Please install u-boot-tools."
+	fi
+	cd -
+}
+
 function clean_kernel()
 {
 	# clean src
@@ -230,10 +349,12 @@ function clean_kernel()
 	scons -c
 	cd -
 
-	# clean dtb
-	cd ${BSP_DIR}/platform/${TARGET_CHIP}/${TARGET_BOARD}/dts/
-	make clean
-	cd -
+	# clean dtb (skip for k3_all_cores virtual target)
+	if [ "${TARGET_BOARD}" != "k3_all_cores" ]; then
+		cd ${BSP_DIR}/platform/${TARGET_CHIP}/${TARGET_BOARD}/dts/
+		make clean
+		cd -
+	fi
 }
 
 # execute some command without configuration
@@ -244,7 +365,17 @@ elif [ "x$1" = "xconfig" ]; then
 	config_sdk
 	exit 0
 elif [ "x$1" = "x" ]; then
-	build_kernel
+	# Check if we need to build all cores
+	if [ -f "${ESOS_BASE_DEFCONF}" ]; then
+		source ${ESOS_BASE_DEFCONF}
+		if [ "${TARGET_BOARD}" = "k3_all_cores" ]; then
+			build_all_cores
+		else
+			build_kernel
+		fi
+	else
+		build_kernel
+	fi
 	exit 0
 elif [ "x$1" = "xclean" ]; then
 	clean_kernel
