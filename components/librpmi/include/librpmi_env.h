@@ -7,6 +7,7 @@
 #ifndef __LIBRPMI_ENV_H__
 #define __LIBRPMI_ENV_H__
 #include <rthw.h>
+#include <rtthread.h>
 
 /******************************************************************************/
 
@@ -246,7 +247,12 @@ void rpmi_env_free(void *ptr);
  */
 static inline void *rpmi_env_alloc_lock(void)
 {
-	return NULL;
+	char tmp[32];
+	static rt_int32_t count;
+
+	rt_snprintf(tmp, 32, "rpmi_lock:%d", count++);
+
+	return rt_mutex_create(tmp, RT_IPC_FLAG_FIFO);
 }
 
 /**
@@ -258,6 +264,7 @@ static inline void *rpmi_env_alloc_lock(void)
  */
 static inline void rpmi_env_free_lock(void *lptr)
 {
+	rt_mutex_delete(lptr);
 }
 
 /**
@@ -270,6 +277,7 @@ static inline void rpmi_env_free_lock(void *lptr)
 static inline void rpmi_env_lock(void *lptr)
 {
 	/* Do the actual locking if available */
+	rt_mutex_take(lptr, RT_WAITING_FOREVER);
 }
 
 /**
@@ -282,6 +290,7 @@ static inline void rpmi_env_lock(void *lptr)
 static inline void rpmi_env_unlock(void *lptr)
 {
 	/* Do the actual unlocking if available */
+	rt_mutex_release(lptr);
 }
 
 /** @} */

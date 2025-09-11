@@ -46,53 +46,6 @@ void rpmi_env_free(void* ptr)
 	}
 }
 
-/* String operations */
-void* rpmi_env_memcpy(void* dst, const void* src, rpmi_size_t len)
-{
-	return rt_memcpy(dst, src, len);
-}
-
-void* rpmi_env_memset(void* dst, rt_int32_t val, rpmi_size_t len)
-{
-	return rt_memset(dst, val, len);
-}
-
-char* rpmi_env_strncpy(char* dst, const char* src, rpmi_size_t len)
-{
-	return rt_strncpy(dst, src, len);
-}
-
-rpmi_size_t rpmi_env_strlen(const char* str)
-{
-	return rt_strlen(str);
-}
-
-/* Lock operations */
-void* rpmi_env_alloc_lock(void)
-{
-	char tmp[32];
-	static rt_int32_t count;
-
-	rt_snprintf(tmp, 32, "rpmi_lock:%d", count++);
-
-	return rt_mutex_create(tmp, RT_IPC_FLAG_FIFO);
-}
-
-void rpmi_env_free_lock(void* lock)
-{
-	rt_mutex_delete(lock);
-}
-
-void rpmi_env_lock(void* lock)
-{
-	rt_mutex_take(lock, RT_WAITING_FOREVER);
-}
-
-void rpmi_env_unlock(void* lock)
-{
-	rt_mutex_release(lock);
-}
-
 /* Time related functions */
 rpmi_uint64_t rpmi_env_get_timestamp(void)
 {
