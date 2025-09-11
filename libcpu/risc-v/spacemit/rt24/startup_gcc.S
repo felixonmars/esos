@@ -44,7 +44,7 @@ _start:
 
 	/* set to disable FPU */
 	li t0, MSTATUS_FS
-	csrc mstatus, t0
+	csrs mstatus, t0
 
 .option push
 .option norelax

@@ -90,6 +90,8 @@ choice
 	select RT_USING_COMPONENTS_INIT
 	select RT_USING_USER_MAIN
 	select ARCH_RISCV64
+	select ARCH_RISCV_FPU
+	select ARCH_RISCV_FPU_D
 	select RT_USING_CACHE
 endchoice
 endmenu
