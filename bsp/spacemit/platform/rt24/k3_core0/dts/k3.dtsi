@@ -377,20 +377,11 @@
 			rpmi_hsm0: rpmi-hsm@0 {
 				compatible = "k3-os0-rpmi-hsm";
 				/* hartids*/
-				hartids = <0x0 0x1 0x2 0x3 0x4 0x5 0x6 0x7>;
+				hartids = <0x0 0x1 0x2 0x3 0x4 0x5 0x6 0x7 0x8 0x9 0xa 0xb 0xc 0xd 0xe 0xf>;
 
-				risv,support-syssup;
+				risv,support-syssup = <1>;
 
 				status = "disabled";
-/**
- *				CPU_RET: cpu-retentive {
- *					compatible = "riscv,idle-state";
- *					riscv,sbi-suspend-param = <0x10000000>;
- *					entry-latency-us = <20>;
- *					exit-latency-us = <40>;
- *					min-residency-us = <80>;
- *				};
- */
 
 				CPU_NONRET: cpu-nonretentive {
 					compatible = "riscv,idle-state";
@@ -400,17 +391,6 @@
 					exit-latency-us = <500>;
 					min-residency-us = <950>;
 				};
-/**
- *				CLUSTER_RET: cluster-retentive {
- *					compatible = "riscv,idle-state";
- *					riscv,sbi-suspend-param = <0x11000000>;
- *					local-timer-stop;
- *					entry-latency-us = <50>;
- *					exit-latency-us = <100>;
- *					min-residency-us = <250>;
- *					wakeup-latency-us = <130>;
- *				};
- */
 
 				CLUSTER_NONRET: cluster-nonretentive {
 					compatible = "riscv,idle-state";
