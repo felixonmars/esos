@@ -74,14 +74,80 @@ typedef volatile union audio_wakeup_en_reg {
 	struct {
 		rt_uint32_t shub_int_wkup_en:1;
 		rt_uint32_t ipc_ap_wkup_en:1;
-		rt_uint32_t reserved0:1;
+		rt_uint32_t ipc_cp_wkup_en:1;
 		rt_uint32_t ap_wkup_en:1;
 		rt_uint32_t timer_wkup_en:1;
-		rt_uint32_t reserved1:27;
+		rt_uint32_t ipc_msa_wkup_en:1;
+		rt_uint32_t reserved0:1;
+		rt_uint32_t icu_wkup_en:1;
+		rt_uint32_t reserved1:2;
+		rt_uint32_t ap_c0_m2_wkup_en:1;
+		rt_uint32_t ap_c0_m2_enter_wkup_en:1;
+		rt_uint32_t ap_c1_m2_wkup_en:1;
+		rt_uint32_t ap_c1_m2_enter_wkup_en:1;
+		rt_uint32_t ap_c2_m2_wkup_en:1;
+		rt_uint32_t ap_c2_m2_enter_wkup_en:1;
+		rt_uint32_t ap_c3_m2_wkup_en:1;
+		rt_uint32_t ap_c3_m2_enter_wkup_en:1;
+		rt_uint32_t d2_enter_en:1;
+		rt_uint32_t d2_exit_en:1;
+		rt_uint32_t reserved2:12;
 	} bits;
 } audio_wakeup_en_t;
 
-#define PWRCTL_LP_WAKEUP_MASK        (0xc088c060)
+#define SOC_TOP_D2_LP_CTRL			0xc088c0fc
+
+typedef volatile union soc_top_d2_lp_ctrl_reg {
+	rt_uint32_t val;
+	struct {
+		rt_uint32_t rcpu_ctrl_soc_top_d2_lp_en:1;
+		rt_uint32_t clr_soc_top_d2_wakeup_hw_mask:1;
+		rt_uint32_t soc_top_d2_enter_int_clr:1;
+		rt_uint32_t reserved0:1;
+		rt_uint32_t soc_top_d2_enter_int_status:1;
+		rt_uint32_t soc_top_d2_wakeup_int_status:1;
+		rt_uint32_t reserved1:26;
+	} bits;
+} soc_top_d2_lp_ctrl;
+
+typedef volatile union clusterx_m2_lp_ctrl_reg {
+	rt_uint32_t val;
+	struct {
+		rt_uint32_t rcpu_ctrl_clx_m2_lp_en:1;
+		rt_uint32_t clr_clx_m2_wkup_hw_msk:1;
+		rt_uint32_t clx_m2_enter_int_clk:1;
+		rt_uint32_t reserved0:1;
+		rt_uint32_t clx_m2_enter_int:1;
+		rt_uint32_t clx_m2_wkup_int:1;
+		rt_uint32_t clx_mp_state:6;
+		rt_uint32_t reserved1:20;
+	} bits;
+} clusterx_m2_lp_ctrl;
+
+#define RT24_CORE0_IDLE_CFG_REG		(0xc088c000 + 0xdc)
+
+typedef volatile union rt24_core0_idle_cfg_reg {
+	rt_uint32_t val;
+	struct {
+		rt_uint32_t core_idle:1;
+		rt_uint32_t core_pwrdwn:1;
+		rt_uint32_t msk_core_clk_statble_check:1;
+		rt_uint32_t msk_core_wfi_state_check:1;
+		rt_uint32_t reserved:28;
+	} bits;
+} rt24_core0_idle_cfg;
+
+#define RT24_CORE1_IDLE_CFG_REG		(0xc088c000 + 0xe0)
+
+#define RT24_PMU_STATUS			(0xc0880000 + 0x64)
+
+#define PWRCTL_LP_WAKEUP_MASK		(0xc088c060)
+
+#define RCPU_CORE0_BOOT_ENTRY_LO	0xc088007c
+#define RCPU_CORE0_BOOT_ENTRY_HI	0xc0880080
+
+#define RCPU_CORE1_BOOT_ENTRY_LO	0xc088008c
+#define RCPU_CORE1_BOOT_ENTRY_HI	0xc0880090
 
 #define RT_HEAP_START		0x100500000
 #define RT_HEAP_END		0x100700000

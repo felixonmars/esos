@@ -178,8 +178,8 @@ static enum rpmi_error rpmi_syssusp_process_events(struct rpmi_service_group *gr
 						sgsusp->current_syssusp_type,
 						sgsusp->current_resume_addr);
 		sgsusp->current_state = RPMI_SYSSUSP_STATE_SUSPENDED;
-		break;
-	case RPMI_SYSSUSP_STATE_SUSPENDED:
+		/* break; */
+	/* case RPMI_SYSSUSP_STATE_SUSPENDED: */
 		if (!sgsusp->ops->system_suspend_can_resume(sgsusp->ops_priv,
 							    sgsusp->current_hart_index))
 			return RPMI_ERR_BUSY;

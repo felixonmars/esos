@@ -5,6 +5,8 @@
  */
 
 #include <librpmi.h>
+#include <spacemit-rpmi.h>
+#include <rtthread.h>
 
 #ifdef DEBUG
 #define DPRINTF(msg...)		rpmi_env_printf(msg)
@@ -294,12 +296,14 @@ enum rpmi_error rpmi_hsm_hart_start(struct rpmi_hsm *hsm, rpmi_uint32_t hart_id,
 		rpmi_env_unlock(hart->lock);
 		return RPMI_ERR_ALREADY;
 	}
+
 	if (hart->state == RPMI_HSM_HART_STATE_START_PENDING) {
 		DPRINTF("%s: hart_id 0x%x already in-progress\n",
 			__func__, hart_id);
 		rpmi_env_unlock(hart->lock);
 		return RPMI_ERR_ALREADY;
 	}
+
 	if (hart->state != RPMI_HSM_HART_STATE_STOPPED) {
 		DPRINTF("%s: denied due to invalid state for hart_id 0x%x\n",
 			__func__, hart_id);
@@ -557,6 +561,8 @@ struct rpmi_hsm *rpmi_hsm_create(rpmi_uint32_t hart_count,
 	hsm->leaf.suspend_types = suspend_types;
 	hsm->leaf.ops = ops;
 	hsm->leaf.ops_priv = ops_priv;
+
+	((struct spacemit_rpmi_hsm_config *)(ops_priv))->hsm = hsm;
 
 	rpmi_hsm_process_state_changes(hsm);
 

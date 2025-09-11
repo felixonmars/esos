@@ -37,13 +37,20 @@
 /* RPMI HSM structures  */
 struct spacemit_rpmi_hsm_config {
 	rt_uint32_t hartids[HSM_SUSPEND_MAX_HARTIDS];
+	rt_uint32_t stop_flag[HSM_SUSPEND_MAX_HARTIDS];
+	rt_uint32_t suspend_flag[HSM_SUSPEND_MAX_HARTIDS];
 	struct rpmi_hsm_suspend_type stype[MAX_HSM_SUSPEND_TYPE];
 	rt_int32_t hartcnt;
 	rt_int32_t type_cnt;
 	rt_int32_t support_syssup;
 	struct dtb_node *node;
+	struct rpmi_hsm *hsm;
 	struct rpmi_hsm_platform_ops *hsm_ops;
 	struct rpmi_syssusp_platform_ops *syssup_ops;
+	rt_event_t event;
+	rt_sem_t sem_exit0, sem_exit1, sem_exit2, sem_exit3;
+	rt_sem_t sem_enter0, sem_enter1, sem_enter2, sem_enter3;
+	rt_thread_t tid;
 	/* reserved for future use */
 	void *priv;
 };
