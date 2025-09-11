@@ -78,12 +78,6 @@ __cpu_resume_enter:
 	/* Disable Global Interrupt */
 	csrc CSR_MSTATUS, MSTATUS_MIE
 
-	/* invalidate icache */
-	csrw CSR_CCM_MCOMMAND, 0xd
-
-	/* invalidate dcache */
-	csrw CSR_CCM_MCOMMAND, 0x17
-
 	/* get the saved context */
 	la a1, __sleep_sp_store
 	lw a0, 0*REGBYTES(a1)

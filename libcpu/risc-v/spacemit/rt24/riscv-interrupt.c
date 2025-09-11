@@ -80,7 +80,7 @@ void rt_hw_interrupt_umask(int vector)
 
 rt_uint32_t rt_hw_interrupt_is_enabled(int vector)
 {
-	return 0;
+	return __plic_irq_is_enabled(vector);
 }
 
 rt_uint32_t rt_hw_interrupt_is_pending(int vector)
@@ -90,6 +90,7 @@ rt_uint32_t rt_hw_interrupt_is_pending(int vector)
 
 void rt_hw_interrupt_clear_pending(int vector)
 {
+	__plic_clr_pending(vector);
 }
 
 void rt_hw_interrupt_set_pending(int vector)
@@ -105,3 +106,41 @@ void rt_hw_irq_isr(void)
 
 	__plic_irq_complete(vector);
 }
+
+#ifdef BSP_USING_PM
+
+static unsigned int ecli_save_reg[SOC_INT_MAX];
+
+void rt_hw_eclic_save(void)
+{
+    int idx = 0;
+
+    for (idx = 0; idx < SOC_INT_MAX; idx++)
+    {
+	    ecli_save_reg[idx] = rt_hw_interrupt_is_enabled(idx);
+    }
+
+    /* disable all the irqs */
+    for (idx = 0; idx < SOC_INT_MAX; idx++)
+    {
+	    rt_hw_interrupt_mask(idx);
+	    rt_hw_interrupt_clear_pending(idx);
+    }
+}
+
+void rt_hw_eclic_restore(void)
+{
+    int idx = 0;
+
+    /* set the plic threshold */
+    __plic_set_threshold(0);
+
+    for (; idx < SOC_INT_MAX; idx++)
+    {
+	__plic_set_priority(idx, 1);
+
+	if (ecli_save_reg[idx])
+		rt_hw_interrupt_umask(idx);
+    }
+}
+#endif

@@ -9,6 +9,9 @@ CPPPATH = [cwd]
 if GetDepend('SOC_SPACEMIT_K1_X') == False:
     SrcRemove(src, ['k1x_pm.c'])
 
+if GetDepend('SOC_SPACEMIT_K3') == False:
+    SrcRemove(src, ['k3_pm.c'])
+
 group = DefineGroup('Drivers_pm', src, depend = ['BSP_USING_PM'], CPPPATH = CPPPATH)
 
 Return('group')

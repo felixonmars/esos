@@ -71,6 +71,14 @@ __attribute__((always_inline)) static inline void __plic_set_pending(unsigned in
     *current_ptr = (1 << (source & 0x1F));
 }
 
+__attribute__((always_inline)) static inline void __plic_clr_pending(unsigned int source)
+{
+    volatile unsigned int *current_ptr = (volatile unsigned int *)(PLIC_BASE_ADDR +
+                                                                   PLIC_PENDING_OFFSET +
+                                                                   ((source >> 5) << 2));
+    *current_ptr &= ~(1 << (source & 0x1F));
+}
+
 __attribute__((always_inline)) static inline void __plic_irq_enable(unsigned int source)
 {
     unsigned int hart_id = read_csr(mhartid);
@@ -81,6 +89,17 @@ __attribute__((always_inline)) static inline void __plic_irq_enable(unsigned int
     unsigned int current = *current_ptr;
     current = current | (1 << (source & 0x1F));
     *current_ptr = current;
+}
+
+__attribute__((always_inline)) static inline unsigned int  __plic_irq_is_enabled(unsigned int source)
+{
+    unsigned int hart_id = read_csr(mhartid);
+    volatile unsigned int *current_ptr = (volatile unsigned int *)(PLIC_BASE_ADDR +
+                                                                   PLIC_ENABLE_OFFSET +
+                                                                   (hart_id << PLIC_ENABLE_SHIFT_PER_TARGET) +
+                                                                   ((source >> 5) << 2));
+    unsigned int current = *current_ptr;
+    return (current & (1 << (source & 0x1F)));
 }
 
 __attribute__((always_inline)) static inline void __plic_irq_disable(unsigned int source)
