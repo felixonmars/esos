@@ -1,0 +1,13 @@
+from building import *
+
+# The set of source files associated with this SConscript file.
+src = Split('''
+rpmsg_retarget.c
+''')
+cwd = GetCurrentDir()
+CPPPATH = [cwd]
+
+group = DefineGroup('OpenAMPSrcLibProxy', src, depend = ['RT_USING_OPENAMP'], CPPPATH = CPPPATH)
+
+Return('group')
+

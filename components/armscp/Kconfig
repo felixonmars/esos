@@ -1,0 +1,112 @@
+menu "ARM SCP framework"
+
+config RT_USING_ARMSCP
+    bool "Using ARM SCP framework for power management"
+    default n
+
+if RT_USING_ARMSCP
+
+    config BUILD_HAS_NOTIFICATION
+        bool "Support notify agent when power state changed"
+        default n
+    
+    config BUILD_HAS_SCMI_NOTIFICATIONS
+        bool "Mod scmi notification support"
+        default n
+
+    config RT_USING_ARMSCP_MODULE
+        bool "using ARM SCP module framework"
+        default n
+
+
+    if RT_USING_ARMSCP_MODULE
+
+        config BUILD_HAS_MOD_SCMI_SYSTEM_POWER
+             bool "using ARM SCP scmi system power framework"
+             default n
+
+             if BUILD_HAS_MOD_SCMI_SYSTEM_POWER
+
+                    config BUILD_HAS_MOD_SYSTEM_POWER
+                         bool "using ARM SCP system power framework"
+                         default n
+
+             endif 
+
+        config BUILD_HAS_MOD_SCMI_POWER_DOMAIN
+            bool "using ARM SCP scmi power module framework"
+            default n
+
+            if BUILD_HAS_MOD_SCMI_POWER_DOMAIN
+
+                    config BUILD_HAS_MOD_POWER_DOMAIN
+                         bool "using ARM SCP power domain module framework"
+                         default n
+            endif
+
+        config BUILD_HAS_MOD_SCMI_VOLTAGE_DOMAIN
+            bool "using ARM SCP scmi voltage module framework"
+            default n
+
+            if BUILD_HAS_MOD_SCMI_VOLTAGE_DOMAIN
+
+                  config BUILD_HAS_MOD_VOLTAGE_DOMAIN
+                       bool "using ARM SCP voltage domain module framework"
+                       default n
+
+            endif
+
+        config BUILD_HAS_MOD_SCMI_PERF
+            bool "using ARM SCP scmi perf module framework"
+            default n
+
+	    if BUILD_HAS_MOD_SCMI_PERF
+
+		config BUILD_HAS_MOD_DVFS
+			bool "using ARM SCP dvfs module framework"
+			default n
+
+                config BUILD_HAS_MOD_CLOCK
+			bool "using ARM SCP clock module framework"
+			default n
+
+			if BUILD_HAS_MOD_CLOCK
+
+				config BUILD_HAS_CLOCK_TREE_MGMT
+					bool "clock module using clock tree management"
+					default n
+			endif
+
+	    endif
+
+        config BUILD_HAS_MOD_SCMI
+            bool "using ARM SCP scmi module framework"
+            default y
+
+
+        config BUILD_HAS_MOD_TRANSPORT
+            bool "using ARM SCP transport module framework"
+            default n
+
+        config BUILD_HAS_MOD_MHU
+            bool "using ARM SCP MHU module framework"
+            default n
+
+        config BUILD_HAS_MOD_TIMER
+            bool "using ARM SCP TIMER module framework"
+            default n
+
+            if BUILD_HAS_MOD_TIMER
+
+                config BUILD_USING_GTIMER
+                      bool "using gtimer as the SCP's timer"
+                      default n
+
+                config BUILD_USING_MTIMER
+                      bool "using the local timer as the SCP's timer"
+                      default n
+            endif
+    endif
+endif
+
+endmenu

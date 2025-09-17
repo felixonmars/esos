@@ -1,0 +1,15 @@
+# RT-Thread building script for bridge
+Import('RTT_ROOT')
+Import('rtconfig')
+from building import *
+
+cwd     = GetCurrentDir()
+src = Split('''
+CommonTables.c
+CommonTablesF16.c
+''')
+CPPPATH = [cwd]
+
+group   = DefineGroup('CommonTables', src, depend = [''], CPPPATH = CPPPATH)
+
+Return('group')

@@ -1,0 +1,19 @@
+# RT-Thread building script for bridge
+Import('RTT_ROOT')
+Import('rtconfig')
+from building import *
+
+cwd     = GetCurrentDir()
+src = Split('''
+riscv_nn_activation_s16.c
+riscv_nn_activations_q15.c
+riscv_nn_activations_q7.c
+riscv_relu6_s8.c
+riscv_relu_q15.c
+riscv_relu_q7.c
+''')
+CPPPATH = [cwd]
+
+group   = DefineGroup('ActivationFunctions', src, depend = [''], CPPPATH = CPPPATH)
+
+Return('group')

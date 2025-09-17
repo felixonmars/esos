@@ -1,0 +1,17 @@
+menu "OpenAMP framework"
+
+config RT_USING_OPENAMP
+    bool "Using OpenAMP framework for muti-core communication"
+    select METAL_INTERNAL
+    default n
+
+config METAL_INTERNAL
+    bool "Using internal metal definations"
+    default n
+
+config RT_USING_ADMA_SERVICE
+    bool "Add adma service in openAMP framework"
+    select RT_USING_OPENAMP
+    depends on SOC_SPACEMIT_K1_X
+
+endmenu

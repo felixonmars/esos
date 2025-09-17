@@ -1,0 +1,44 @@
+menu "Hardware Drivers Config"
+
+menu "Onboard Peripheral Drivers"
+
+endmenu
+
+menu "On-chip Peripheral Drivers"
+
+    config BSP_USING_GPIO
+        bool "Enable GPIO"
+        select RT_USING_PIN
+        default y
+
+    config BSP_USING_UART
+        bool "Enable UART"
+        default y
+        select RT_USING_SERIAL
+
+    config BSP_USING_PM
+	bool "Enable PM"
+	default n
+	select RT_USING_PM
+endmenu
+
+menu "Board extended module Drivers"
+
+endmenu
+
+endmenu
+
+menu "Platform Config"
+
+choice
+    prompt "select chip type"
+    default SOC_SPACEMIT_K1_X
+
+    config SOC_SPACEMIT_K1_X
+    bool "SOC_SPACEMIT_K1_X"
+    	select RT_USING_COMPONENTS_INIT
+    	select RT_USING_USER_MAIN
+    	select ARCH_RISCV32
+   	select RT_USING_CACHE
+endchoice
+endmenu

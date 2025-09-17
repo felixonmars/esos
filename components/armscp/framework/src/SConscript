@@ -1,0 +1,15 @@
+# RT-Thread building script for bridge
+Import('RTT_ROOT')
+Import('rtconfig')
+from building import *
+
+cwd     = GetCurrentDir()
+src = Glob("*.c")
+CPPPATH = [cwd]
+
+if GetDepend('BUILD_HAS_NOTIFICATION') == False:
+	SrcRemove(src, ['fwk_notification.c'])
+
+group   = DefineGroup('ArmScpFrameworkSrc', src, depend = [''], CPPPATH = CPPPATH)
+
+Return('group')

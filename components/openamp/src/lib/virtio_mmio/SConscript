@@ -1,0 +1,13 @@
+from building import *
+
+# The set of source files associated with this SConscript file.
+src = Split('''
+virtio_mmio_drv.c
+''')
+cwd = GetCurrentDir()
+CPPPATH = [cwd]
+
+group = DefineGroup('OpenAMPSrcLibVirtioMMIO', src, depend = ['RT_USING_OPENAMP'], CPPPATH = CPPPATH)
+
+Return('group')
+

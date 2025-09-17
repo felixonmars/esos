@@ -612,6 +612,11 @@ void rt_assert_handler(const char *ex, const char *func, rt_size_t line);
 #include <finsh.h>
 #endif
 
+/* ARMSCP debug log level */
+/* if FWK_LOG_LEVEL <= FWK_LOG_LEVEL_DEBUG , the debug info can be print-out */
+#define FWK_LOG_LEVEL_DEBUG	1
+#define FWK_LOG_LEVEL		2
+
 /**@}*/
 
 #ifdef __cplusplus

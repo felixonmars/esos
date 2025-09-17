@@ -1,0 +1,11 @@
+# RT-Thread building script for bridge
+from building import *
+
+# The set of source files associated with this SConscript file.
+src = Glob('*.c')
+cwd = GetCurrentDir()
+CPPPATH = [cwd]
+
+group = DefineGroup('ArmScpModuleGTimerInc', src, depend = ['BUILD_USING_GTIMER'], CPPPATH = CPPPATH)
+
+Return('group')

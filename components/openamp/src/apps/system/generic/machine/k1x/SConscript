@@ -1,0 +1,13 @@
+from building import *
+
+# The set of source files associated with this SConscript file.
+src = Split('''
+helper.c
+''')
+cwd = GetCurrentDir()
+CPPPATH = [cwd]
+
+group = DefineGroup('OpenAMPSrcAppsSysGenMacK1x', src, depend = ['RT_USING_OPENAMP'], CPPPATH = CPPPATH)
+
+Return('group')
+

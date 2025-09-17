@@ -1,0 +1,23 @@
+from building import *
+
+# The set of source files associated with this SConscript file.
+src = Split('''
+metal/irq.c
+metal/init.c
+metal/device.c
+metal/io.c
+metal/log.c
+metal/system/rtthread/io.c
+metal/system/rtthread/init.c
+metal/system/rtthread/irq.c
+metal/system/rtthread/device.c
+metal/system/rtthread/spacemit/sys.c
+metal/system/rtthread/spacemit/irq.c
+''')
+cwd = GetCurrentDir()
+CPPPATH = [cwd]
+
+group = DefineGroup('OpenAMPMetal', src, depend = ['RT_USING_OPENAMP'], CPPPATH = CPPPATH)
+
+Return('group')
+

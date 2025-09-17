@@ -1,0 +1,19 @@
+menu "NMSIS software algorithm library"
+
+config RT_USING_NMSIS
+    bool "Using NMSIS software algorithm library"
+    default n
+
+if RT_USING_NMSIS
+
+    config RT_USING_NMSIS_DSP
+        bool "Using NMSIS DSP related software algorithm library"
+        default n
+
+
+    config RT_USING_NMSIS_NN
+         bool "Using NMSIS NN related software algorithm library"
+         default n
+endif
+
+endmenu

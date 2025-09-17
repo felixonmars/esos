@@ -1,0 +1,6 @@
+.config
+.esos.config
+*.dtb
+mydtb
+platform/version_id_gen.cc
+rtconfig.h

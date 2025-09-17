@@ -1,0 +1,17 @@
+# RT-Thread building script for bridge
+Import('RTT_ROOT')
+Import('rtconfig')
+from building import *
+
+cwd     = GetCurrentDir()
+src = Split('''
+riscv_concatenation_s8_w.c
+riscv_concatenation_s8_x.c
+riscv_concatenation_s8_y.c
+riscv_concatenation_s8_z.c
+''')
+CPPPATH = [cwd]
+
+group   = DefineGroup('ConcatenationFunctions', src, depend = [''], CPPPATH = CPPPATH)
+
+Return('group')

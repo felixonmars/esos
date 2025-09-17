@@ -89,6 +89,10 @@ struct rt_irq_desc
 void rt_hw_interrupt_init(void);
 void rt_hw_interrupt_mask(int vector);
 void rt_hw_interrupt_umask(int vector);
+rt_uint32_t rt_hw_interrupt_is_enabled(int vector);
+rt_uint32_t rt_hw_interrupt_is_pending(int vector);
+void rt_hw_interrupt_clear_pending(int vector);
+void rt_hw_interrupt_set_pending(int vector);
 rt_isr_handler_t rt_hw_interrupt_install(int              vector,
                                          rt_isr_handler_t handler,
                                          void            *param,

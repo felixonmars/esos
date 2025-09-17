@@ -1,0 +1,12 @@
+from building import *
+
+# The set of source files associated with this SConscript file.
+src = Split('''
+''')
+cwd = GetCurrentDir()
+CPPPATH = [cwd]
+
+group = DefineGroup('NmsisNNInclude', src, depend = [''], CPPPATH = CPPPATH)
+
+Return('group')
+

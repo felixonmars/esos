@@ -1,0 +1,15 @@
+# RT-Thread building script for bridge
+Import('RTT_ROOT')
+Import('rtconfig')
+from building import *
+
+cwd     = GetCurrentDir()
+src = Split('''
+MatrixFunctions.c
+MatrixFunctionsF16.c
+''')
+CPPPATH = [cwd]
+
+group   = DefineGroup('MatrixFunctions', src, depend = [''], CPPPATH = CPPPATH)
+
+Return('group')
