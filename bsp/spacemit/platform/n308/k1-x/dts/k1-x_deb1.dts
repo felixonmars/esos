@@ -1,5 +1,8 @@
-// SPDX-License-Identifier: (GPL-2.0 OR MIT)
-/* Copyright (c) 2022 Spacemit, Inc */
+/*
+ * Copyright (c) 2022-2025, Spacemit
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /dts-v1/;
 

@@ -31,7 +31,7 @@ typedef struct {
 	rt_uint32_t FOR;
 	rt_uint32_t ABR;
 	rt_uint32_t ACR;
-} ck_usart_reg_t;
+} pxa_uart_reg_t;
 
 /* AUDIO PMU */
 #define AUDIO_PMU_VOTE_REG	0xc088c018

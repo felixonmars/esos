@@ -1,7 +1,7 @@
-// SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2023, spacemit Corporation.
+ * Copyright (c) 2022-2025, Spacemit
  *
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #ifndef _CCU_SPACEMIT_K1X_DTS_H_

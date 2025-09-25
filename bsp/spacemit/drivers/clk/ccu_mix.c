@@ -1,9 +1,7 @@
-// SPDX-License-Identifier: GPL-2.0-only
 /*
- * Spacemit clock type mix(div/mux/gate/factor)
+ * Copyright (c) 2022-2025, Spacemit
  *
- * Copyright (c) 2023, spacemit Corporation.
- *
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <rthw.h>

@@ -1,6 +1,7 @@
-// SPDX-License-Identifier: GPL-2.0
 /*
- * Spacemit i2c driver header file
+ * Copyright (c) 2022-2025, Spacemit
+ *
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #ifndef _I2C_SPACEMIT_K1X_H

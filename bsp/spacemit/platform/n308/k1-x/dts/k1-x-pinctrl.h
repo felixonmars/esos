@@ -1,4 +1,8 @@
-/* SPDX-License-Identifier: GPL-2.0-or-later */
+/*
+ * Copyright (c) 2022-2025, Spacemit
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef __DT_BINDINGS_K1X_PINCTRL_H
 #define __DT_BINDINGS_K1X_PINCTRL_H

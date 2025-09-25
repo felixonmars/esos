@@ -1,18 +1,7 @@
-// SPDX-License-Identifier: GPL-2.0-only
 /*
- * drivers/pwm/pwm-pxa.c
+ * Copyright (c) 2022-2025, Spacemit
  *
- * simple driver for PWM (Pulse Width Modulator) controller
- *
- * 2008-02-13	initial version
- *		eric miao <eric.miao@marvell.com>
- *
- * Links to reference manuals for some of the supported PWM chips can be found
- * in Documentation/arch/arm/marvell.rst.
- *
- * Limitations:
- * - When PWM is stopped, the current PWM period stops abruptly at the next
- *   input clock (PWMCR_SD is set) and the output is driven to inactive.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <rtthread.h>

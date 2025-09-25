@@ -1,9 +1,7 @@
-// SPDX-License-Identifier: GPL-2.0
 /*
- * Support for Spacemit k1x spi controller
+ * Copyright (c) 2022-2025, Spacemit
  *
- * Copyright (c) 2023, spacemit Corporation.
- *
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #ifndef _K1X_SPI_H

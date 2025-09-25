@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2022-2025, Spacemit
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #ifndef __RT_MAILBOX_H__
 #define __RT_MAILBOX_H__
 

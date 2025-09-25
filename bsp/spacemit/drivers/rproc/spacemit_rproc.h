@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2022-2025, Spacemit
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #ifndef PLATFORM_INFO_H_
 #define PLATFORM_INFO_H_
 
