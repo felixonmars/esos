@@ -2127,7 +2127,6 @@ static int clk_core_set_parent_nolock(struct clk_core *core,
 					__func__, parent->name, core->name);
 			return p_index;
 		}
-		parent->rate;
 	}
 
 	/* do the re-parent */

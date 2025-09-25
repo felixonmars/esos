@@ -88,7 +88,6 @@ void of_gpiochip_add(struct gpio_chip *chip)
 	}
 
 	of_gpiochip_add_pin_range(chip);
-	dtb_node_get(chip->of_node);
 }
 
 /* Private function for resolving node pointer to gpio_chip */

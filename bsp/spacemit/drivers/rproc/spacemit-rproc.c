@@ -371,12 +371,11 @@ static rt_int32_t spacemit_rproc_probe(void)
 {
 	rt_int32_t i, irq;
 	rt_thread_t tid;
-	rt_uint32_t val[2] = {0, 0};
+	uint32_t val[2] = {0, 0};
 	struct spacemit_rproc *rproc;
 	rt_int32_t property_size;
 	rt_uint32_t u32_value;
 	rt_uint32_t *u32_ptr;
-	const void *prop_data;
 	struct dtb_node *compatible_node;
 	struct dtb_node *dtb_head_node = get_dtb_node_head();
 

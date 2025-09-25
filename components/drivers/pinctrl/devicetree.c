@@ -170,9 +170,6 @@ int pinctrl_dt_to_map(struct pinctrl *p)
 		return 0;
 	}
 
-	/* We may store pointers to property names within the node */
-	dtb_node_get(np);
-
 	/* For each defined state ID */
 	for (state = 0; ; state++) {
 		/* Retrieve the pinctrl-* property */

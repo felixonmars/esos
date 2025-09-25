@@ -20,7 +20,7 @@ static const char *_parse_integer_fixup_radix(const char *s, unsigned int *base)
     {
         if (s[0] == '0')
         {
-            if (tolower(s[1]) == 'x' && isxdigit(s[2]))
+            if (tolower(s[1]) == 'x' && isxdigit((unsigned char)s[2]))
                 *base = 16;
             else
                 *base = 8;
@@ -41,7 +41,7 @@ unsigned long simple_strtoul(const char *cp, char **endp,
 
     cp = _parse_integer_fixup_radix(cp, &base);
 
-    while (isxdigit(*cp) && (value = isdigit(*cp) ? *cp-'0' : (islower(*cp)
+    while (isxdigit((unsigned char)*cp) && (value = isdigit((unsigned char)*cp) ? *cp-'0' : (islower((unsigned char)*cp)
         ? toupper(*cp) : *cp)-'A'+10) < base)
     {
         result = result*base + value;
