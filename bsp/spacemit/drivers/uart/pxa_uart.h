@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __USART_H
-#define __USART_H
+#ifndef __PXA_UART_H
+#define __PXA_UART_H
 
 
 #include <rtdef.h>
-#include "drv_usart.h"
+#include "drv_uart.h"
 #include <register_defination.h>
 
 #ifdef __cplusplus
@@ -32,18 +32,18 @@ extern "C" {
 #define IER_THRE_INT_ENABLE     0x02
 #define IIR_RECV_LINE_ENABLE    0x04
 #define IIR_NO_ISQ_PEND         0x01
-#define UART_IER_UUE		0x40   /* UART Unit Enable */
+#define UART_IER_UUE		0x40
 
-#define LCR_SET_DLAB            0x80   /* enable r/w DLR to set the baud rate */
-#define LCR_PARITY_ENABLE       0x08   /* parity enabled */
-#define LCR_PARITY_EVEN         0x10   /* Even parity enabled */
-#define LCR_PARITY_ODD          0xef   /* Odd parity enabled */
-#define LCR_WORD_SIZE_5         0xfc   /* the data length is 5 bits */
-#define LCR_WORD_SIZE_6         0x01   /* the data length is 6 bits */
-#define LCR_WORD_SIZE_7         0x02   /* the data length is 7 bits */
-#define LCR_WORD_SIZE_8         0x03   /* the data length is 8 bits */
-#define LCR_STOP_BIT1           0xfb   /* 1 stop bit */
-#define LCR_STOP_BIT2           0x04   /* 1.5 stop bit */
+#define LCR_SET_DLAB            0x80
+#define LCR_PARITY_ENABLE       0x08
+#define LCR_PARITY_EVEN         0x10
+#define LCR_PARITY_ODD          0xef
+#define LCR_WORD_SIZE_5         0xfc
+#define LCR_WORD_SIZE_6         0x01
+#define LCR_WORD_SIZE_7         0x02
+#define LCR_WORD_SIZE_8         0x03
+#define LCR_STOP_BIT1           0xfb
+#define LCR_STOP_BIT2           0x04
 
 #define DW_LSR_PFE              0x80
 #define DW_LSR_TEMT             0x40
@@ -65,7 +65,7 @@ typedef struct
     uintptr_t base;
     rt_uint32_t irq;
     struct clk *clk, *rst;
-    usart_event_cb_t cb_event;           ///< Event callback
+    uart_event_cb_t cb_event;
     rt_uint32_t rx_total_num;
     rt_uint32_t tx_total_num;
     rt_uint8_t *rx_buf;
@@ -77,11 +77,11 @@ typedef struct
     rt_uint32_t last_tx_num;
     rt_uint32_t last_rx_num;
     rt_int32_t idx;
-} ck_usart_priv_t;
+} pxa_uart_priv_t;
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __USART_H */
+#endif /* __UART_H */
 
