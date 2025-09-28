@@ -104,7 +104,25 @@ static void rpmsg_service_unbind(struct rpmsg_endpoint *ept)
 
 static void trigger_irq_thread_entry(void *parameter)
 {
+	int ret;
 	struct uart_service *_uart_service = (struct uart_service *)parameter;
+
+	/* wait for rproc dev ready */
+	while (1) {
+		if (!rpdev)
+			rt_thread_delay(2);
+		else
+			break;
+	}
+
+	/* create rpmsg endpoint */
+	ret = rpmsg_create_ept(&_uart_service->lept, rpdev, _uart_service->ser_name,
+			RPMSG_ADDR_ANY, RPMSG_ADDR_ANY,
+			rpmsg_endpoint_cb, rpmsg_service_unbind);
+	if (ret) {
+		rt_kprintf("Failed to create endpoint\n");
+		return;
+	}
 
 	while (1) {
 		rt_sem_take(_uart_service->sem, RT_WAITING_FOREVER);
@@ -117,18 +135,9 @@ static void trigger_irq_thread_entry(void *parameter)
 
 int rpmsg_uart_service_init(void)
 {
-	int ret, i;
+	int i;
 
 	for (i = 0; i < sizeof(_uart_service) / sizeof(_uart_service[0]); ++i) {
-		/* create rpmsg endpoint */
-		ret = rpmsg_create_ept(&_uart_service[i].lept, rpdev, _uart_service[i].ser_name,
-				RPMSG_ADDR_ANY, RPMSG_ADDR_ANY,
-				rpmsg_endpoint_cb, rpmsg_service_unbind);
-		if (ret) {
-			rt_kprintf("Failed to create endpoint\n");
-			return -1;
-		}
-
 		_uart_service[i].sem = rt_sem_create(_uart_service[i].sem_name, 0, RT_IPC_FLAG_FIFO);
 		if (!_uart_service[i].sem) {
 			rt_kprintf("Failed to create uart sem\n");

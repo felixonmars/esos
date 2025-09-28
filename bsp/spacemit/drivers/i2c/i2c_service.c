@@ -66,6 +66,25 @@ static void rpmsg_service_unbind(struct rpmsg_endpoint *ept)
 
 static void i2c_trigger_irq_thread_entry(void *parameter)
 {
+	int ret;
+
+	/* wait for rproc dev ready */
+	while (1) {
+		if (!rpdev)
+			rt_thread_delay(2);
+		else
+			break;
+	}
+
+	/* create rpmsg endpoint */
+	ret = rpmsg_create_ept(&lept, rpdev, RPMSG_SERV_NAME,
+			RPMSG_ADDR_ANY, RPMSG_ADDR_ANY,
+			rpmsg_endpoint_cb, rpmsg_service_unbind);
+	if (ret) {
+		rt_kprintf("Failed to create endpoint\n");
+		return;
+	}
+
 	while (1) {
 		rt_sem_take(trigger_sem, RT_WAITING_FOREVER);
 
@@ -77,17 +96,6 @@ static void i2c_trigger_irq_thread_entry(void *parameter)
 
 int rpmsg_i2c_service_init(void)
 {
-	int ret;
-
-	/* create rpmsg endpoint */
-	ret = rpmsg_create_ept(&lept, rpdev, RPMSG_SERV_NAME,
-			RPMSG_ADDR_ANY, RPMSG_ADDR_ANY,
-			rpmsg_endpoint_cb, rpmsg_service_unbind);
-	if (ret) {
-		rt_kprintf("Failed to create endpoint\n");
-		return -1;
-	}
-
 	trigger_sem = rt_sem_create("i2c_trigger_sem", 0, RT_IPC_FLAG_FIFO);
 	if (!trigger_sem) {
 		rt_kprintf("Failed to create i2c sem\n");

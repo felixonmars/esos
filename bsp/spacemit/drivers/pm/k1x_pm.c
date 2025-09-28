@@ -15,6 +15,7 @@
 #include <register_defination.h>
 #include <openamp/rpmsg.h>
 
+static rt_thread_t trigger_tid;
 struct rpmsg_endpoint lpwept;
 extern struct rpmsg_device *rpdev;
 extern unsigned char __resource_table_start__[];
@@ -304,9 +305,30 @@ static void rpmsg_lpw_service_unbind(struct rpmsg_endpoint *ept)
 	/* do nothing */
 }
 
-int rt_hw_k1x_pm_init(void)
+static void pm_creat_endpoint(void *parameter)
 {
 	int ret;
+
+	/* wait for rproc dev ready */
+	while (1) {
+		if (!rpdev)
+			rt_thread_delay(2);
+		else
+			break;
+	}
+
+	/* create lowpower mode endpoint */
+	ret = rpmsg_create_ept(&lpwept, rpdev, RPMSG_LOW_PWR_SERV_NAME,
+			RPMSG_ADDR_ANY, RPMSG_ADDR_ANY,
+			rpmsg_lpw_endpoint_cb, rpmsg_lpw_service_unbind);
+	if (ret) {
+		rt_kprintf("Failed to create endpoint\n");
+		return;
+	}
+}
+
+int rt_hw_k1x_pm_init(void)
+{
 	rt_uint8_t timer_mask = 0;
 	audio_vote_for_main_mpu_t *vmp =
 		(audio_vote_for_main_mpu_t *)AUDIO_VOTE_FOR_MAIN_PMU;
@@ -336,14 +358,19 @@ int rt_hw_k1x_pm_init(void)
 	/* initialize system pm module */
 	rt_system_pm_init(&_ops, timer_mask, RT_NULL);
 
-	/* create lowpower mode endpoint */
-	ret = rpmsg_create_ept(&lpwept, rpdev, RPMSG_LOW_PWR_SERV_NAME,
-			RPMSG_ADDR_ANY, RPMSG_ADDR_ANY,
-			rpmsg_lpw_endpoint_cb, rpmsg_lpw_service_unbind);
-	if (ret) {
-		rt_kprintf("Failed to create endpoint\n");
+	/* create the rpmsg trigger irq thread */
+	trigger_tid = rt_thread_create("pm_create_endpoint",
+			pm_creat_endpoint,
+			NULL,
+			2048,
+			RT_THREAD_PRIORITY_MAX / 5,
+			20);
+	if (!trigger_tid) {
+		rt_kprintf("Failed to create pm thread\n");
 		return -1;
 	}
+
+	rt_thread_startup(trigger_tid);
 
 	return 0;
 }
