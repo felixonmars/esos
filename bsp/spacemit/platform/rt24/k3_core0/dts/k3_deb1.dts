@@ -28,6 +28,14 @@
 	status = "okay";
 };
 
+&r_gpio0 {
+	status = "okay";
+};
+
+&r_gpio1 {
+	status = "okay";
+};
+
 &uart0 {
 	pinctrl-names = "default";
 	status = "okay";

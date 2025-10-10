@@ -114,23 +114,26 @@
 			banks = <4>;
 			gpio-controller;
 			#gpio-cells = <2>;
+			status = "disabled";
+		};
 
-			gcb0: gpio0 {
-				reg-offset = <0x0>;
-			};
+		r_gpio0: r_gpio0@c0889400 {
+			compatible = "spacemit,k3-rgpio0";
+			reg = <0xc0889400 0x100>;
+			banks = <1>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
 
-			gcb1: gpio1 {
-				reg-offset = <0x4>;
-			};
-
-			gcb2: gpio2 {
-				reg-offset = <0x8>;
-			};
-
-			gcb3: gpio3 {
-				reg-offset = <0x100>;
-			};
-                };
+		r_gpio1: r_gpio1@c0889440 {
+			compatible = "spacemit,k3-rgpio1";
+			reg = <0xc0889440 0x100>;
+			banks = <1>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
 
 		rdma: pdma@c0884000 {
 			compatible = "spacemit,k1x-rdma";
