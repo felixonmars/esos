@@ -199,6 +199,7 @@ enum rpmi_servicegroup_id {
 	RPMI_SRVGRP_RAS_AGENT = 0x000C,
 	RPMI_SRVGRP_REQUEST_FORWARD = 0x000D,
 	RPMI_SRVGRP_RTC = 0x000E,
+	RPMI_SRVGRP_PWRKEY = 0x000F,
 	RPMI_SRVGRP_ID_MAX_COUNT,
 
 	/* Reserved range for service groups */
@@ -350,6 +351,14 @@ enum rpmi_rtc_service_id {
 	RPMI_RTC_SRV_QUERY_PENDING = 0x8,
 	RPMI_RTC_SRV_CLR_PENDING = 0x9,
 	RPMI_RTC_SRV_MAX_COUNT,
+};
+
+/** RPMI pwrkey service IDs */
+enum rpmi_pwrkey_service_id {
+	RPMI_PWRKEY_SRV_ENABLE_NOTIFICATION = 0x01,
+	RPMI_PWRKEY_SRV_QUERY_PENDING = 0x02,
+	RPMI_PWRKEY_SRV_CLR_PENDING = 0x03,
+	RPMI_PWRKEY_SRV_ID_MAX_COUNT,
 };
 /** @} */
 
@@ -1375,6 +1384,36 @@ rpmi_service_group_rtc_create(const struct rpmi_rtc_platform_ops *ops,
  * @param[in] group	pointer to RPMI service group instance
  */
 void rpmi_service_group_rtc_destroy(struct rpmi_service_group *group);
+
+/** Platform specific pwrkey operations(synchronous) */
+struct rpmi_pwrkey_platform_ops {
+	/**
+	 * Query the pwrkey interrupt pending
+	 **/
+	enum rpmi_error (*query_pending)(void *priv, rpmi_uint32_t *status);
+
+	/**
+	 * Clear the pwrkey interrupt pending
+	 **/
+	enum rpmi_error (*clear_pending)(void *priv, rpmi_uint32_t clear);
+};
+
+/**
+ * @brief Create a pwrkey service group instance
+ *
+ * @return rpmi_service_group *	pointer to RPMI service group instance upon
+ * success and NULL upon failure
+ */
+struct rpmi_service_group *
+rpmi_service_group_pwrkey_create(const struct rpmi_pwrkey_platform_ops *ops,
+				void *ops_priv);
+
+/**
+ * @brief Destroy(free) a pwrkey service group instance
+ *
+ * @param[in] group	pointer to RPMI service group instance
+ */
+void rpmi_service_group_pwrkey_destroy(struct rpmi_service_group *group);
 
 /** @} */
 
