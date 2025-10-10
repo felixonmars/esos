@@ -374,6 +374,11 @@
 				status = "okay";
 			};
 
+			rpmi_rtc: rpmi-rtc@0 {
+				compatible = "k3-os0-rpmi-rtc";
+				status = "disabled";
+			};
+
 			rpmi_hsm0: rpmi-hsm@0 {
 				compatible = "k3-os0-rpmi-hsm";
 				/* hartids*/
