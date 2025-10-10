@@ -45,6 +45,7 @@ extern int spacemit_gpio_init(void);
 struct rt_mutex rpmi_hsm_mtx;
 struct rt_mutex rpmi_clk_mtx;
 struct rt_mutex rpmi_voltage_mtx;
+struct rt_mutex rpmi_rtc_mtx;
 #endif
 
 extern unsigned long __irf_start[];
@@ -91,6 +92,7 @@ void rt_hw_board_init(void)
     rt_mutex_init(&rpmi_hsm_mtx, "rpmi_hsm_mtx", RT_IPC_FLAG_PRIO);
     rt_mutex_init(&rpmi_clk_mtx, "rpmi_clk_mtx", RT_IPC_FLAG_PRIO);
     rt_mutex_init(&rpmi_voltage_mtx, "rpmi_vol_mtx", RT_IPC_FLAG_PRIO);
+    rt_mutex_init(&rpmi_rtc_mtx, "rpmi_rtc_mtx", RT_IPC_FLAG_PRIO);
 #endif
     /* uart must be initialize here */
 #ifdef RT_USING_COMPONENTS_INIT

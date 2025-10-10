@@ -198,8 +198,9 @@ enum rpmi_servicegroup_id {
 	RPMI_SRVGRP_MANAGEMENT_MODE = 0x000B,
 	RPMI_SRVGRP_RAS_AGENT = 0x000C,
 	RPMI_SRVGRP_REQUEST_FORWARD = 0x000D,
+	RPMI_SRVGRP_RTC = 0x000E,
 	RPMI_SRVGRP_ID_MAX_COUNT,
-	
+
 	/* Reserved range for service groups */
 	RPMI_SRVGRP_RESERVE_START = RPMI_SRVGRP_ID_MAX_COUNT,
 	RPMI_SRVGRP_RESERVE_END = 0x7BFF,
@@ -207,7 +208,7 @@ enum rpmi_servicegroup_id {
 	/* Experimental service groups range */
 	RPMI_SRVGRP_EXPERIMENTAL_START = 0x7C00,
 	RPMI_SRVGRP_EXPERIMENTAL_END = 0x7FFF,
-	
+
 	/* Vendor/Implementation-specific service groups range */
 	RPMI_SRVGRP_VENDOR_START = 0x8000,
 	RPMI_SRVGRP_VENDOR_END = 0xFFFF,
@@ -337,6 +338,19 @@ enum rpmi_cppc_service_id {
 	RPMI_CPPC_SRV_ID_MAX,
 };
 
+/** RPMI RTC (RTC) ServiceGroup Service IDs */
+enum rpmi_rtc_service_id {
+	RPMI_RTC_SRV_ENABLE_NOTIFICATION = 0x01,
+	RPMI_RTC_SRV_SET_TIME = 0x02,
+	RPMI_RTC_SRV_GET_TIME = 0x03,
+	RPMI_RTC_SRV_SET_ALARM = 0x04,
+	RPMI_RTC_SRV_GET_ALARM = 0x05,
+	RPMI_RTC_SRV_ALARM_GET_EN = 0x06,
+	RPMI_RTC_SRV_ALARM_SET_EN = 0x07,
+	RPMI_RTC_SRV_QUERY_PENDING = 0x8,
+	RPMI_RTC_SRV_CLR_PENDING = 0x9,
+	RPMI_RTC_SRV_MAX_COUNT,
+};
 /** @} */
 
 /****************************************************************************/
@@ -1285,6 +1299,82 @@ rpmi_service_group_clock_create(rpmi_uint32_t clock_count,
  * @param[in] group	pointer to RPMI service group instance
  */
 void rpmi_service_group_clock_destroy(struct rpmi_service_group *group);
+
+/** Platform specific rtc operations(synchronous) */
+struct rpmi_rtc_platform_ops {
+	/** Set the rtc time */
+	enum rpmi_error (*set_time)(void *priv, rpmi_uint32_t year,
+				    rpmi_uint32_t mon,
+				    rpmi_uint32_t dat,
+				    rpmi_uint32_t hour,
+				    rpmi_uint32_t min,
+				    rpmi_uint32_t second);
+
+	/**
+	 * Get the rtc time
+	 **/
+	enum rpmi_error (*get_time)(void *priv, rpmi_uint32_t *year,
+				    rpmi_uint32_t *mon,
+				    rpmi_uint32_t *dat,
+				    rpmi_uint32_t *hour,
+				    rpmi_uint32_t *min,
+				    rpmi_uint32_t *second);
+
+	/** Set the rtc alarm time */
+	enum rpmi_error (*set_alarm)(void *priv, rpmi_uint32_t year,
+				    rpmi_uint32_t mon,
+				    rpmi_uint32_t dat,
+				    rpmi_uint32_t hour,
+				    rpmi_uint32_t min,
+				    rpmi_uint32_t second);
+
+	/**
+	 * Get the rtc alarm time
+	 **/
+	enum rpmi_error (*get_alarm)(void *priv, rpmi_uint32_t *year,
+				    rpmi_uint32_t *mon,
+				    rpmi_uint32_t *dat,
+				    rpmi_uint32_t *hour,
+				    rpmi_uint32_t *min,
+				    rpmi_uint32_t *second);
+
+	/**
+	 * Get the rtc alarm en
+	 **/
+	enum rpmi_error (*get_alarm_en)(void *priv, rpmi_uint32_t *status);
+
+	/**
+	 * Set the rtc alarm en
+	 **/
+	enum rpmi_error (*set_alarm_en)(void *priv, rpmi_uint32_t en);
+
+	/**
+	 * Query the rtc interrupt pending
+	 **/
+	enum rpmi_error (*query_pending)(void *priv, rpmi_uint32_t *status);
+
+	/**
+	 * Clear the rtc interrupt pending
+	 **/
+	enum rpmi_error (*clear_pending)(void *priv);
+};
+
+/**
+ * @brief Create a rtc service group instance
+ *
+ * @return rpmi_service_group *	pointer to RPMI service group instance upon
+ * success and NULL upon failure
+ */
+struct rpmi_service_group *
+rpmi_service_group_rtc_create(const struct rpmi_rtc_platform_ops *ops,
+				void *ops_priv);
+
+/**
+ * @brief Destroy(free) a rtc service group instance
+ *
+ * @param[in] group	pointer to RPMI service group instance
+ */
+void rpmi_service_group_rtc_destroy(struct rpmi_service_group *group);
 
 /** @} */
 
