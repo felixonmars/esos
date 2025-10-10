@@ -379,6 +379,11 @@
 				status = "disabled";
 			};
 
+			rpmi_pwrkey: rpmi-pwrkey@0 {
+				compatible = "k3-os0-rpmi-pwrkey";
+				status = "disabled";
+			};
+
 			rpmi_hsm0: rpmi-hsm@0 {
 				compatible = "k3-os0-rpmi-hsm";
 				/* hartids*/
