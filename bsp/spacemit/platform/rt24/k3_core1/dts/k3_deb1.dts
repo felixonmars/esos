@@ -12,7 +12,7 @@
 &pmx_core {
 	status = "disabled";
         pinctrl-single,gpio-range = <
-		&range GPIO_49  2 (MUX_MODE0 | EDGE_NONE | PULL_UP | PAD_3V_DS4)
+		&range GPIO_49  2 (MUX_MODE0 | EDGE_NONE | PULL_UP | PAD_DS4)
 	>;
 
 	pinctrl_rcpu: pinctrl_rcpu_grp {
