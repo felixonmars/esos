@@ -47,6 +47,7 @@ struct rt_mutex rpmi_clk_mtx;
 struct rt_mutex rpmi_voltage_mtx;
 struct rt_mutex rpmi_rtc_mtx;
 struct rt_mutex rpmi_pwrkey_mtx;
+struct rt_mutex rpmi_sysreset_mtx;
 #endif
 
 extern unsigned long __irf_start[];
@@ -95,6 +96,7 @@ void rt_hw_board_init(void)
     rt_mutex_init(&rpmi_voltage_mtx, "rpmi_vol_mtx", RT_IPC_FLAG_PRIO);
     rt_mutex_init(&rpmi_rtc_mtx, "rpmi_rtc_mtx", RT_IPC_FLAG_PRIO);
     rt_mutex_init(&rpmi_pwrkey_mtx, "rpmi_pwrkey_mtx", RT_IPC_FLAG_PRIO);
+    rt_mutex_init(&rpmi_sysreset_mtx, "rpmi_sysreset_mtx", RT_IPC_FLAG_PRIO);
 #endif
     /* uart must be initialize here */
 #ifdef RT_USING_COMPONENTS_INIT

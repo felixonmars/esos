@@ -129,7 +129,18 @@ struct spacemit_rpmi_pwrkey_ops {
 
 /* RPMI sysreset structures */
 struct spacemit_rpmi_sysreset_config {
+	struct dtb_node *node;
+	struct rpmi_sysreset_platform_ops *ops;
 	rt_int32_t reset;
+	/* reserved for future use */
+	void *priv;
+};
+
+struct spacemit_rpmi_sysreset_ops {
+	char *name;
+	rt_int32_t (*init)(void *priv);
+	struct rpmi_sysreset_platform_ops *sysreset_ops;
+	rt_list_t list;
 };
 
 struct spacemit_rpmi_config {
@@ -167,5 +178,6 @@ int spacemit_rpmi_clk_register(rt_list_t *node);
 int spacemit_rpmi_voltage_register(rt_list_t *node);
 int spacemit_rpmi_rtc_register(rt_list_t *node);
 int spacemit_rpmi_pwrkey_register(rt_list_t *node);
+int spacemit_rpmi_sysreset_register(rt_list_t *node);
 
 #endif /* __RPMI_PLATFORM_DEFIN_H__ */
