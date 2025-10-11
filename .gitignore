@@ -23,6 +23,8 @@ documentation/html
 *.a
 *.i
 *.d
+*.itb
+bsp/spacemit/esos.its
 tools/kconfig-frontends/kconfig-mconf
 packages
 dist
