@@ -143,6 +143,22 @@ struct spacemit_rpmi_sysreset_ops {
 	rt_list_t list;
 };
 
+/* RPMI msi structures */
+struct spacemit_rpmi_msi_config {
+	struct dtb_node *node;
+	rt_uint32_t num_msi, p2a_index;
+	struct rpmi_sysmsi_platform_ops *ops;
+	/* reserved for future use */
+	void *priv;
+};
+
+struct spacemit_rpmi_msi_ops {
+	char *name;
+	rt_int32_t (*init)(void *priv);
+	struct rpmi_sysmsi_platform_ops *msi_ops;
+	rt_list_t list;
+};
+
 struct spacemit_rpmi_config {
 	rpmi_uintptr_t shmem_base;        /* Shared memory base address */
 	rpmi_uint32_t shmem_size;         /* Shared memory size */
@@ -153,6 +169,7 @@ struct spacemit_rpmi_config {
 	struct spacemit_rpmi_clk_config clk_config;
 	struct spacemit_rpmi_voltage_config voltage_config;
 	struct spacemit_rpmi_rtc_config rtc_config;
+	struct spacemit_rpmi_msi_config msi_config;
 	struct spacemit_rpmi_pwrkey_config pwrkey_config;
 	struct spacemit_rpmi_sysreset_config sysreset_config;
 };
@@ -179,5 +196,6 @@ int spacemit_rpmi_voltage_register(rt_list_t *node);
 int spacemit_rpmi_rtc_register(rt_list_t *node);
 int spacemit_rpmi_pwrkey_register(rt_list_t *node);
 int spacemit_rpmi_sysreset_register(rt_list_t *node);
+int spacemit_rpmi_msi_register(rt_list_t *node);
 
 #endif /* __RPMI_PLATFORM_DEFIN_H__ */
