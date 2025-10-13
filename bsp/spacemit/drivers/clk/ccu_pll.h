@@ -9,7 +9,7 @@
 
 #include <rtthread.h>
 #include <rtdevice.h>
-#include "ccu-spacemit.h"
+#include "ccu-common.h"
 
 struct ccu_pll_rate_tbl {
 	rt_uint64_t rate;
