@@ -9,6 +9,7 @@
 #include "ccu_pll.h"
 #include "ccu_mix.h"
 #include "ccu-spacemit.h"
+#include "../../platform/n308/ccu-spacemit-k1x.h"
 
 struct spacemit_ccu {
 	struct spacemit_k1x_clk clk_info;
