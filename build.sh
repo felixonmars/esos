@@ -284,6 +284,9 @@ function build_single_core()
 
 function build_all_cores()
 {
+	local sign_mode="$1"
+	local key_dir="$2"
+
 	mk_info "Building all K3 cores (k3_core0 and k3_core1)..."
 
 	# Clean previous builds
@@ -300,8 +303,12 @@ function build_all_cores()
 	# Build core1
 	build_single_core "k3_core1" "core1"
 
-	# Create ITB package
-	create_esos_itb
+	# Create ITB package (signed or unsigned)
+	if [ "x${sign_mode}" = "xsign" ]; then
+		create_esos_itb "sign" "${key_dir}"
+	else
+		create_esos_itb
+	fi
 
 	mk_info "All cores built successfully!"
 	mk_info "Generated files:"
@@ -312,31 +319,88 @@ function build_all_cores()
 
 function create_esos_itb()
 {
-	mk_info "Creating ESOS ITB package..."
+	local sign_mode="$1"
+	local key_dir="$2"
 
-	# Copy ITS template to build directory
-	if [ -f "${TOP_DIR}/esos.its" ]; then
-		cp "${TOP_DIR}/esos.its" "${BSP_DIR}/esos.its"
-		mk_info "Using ITS template: ${TOP_DIR}/esos.its"
+	# Always output as esos.itb regardless of signing
+	local itb_file="esos.itb"
+
+	if [ "x${sign_mode}" = "xsign" ]; then
+		mk_info "Creating signed ESOS ITB package..."
+		local its_file="esos_sign.its"
 	else
-		mk_error "ITS template not found: ${TOP_DIR}/esos.its"
+		mk_info "Creating ESOS ITB package..."
+		local its_file="esos.its"
+	fi
+
+	# Use ITS template from top directory
+	local its_path="${TOP_DIR}/${its_file}"
+	if [ ! -f "${its_path}" ]; then
+		mk_error "ITS template not found: ${its_path}"
+		return 1
+	fi
+	mk_info "Using ITS template: ${its_path}"
+
+	# Check if mkimage is available
+	if ! command -v mkimage >/dev/null 2>&1; then
+		mk_warn "mkimage not found, ITB not created. Please install u-boot-tools."
 		return 1
 	fi
 
-	# Generate ITB using mkimage
-	cd ${BSP_DIR}
-	if command -v mkimage >/dev/null 2>&1; then
-		mkimage -f esos.its esos.itb
-		mk_info "ITB created: ${BSP_DIR}/esos.itb"
+	# Handle signing parameters before changing directory
+	if [ "x${sign_mode}" = "xsign" ]; then
+		if [ -z "${key_dir}" ]; then
+			mk_error "Key directory not specified"
+			mk_error "Please specify key directory: ./build.sh sign_with_key <key_dir>"
+			return 1
+		fi
 
-		# Copy ITB to output directory
-		OUTPUT_DIR="${TOP_DIR}/../output/esos"
-		mkdir -p "${OUTPUT_DIR}"
-		cp esos.itb "${OUTPUT_DIR}/"
-		mk_info "ITB copied to: ${OUTPUT_DIR}/esos.itb"
-	else
-		mk_warn "mkimage not found, ITB not created. Please install u-boot-tools."
+		# Convert to absolute path if needed (before cd)
+		if [[ "${key_dir}" != /* ]]; then
+			local abs_key_dir="$(cd "${key_dir}" 2>/dev/null && pwd)"
+			if [ -z "${abs_key_dir}" ]; then
+				mk_error "Key directory does not exist: ${key_dir}"
+				return 1
+			fi
+			key_dir="${abs_key_dir}"
+		fi
+
+		if [ ! -d "${key_dir}" ]; then
+			mk_error "Key directory not found: ${key_dir}"
+			mk_error "Please create keys using: openssl genpkey -algorithm RSA -out kernel_key_prv.key ..."
+			return 1
+		fi
 	fi
+
+	# Generate ITB using mkimage (run from TOP_DIR for correct relative paths in ITS)
+	cd ${TOP_DIR}
+
+	if [ "x${sign_mode}" = "xsign" ]; then
+
+		# Create temporary DTB for public key
+		UBOOT_DIR="${TOP_DIR}/../uboot-2022.10"
+		if [ -f "${UBOOT_DIR}/u-boot.dtb" ]; then
+			cp "${UBOOT_DIR}/u-boot.dtb" ${BSP_DIR}/u-boot-esos-sign.dtb
+		else
+			# Create empty DTB if u-boot.dtb doesn't exist
+			printf "/dts-v1/;\n/ {\n};" > ${BSP_DIR}/u-boot-esos-sign.dts
+			dtc -I dts -O dtb -o ${BSP_DIR}/u-boot-esos-sign.dtb ${BSP_DIR}/u-boot-esos-sign.dts 2>/dev/null
+		fi
+
+		mkimage -f ${its_path} -K ${BSP_DIR}/u-boot-esos-sign.dtb -k "${key_dir}" -r ${BSP_DIR}/${itb_file}
+		mk_info "Signed ITB created: ${BSP_DIR}/${itb_file}"
+	else
+		mkimage -f ${its_path} ${BSP_DIR}/${itb_file}
+		mk_info "ITB created: ${BSP_DIR}/${itb_file}"
+	fi
+
+	# Copy ITB to output directory
+	OUTPUT_DIR="${TOP_DIR}/../output/esos"
+	mkdir -p "${OUTPUT_DIR}"
+	cp ${BSP_DIR}/${itb_file} "${OUTPUT_DIR}/"
+	cp ${BSP_DIR}/${itb_file} "${TOP_DIR}/../output/"
+	mk_info "ITB copied to: ${OUTPUT_DIR}/${itb_file}"
+
 	cd -
 }
 
@@ -363,6 +427,40 @@ if [ "x$1" = "xhelp" ]; then
 	exit 0
 elif [ "x$1" = "xconfig" ]; then
 	config_sdk
+	exit 0
+elif [ "x$1" = "xsign" ]; then
+	# Build with signature using default key directory
+	if [ -f "${ESOS_BASE_DEFCONF}" ]; then
+		source ${ESOS_BASE_DEFCONF}
+		if [ "${TARGET_BOARD}" = "k3_all_cores" ]; then
+			build_all_cores "sign"
+		else
+			mk_error "Sign mode only supported for k3_all_cores target"
+			exit 1
+		fi
+	else
+		mk_error "Please run './build.sh config' first"
+		exit 1
+	fi
+	exit 0
+elif [ "x$1" = "xsign_with_key" ]; then
+	# Build with signature using specified key directory
+	if [ -z "$2" ]; then
+		mk_error "Please specify key directory: ./build.sh sign_with_key <key_dir>"
+		exit 1
+	fi
+	if [ -f "${ESOS_BASE_DEFCONF}" ]; then
+		source ${ESOS_BASE_DEFCONF}
+		if [ "${TARGET_BOARD}" = "k3_all_cores" ]; then
+			build_all_cores "sign" "$2"
+		else
+			mk_error "Sign mode only supported for k3_all_cores target"
+			exit 1
+		fi
+	else
+		mk_error "Please run './build.sh config' first"
+		exit 1
+	fi
 	exit 0
 elif [ "x$1" = "x" ]; then
 	# Check if we need to build all cores

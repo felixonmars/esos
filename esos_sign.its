@@ -1,7 +1,7 @@
 /dts-v1/;
 
 / {
-	description = "ESOS dual-core image for K3";
+	description = "Signed ESOS dual-core image for K3";
 	#address-cells = <2>;
 
 	images {
@@ -15,7 +15,7 @@
 			entry = <0x1 0x200000>;
 			data = /incbin/("./bsp/spacemit/k3_os0_rcpu.elf");
 			hash {
-				algo = "crc32";
+				algo = "sha256";
 			};
 		};
 
@@ -29,7 +29,7 @@
 			entry = <0x1 0x804000>;
 			data = /incbin/("./bsp/spacemit/k3_os1_rcpu.elf");
 			hash {
-				algo = "crc32";
+				algo = "sha256";
 			};
 		};
 	};
@@ -39,6 +39,11 @@
 		conf_dual {
 			description = "ESOS Dual Core Configuration";
 			loadables = "esos_core0", "esos_core1";
+			signature-1 {
+				algo = "sha256,rsa2048";
+				key-name-hint = "uboot_pubkey_prv";
+				sign-images = "loadables";
+			};
 		};
 	};
 };
