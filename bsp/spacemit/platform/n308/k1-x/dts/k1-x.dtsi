@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include "ccu-spacemit-k1x.h"
+#include "../../ccu-spacemit-k1x.h"
 
 / {
 	compatible = "spacemit,k1-x";
