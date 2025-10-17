@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include "ccu-spacemit-k3.h"
+#include "../../ccu-spacemit-k3.h"
 
 / {
 	compatible = "spacemit,k3";
@@ -64,6 +64,13 @@
 			clock-frequency = <32000>;
 			clock-output-names = "clk_32k";
 		};
+
+		dummy_clk: clock-dummy {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <0>;
+			clock-output-names = "dummy_clk";
+		};
 	};
 
 	soc: soc {
@@ -74,14 +81,14 @@
 			compatible = "spacemit,rcpu-ccu-k3";
 			reg = <0xd4050000 0x209c>,
 				<0xd4282800 0x400>,
-				<0xd4015000 0x1000>,
 				<0xd4090000 0x1000>,
-				<0xd4282c00 0x400>,
-				<0xd8440000 0x98>,
-				/* <0xc0000000 0x4280>, ddrc cannot access */
-				/* <0xf0610000 0x20>, secure register cannot access */
-				<0xc0880000 0x2050>,
-				<0xc0888000 0x30>;
+				<0xc0880000 0x1000>,
+				<0xc0881f00 0x100>,
+				<0xc0882000 0x1000>,
+				<0xc0885f00 0x100>,
+				<0xc0886f00 0x100>,
+				<0xc088c000 0x800>,
+				<0xc088d000 0x100>;
 			#clock-cells = <1>;
 			status = "okay";
 		};
@@ -169,7 +176,7 @@
 		rpwm0: pwm@c0888100 {
 			compatible = "spacemit,k1x-rpwm0";
 			reg = <0xc0888100 0x10>;
-			clocks = <&ccu CLK_RCPU2_PWM0>, <&ccu CLK_RST_RCPU2_PWM0>;
+			clocks = <&ccu CLK_RCPU_PWM0>, <&ccu CLK_RST_RCPU_PWM0>;
 			clock-rate = <24576000>;
 			k1x,pwm-disable-fd;
 			status = "disabled";
@@ -178,7 +185,7 @@
 		rpwm1: pwm@c0888200 {
 			compatible = "spacemit,k1x-rpwm1";
 			reg = <0xc0888200 0x10>;
-			clocks = <&ccu CLK_RCPU2_PWM1>, <&ccu CLK_RST_RCPU2_PWM1>;
+			clocks = <&ccu CLK_RCPU_PWM1>, <&ccu CLK_RST_RCPU_PWM1>;
 			clock-rate = <24576000>;
 			k1x,pwm-disable-fd;
 			status = "disabled";
@@ -187,7 +194,7 @@
 		rpwm2: pwm@c0888300 {
 			compatible = "spacemit,k1x-rpwm2";
 			reg = <0xc0888300 0x10>;
-			clocks = <&ccu CLK_RCPU2_PWM2>, <&ccu CLK_RST_RCPU2_PWM2>;
+			clocks = <&ccu CLK_RCPU_PWM2>, <&ccu CLK_RST_RCPU_PWM2>;
 			clock-rate = <24576000>;
 			k1x,pwm-disable-fd;
 			status = "disabled";
@@ -196,7 +203,7 @@
 		rpwm3: pwm@c0888400 {
 			compatible = "spacemit,k1x-rpwm3";
 			reg = <0xc0888400 0x10>;
-			clocks = <&ccu CLK_RCPU2_PWM3>, <&ccu CLK_RST_RCPU2_PWM3>;
+			clocks = <&ccu CLK_RCPU_PWM3>, <&ccu CLK_RST_RCPU_PWM3>;
 			clock-rate = <24576000>;
 			k1x,pwm-disable-fd;
 			status = "disabled";
@@ -205,7 +212,7 @@
 		rpwm4: pwm@c0888500 {
 			compatible = "spacemit,k1x-rpwm4";
 			reg = <0xc0888500 0x10>;
-			clocks = <&ccu CLK_RCPU2_PWM4>, <&ccu CLK_RST_RCPU2_PWM4>;
+			clocks = <&ccu CLK_RCPU_PWM4>, <&ccu CLK_RST_RCPU_PWM4>;
 			clock-rate = <24576000>;
 			k1x,pwm-disable-fd;
 			status = "disabled";
@@ -214,7 +221,7 @@
 		rpwm5: pwm@c0888600 {
 			compatible = "spacemit,k1x-rpwm5";
 			reg = <0xc0888600 0x10>;
-			clocks = <&ccu CLK_RCPU2_PWM5>, <&ccu CLK_RST_RCPU2_PWM5>;
+			clocks = <&ccu CLK_RCPU_PWM5>, <&ccu CLK_RST_RCPU_PWM5>;
 			clock-rate = <24576000>;
 			k1x,pwm-disable-fd;
 			status = "disabled";
@@ -223,7 +230,7 @@
 		rpwm6: pwm@c0888700 {
 			compatible = "spacemit,k1x-rpwm6";
 			reg = <0xc0888700 0x10>;
-			clocks = <&ccu CLK_RCPU2_PWM6>, <&ccu CLK_RST_RCPU2_PWM6>;
+			clocks = <&ccu CLK_RCPU_PWM6>, <&ccu CLK_RST_RCPU_PWM6>;
 			clock-rate = <24576000>;
 			k1x,pwm-disable-fd;
 			status = "disabled";
@@ -232,7 +239,7 @@
 		rpwm7: pwm@c0888800 {
 			compatible = "spacemit,k1x-rpwm7";
 			reg = <0xc0888800 0x10>;
-			clocks = <&ccu CLK_RCPU2_PWM7>, <&ccu CLK_RST_RCPU2_PWM7>;
+			clocks = <&ccu CLK_RCPU_PWM7>, <&ccu CLK_RST_RCPU_PWM7>;
 			clock-rate = <24576000>;
 			k1x,pwm-disable-fd;
 			status = "disabled";
@@ -241,7 +248,7 @@
 		rpwm8: pwm@c0888900 {
 			compatible = "spacemit,k1x-rpwm8";
 			reg = <0xc0888900 0x10>;
-			clocks = <&ccu CLK_RCPU2_PWM8>, <&ccu CLK_RST_RCPU2_PWM8>;
+			clocks = <&ccu CLK_RCPU_PWM8>, <&ccu CLK_RST_RCPU_PWM8>;
 			clock-rate = <24576000>;
 			k1x,pwm-disable-fd;
 			status = "disabled";
@@ -250,7 +257,7 @@
 		rpwm9: pwm@c0888a00 {
 			compatible = "spacemit,k1x-rpwm9";
 			reg = <0xc0888a00 0x10>;
-			clocks = <&ccu CLK_RCPU2_PWM9>, <&ccu CLK_RST_RCPU2_PWM9>;
+			clocks = <&ccu CLK_RCPU_PWM9>, <&ccu CLK_RST_RCPU_PWM9>;
 			clock-rate = <24576000>;
 			k1x,pwm-disable-fd;
 			status = "disabled";
@@ -275,7 +282,7 @@
 		rspi0: rspi0@c0885000 {
 			compatible = "spacemit,k1x-rspi0";
 			reg = <0xc0885000 0x30>;
-			clocks = <&ccu CLK_RCPU_SSP0>, <&ccu CLK_RST_RCPU_SSP0>;
+			clocks = <&ccu CLK_RCPU_SPI0>, <&ccu CLK_RST_RCPU_SPI0>;
 			clock-frequency = <26000000>;
 			interrupt-parent = <&intc>;
 			interrupts = <0 34 0>;
