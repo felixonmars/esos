@@ -1,0 +1,134 @@
+/*
+ * Copyright (c) 2022-2025, Spacemit
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef _CCU_SPACEMIT_K3_H_
+#define _CCU_SPACEMIT_K3_H_
+
+#include <rthw.h>
+#include <rtthread.h>
+#include <rtdevice.h>
+
+/* MPMU register offset */
+#define MPMU_FCCR			0x0008
+#define MPMU_POSR			0x0010
+#define POSR_PLL1_LOCK			BIT(24)
+#define POSR_PLL2_LOCK			BIT(25)
+#define POSR_PLL3_LOCK			BIT(26)
+#define POSR_PLL4_LOCK			BIT(27)
+#define POSR_PLL5_LOCK			BIT(28)
+#define POSR_PLL6_LOCK			BIT(29)
+#define POSR_PLL7_LOCK			BIT(30)
+#define POSR_PLL8_LOCK			BIT(31)
+#define MPMU_SUCCR			0x0014
+#define MPMU_ISCCR			0x0044
+#define MPMU_WDTPCR			0x0200
+#define MPMU_RIPCCR			0x0210
+#define MPMU_ACGR			0x1024
+#define MPMU_APBCSCR			0x1050
+#define MPMU_SUCCR_1			0x10b0
+
+#define MPMU_I2S0_SYSCLK		0x1100
+#define MPMU_I2S2_SYSCLK		0x1104
+#define MPMU_I2S3_SYSCLK		0x1108
+#define MPMU_I2S4_SYSCLK		0x110c
+#define MPMU_I2S5_SYSCLK		0x1110
+#define MPMU_I2S_SYSCLK_CTRL		0x1114
+
+/* APBS register offset */
+#define APBS_PLL1_SWCR1			0x100
+#define APBS_PLL1_SWCR2			0x104
+#define APBS_PLL1_SWCR3			0x108
+#define APBS_PLL2_SWCR1			0x118
+#define APBS_PLL2_SWCR2			0x11c
+#define APBS_PLL2_SWCR3			0x120
+#define APBS_PLL3_SWCR1			0x124
+#define APBS_PLL3_SWCR2			0x128
+#define APBS_PLL3_SWCR3			0x12c
+#define APBS_PLL4_SWCR1			0x130
+#define APBS_PLL4_SWCR2			0x134
+#define APBS_PLL4_SWCR3			0x138
+#define APBS_PLL5_SWCR1			0x13c
+#define APBS_PLL5_SWCR2			0x140
+#define APBS_PLL5_SWCR3			0x144
+#define APBS_PLL6_SWCR1			0x148
+#define APBS_PLL6_SWCR2			0x14c
+#define APBS_PLL6_SWCR3			0x150
+#define APBS_PLL7_SWCR1			0x158
+#define APBS_PLL7_SWCR2			0x15c
+#define APBS_PLL7_SWCR3			0x160
+#define APBS_PLL8_SWCR1			0x180
+#define APBS_PLL8_SWCR2			0x184
+#define APBS_PLL8_SWCR3			0x188
+
+/* APMU register offset */
+#define APMU_RCPU_CLK_RES_CTRL		0x14c
+
+/* RCPU SYSCTRL register offsets */
+#define RCPU_CAN_CLK_RST		0x4c
+#define RCPU_CAN1_CLK_RST		0xF0
+#define RCPU_CAN2_CLK_RST		0xF4
+#define RCPU_CAN3_CLK_RST		0xF8
+#define RCPU_CAN4_CLK_RST		0xFC
+#define RCPU_IRC_CLK_RST		0x48
+#define RCPU_IRC1_CLK_RST		0xEC
+#define RCPU_GMAC_CLK_RST		0xE4
+#define RCPU_ESPI_CLK_RST		0xDC
+#define RCPU_AUDIO_I2S0_SYS_CLK_CTRL	0x70
+#define RCPU_AUDIO_I2S1_SYS_CLK_CTRL	0x44
+
+/* RCPU UARTCTRL register offsets */
+#define RCPU1_UART0_CLK_RST		0x00
+#define RCPU1_UART1_CLK_RST		0x04
+#define RCPU1_UART2_CLK_RST		0x08
+#define RCPU1_UART3_CLK_RST		0x0c
+#define RCPU1_UART4_CLK_RST		0x10
+#define RCPU1_UART5_CLK_RST		0x14
+
+/* RCPU I2SCTRL register offsets */
+#define RCPU2_AUDIO_I2S0_TX_RX_CLK_CTRL	0x60
+#define RCPU2_AUDIO_I2S1_TX_RX_CLK_CTRL	0x64
+#define RCPU2_AUDIO_I2S2_TX_RX_CLK_CTRL	0x68
+#define RCPU2_AUDIO_I2S3_TX_RX_CLK_CTRL	0x6C
+
+#define RCPU2_AUDIO_I2S2_SYS_CLK_CTRL	0x44
+#define RCPU2_AUDIO_I2S3_SYS_CLK_CTRL	0x54
+
+/* RCPU SPICTRL register offsets */
+#define RCPU3_SSP0_CLK_RST		0x00
+#define RCPU3_SSP1_CLK_RST		0x04
+#define RCPU3_PWR_SSP_CLK_RST		0x08
+
+/* RCPU I2CCTRL register offsets */
+#define RCPU4_I2C0_CLK_RST		0x00
+#define RCPU4_I2C1_CLK_RST		0x04
+#define RCPU4_PWR_I2C_CLK_RST		0x08
+
+/* RPMU register offsets */
+#define RCPU5_AON_PER_CLK_RST_CTRL	0x2C
+#define RCPU5_TIMER1_CLK_RST		0x4C
+#define RCPU5_TIMER2_CLK_RST		0x70
+#define RCPU5_TIMER3_CLK_RST		0x78
+#define RCPU5_TIMER4_CLK_RST		0x7C
+#define RCPU5_GPIO_AND_EDGE_CLK_RST	0x74
+#define RCPU5_RCPU_BUS_CLK_CTRL		0xC0
+#define RCPU5_RT24_CORE0_CLK_CTRL	0xC4
+#define RCPU5_RT24_CORE1_CLK_CTRL	0xC8
+#define RCPU5_RT24_CORE0_SW_RESET	0xCC
+#define RCPU5_RT24_CORE1_SW_RESET	0xD0
+
+/* RCPU PWMCTRL register offsets */
+#define RCPU6_PWM0_CLK_RST		0x00
+#define RCPU6_PWM1_CLK_RST		0x04
+#define RCPU6_PWM2_CLK_RST		0x08
+#define RCPU6_PWM3_CLK_RST		0x0c
+#define RCPU6_PWM4_CLK_RST		0x10
+#define RCPU6_PWM5_CLK_RST		0x14
+#define RCPU6_PWM6_CLK_RST		0x18
+#define RCPU6_PWM7_CLK_RST		0x1c
+#define RCPU6_PWM8_CLK_RST		0x20
+#define RCPU6_PWM9_CLK_RST		0x24
+
+#endif /* _CCU_SPACEMIT_K3_H_ */

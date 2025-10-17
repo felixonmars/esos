@@ -23,7 +23,12 @@ enum ccu_base_type{
 	BASE_TYPE_DDRC       = 6,
 	BASE_TYPE_APBC2      = 7,
 	BASE_TYPE_RCPU       = 8,
-	BASE_TYPE_RCPU2      = 9,
+	BASE_TYPE_RCPU1      = 9,
+	BASE_TYPE_RCPU2      = 10,
+	BASE_TYPE_RCPU3      = 11,
+	BASE_TYPE_RCPU4      = 12,
+	BASE_TYPE_RCPU5      = 13,
+	BASE_TYPE_RCPU6      = 14,
 };
 
 enum {
@@ -63,7 +68,12 @@ struct spacemit_k1x_clk {
 	void	*ddrc_base;
 	void	*apbc2_base;
 	void	*rcpu_base;
+	void	*rcpu1_base;
 	void	*rcpu2_base;
+	void	*rcpu3_base;
+	void	*rcpu4_base;
+	void	*rcpu5_base;
+	void	*rcpu6_base;
 };
 
 struct clk_hw_table {

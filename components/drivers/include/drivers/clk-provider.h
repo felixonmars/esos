@@ -41,7 +41,13 @@ struct clk_onecell_data {
 
 struct clk_hw_onecell_data {
 	rt_uint32_t num;
+#if defined(SOC_SPACEMIT_K3)
+	struct clk_hw *hws[168];
+#elif defined(SOC_SPACEMIT_K1_X)
 	struct clk_hw *hws[128];
+#else
+	struct clk_hw *hws[128];
+#endif
 };
 
 /**
