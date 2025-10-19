@@ -97,6 +97,22 @@ struct spacemit_rpmi_voltage_ops {
 	rt_list_t list;
 };
 
+/* RPMI device power structures */
+struct spacemit_rpmi_domain_config {
+	rt_int32_t domain_count;
+	struct rpmi_device_power_attrs *domain_data;
+	struct rpmi_domain_platform_ops *ops;
+	/* reserved for future use */
+	void *priv;
+};
+
+struct spacemit_rpmi_domain_ops {
+	char *name;
+	rt_int32_t (*init)(void *priv);
+	struct rpmi_domain_platform_ops *domain_ops;
+	rt_list_t list;
+};
+
 /* RPMI rtc structures */
 struct spacemit_rpmi_rtc_config {
 	struct dtb_node *node;
@@ -168,6 +184,7 @@ struct spacemit_rpmi_config {
 	struct spacemit_rpmi_hsm_config hsm_config;
 	struct spacemit_rpmi_clk_config clk_config;
 	struct spacemit_rpmi_voltage_config voltage_config;
+	struct spacemit_rpmi_domain_config domain_config;
 	struct spacemit_rpmi_rtc_config rtc_config;
 	struct spacemit_rpmi_msi_config msi_config;
 	struct spacemit_rpmi_pwrkey_config pwrkey_config;
@@ -193,6 +210,7 @@ struct spacemit_rpmi_priv {
 int spacemit_rpmi_hsm_register(rt_list_t *node);
 int spacemit_rpmi_clk_register(rt_list_t *node);
 int spacemit_rpmi_voltage_register(rt_list_t *node);
+int spacemit_rpmi_domain_register(rt_list_t *node);
 int spacemit_rpmi_rtc_register(rt_list_t *node);
 int spacemit_rpmi_pwrkey_register(rt_list_t *node);
 int spacemit_rpmi_sysreset_register(rt_list_t *node);

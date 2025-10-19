@@ -12,6 +12,7 @@
 extern struct spacemit_rpmi_func rpmi_hsm_func;
 extern struct spacemit_rpmi_func rpmi_clk_func;
 extern struct spacemit_rpmi_func rpmi_voltage_func;
+extern struct spacemit_rpmi_func rpmi_domain_func;
 extern struct spacemit_rpmi_func rpmi_rtc_func;
 extern struct spacemit_rpmi_func rpmi_pwrkey_func;
 extern struct spacemit_rpmi_func rpmi_sysreset_func;
@@ -20,6 +21,7 @@ extern struct spacemit_rpmi_func rpmi_msi_func;
 static struct dtb_compatible_array __k1_compatible_sub[] = {
 	{ .compatible = "k3-os0-rpmi-clock", .data = (void *)&rpmi_clk_func },
 	{ .compatible = "k3-os0-rpmi-voltage", .data = (void *)&rpmi_voltage_func },
+	{ .compatible = "k3-os0-rpmi-domain", .data = (void *)&rpmi_domain_func },
 	{ .compatible = "k3-os0-rpmi-hsm", .data = (void *)&rpmi_hsm_func },
 	{ .compatible = "k3-os0-rpmi-rtc", .data = (void *)&rpmi_rtc_func },
 	{ .compatible = "k3-os0-rpmi-pwrkey", .data = (void *)&rpmi_pwrkey_func },

@@ -339,6 +339,16 @@ enum rpmi_cppc_service_id {
 	RPMI_CPPC_SRV_ID_MAX,
 };
 
+/** RPMI DEVICE POWER ServiceGroup Service IDs */
+enum rpmi_domain_service_id {
+	RPMI_DEVICE_POWER_SRV_ENABLE_NOTIFICATION = 0x01,
+	RPMI_DEVICE_POWER_SRV_GET_NUM_DOMAINS = 0x02,
+	RPMI_DEVICE_POWER_SRV_GET_ATTRIBUTES = 0x03,
+	RPMI_DEVICE_POWER_SRV_SET_STATE = 0x04,
+	RPMI_DEVICE_POWER_SRV_GET_STATE = 0x05,
+	RPMI_DEVICE_POWER_SRV_ID_MAX,
+};
+
 /** RPMI RTC (RTC) ServiceGroup Service IDs */
 enum rpmi_rtc_service_id {
 	RPMI_RTC_SRV_ENABLE_NOTIFICATION = 0x01,
@@ -1755,6 +1765,62 @@ rpmi_service_group_cppc_create(struct rpmi_hsm *hsm,
  */
 void rpmi_service_group_cppc_destroy(struct rpmi_service_group *group);
 
+/** @} */
+/******************************************************************************/
+/**
+ * \defgroup LIBRPMI_DEVICEPOWER_SRVGRP_INTERFACE RPMI Device Power Serive Group
+ * Library Interface
+ * @brief Global functions and data structures implemented by the RPMI library
+ * for RPMI voltage service group
+ * @{
+ */
+
+/** Supported Device Power states */
+enum rpmi_device_power_state {
+	RPMI_DEVICE_POWER_STATE_OFF = 0,
+	RPMI_DEVICE_POWER_STATE_ON = 1,
+	RPMI_DEVICE_POWER_STATE_MAX_IDX,
+};
+
+struct rpmi_device_power_attrs {
+	rpmi_uint32_t transition_latency;
+	const char *name;
+};
+
+struct rpmi_domain_platform_ops {
+	/**
+	 * device power set domain state
+	 **/
+	enum rpmi_error (*set_state)(void *priv,
+				    rpmi_uint32_t domain_id,
+				    enum rpmi_device_power_state state);
+	/**
+	 * device power get domain state
+	 **/
+	enum rpmi_error (*get_state)(void *priv,
+				    rpmi_uint32_t domain_id,
+				    enum rpmi_device_power_state *state);
+};
+
+/**
+ * @brief Create a device power service group instance
+ *
+ * @param[in] device-power_mod		pointer to domain module
+ * @return rpmi_service_group *	pointer to RPMI service group instance upon
+ * success and NULL upon failure
+ */
+struct rpmi_service_group *
+rpmi_service_group_domain_create(rpmi_uint32_t domain_count,
+			const struct rpmi_device_power_attrs *domain_data,
+			const struct rpmi_domain_platform_ops *ops,
+			void *ops_priv);
+
+/**
+ * @brief Destroy(free) a device power service group instance
+ *
+ * @param[in] group	pointer to RPMI service group instance
+ */
+void rpmi_service_group_domain_destroy(struct rpmi_service_group *group);
 /** @} */
 
 /**

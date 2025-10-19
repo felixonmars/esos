@@ -45,6 +45,7 @@ extern int spacemit_gpio_init(void);
 struct rt_mutex rpmi_hsm_mtx;
 struct rt_mutex rpmi_clk_mtx;
 struct rt_mutex rpmi_voltage_mtx;
+struct rt_mutex rpmi_device_power_mtx;
 struct rt_mutex rpmi_rtc_mtx;
 struct rt_mutex rpmi_pwrkey_mtx;
 struct rt_mutex rpmi_sysreset_mtx;
@@ -95,6 +96,7 @@ void rt_hw_board_init(void)
     rt_mutex_init(&rpmi_hsm_mtx, "rpmi_hsm_mtx", RT_IPC_FLAG_PRIO);
     rt_mutex_init(&rpmi_clk_mtx, "rpmi_clk_mtx", RT_IPC_FLAG_PRIO);
     rt_mutex_init(&rpmi_voltage_mtx, "rpmi_vol_mtx", RT_IPC_FLAG_PRIO);
+    rt_mutex_init(&rpmi_device_power_mtx, "rpmi_pm_mtx", RT_IPC_FLAG_PRIO);
     rt_mutex_init(&rpmi_rtc_mtx, "rpmi_rtc_mtx", RT_IPC_FLAG_PRIO);
     rt_mutex_init(&rpmi_pwrkey_mtx, "rpmi_pwrkey_mtx", RT_IPC_FLAG_PRIO);
     rt_mutex_init(&rpmi_sysreset_mtx, "rpmi_sysreset_mtx", RT_IPC_FLAG_PRIO);
