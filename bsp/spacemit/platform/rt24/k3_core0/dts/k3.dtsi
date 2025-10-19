@@ -384,6 +384,11 @@
 				status = "okay";
 			};
 
+			rpmi_domain0: rpmi-domain@0 {
+				compatible = "k3-os0-rpmi-domain";
+				status = "disabled";
+			};
+
 			rpmi_rtc: rpmi-rtc@0 {
 				compatible = "k3-os0-rpmi-rtc";
 				status = "disabled";
