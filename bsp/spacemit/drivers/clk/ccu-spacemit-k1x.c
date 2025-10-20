@@ -8,7 +8,7 @@
 #include <rtdevice.h>
 #include "ccu_pll.h"
 #include "ccu_mix.h"
-#include "ccu-spacemit.h"
+#include "ccu-spacemit-k1x.h"
 #include "../../platform/n308/ccu-spacemit-k1x.h"
 
 struct spacemit_ccu {
