@@ -10,8 +10,6 @@
 #include <core_feature_base.h>
 #include <register_defination.h>
 
-#define SOC_TIMER_FREQ	(32768 * 4)
-
 #define SYSTICK_TICK_CONST	(SOC_TIMER_FREQ / RT_TICK_PER_SECOND)
 
 #ifndef configTIMER_INTERRUPT_PRIORITY

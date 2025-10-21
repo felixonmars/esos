@@ -7,6 +7,7 @@
 #include <rthw.h>
 #include <rtthread.h>
 #include <dtb_head.h>
+#include <spacemit_sdk_soc.h>
 #include <register_defination.h>
 #ifdef RT_USING_ARMSCP_MODULE
 #include <fwk_arch.h>
@@ -53,6 +54,19 @@ struct rt_mutex rpmi_msi_mtx;
 #endif
 
 extern unsigned long __irf_start[];
+
+void rt_hw_us_delay(rt_uint32_t us)
+{
+	rt_uint64_t _start;
+	rt_uint64_t _delte;
+
+	_start = SysTimer_GetLoadValue();
+
+	_delte = SOC_TIMER_FREQ * us / 1000000;
+
+	while ((SysTimer_GetLoadValue() - _start) < _delte)
+		asm volatile ("nop");
+}
 
 /**
  * This function will initial smart-evb board.

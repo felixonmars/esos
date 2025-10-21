@@ -23,10 +23,13 @@
 #define __SPACEMIT_SDK_SOC_H__
 
 #include <stddef.h>
+#include <clint.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define SOC_TIMER_FREQ	(10000000)
 
 
 #ifdef __cplusplus

@@ -195,6 +195,8 @@ extern volatile IRegion_Info_Type SystemIRegionInfo;
 #define configSWI_INTERRUPT_PRIORITY		7
 #define configKERENL_INTERRUPT_PRIORITY		7
 
+#define SOC_TIMER_FREQ	(32768 * 4)
+
 #include <nmsis_core.h>
 
 /** @} */ /* End of Doxygen Group NMSIS_Core_CPU_Intrinsic */
