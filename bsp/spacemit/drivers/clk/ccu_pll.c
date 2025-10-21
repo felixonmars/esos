@@ -123,7 +123,6 @@ static int ccu_pll_enable(struct clk_hw *hw)
 	rt_uint32_t delaytime = PLL_DELAYTIME;
 	struct ccu_pll *p = hw_to_ccu_pll(hw);
 	union pllx_swcr3 swcr3;
-	rt_tick_t tick_delay, now;
 	rt_uint64_t flags;
 
 	if (ccu_pll_is_enabled(hw))
@@ -138,23 +137,12 @@ static int ccu_pll_enable(struct clk_hw *hw)
 	rt_spin_unlock_irqrestore(&p->common.lock, flags);
 
 	/* check lock status */
-	/* udelay(50); */
-	tick_delay = rt_tick_from_millisecond(10);
-	now = rt_tick_get_millisecond();
-	tick_delay += now;
-
-	while (now < tick_delay)
-		now = rt_tick_get_millisecond();
+	rt_hw_us_delay(50);
 
 	while ((!(readl(p->pll.lock_base + p->pll.reg_lock) & p->pll.lock_enable_bit))
 	       && delaytime) {
-		/* udelay(5); */
-		tick_delay = rt_tick_from_millisecond(10);
-		now = rt_tick_get_millisecond();
-		tick_delay += now;
 
-		while (now < tick_delay)
-			now = rt_tick_get_millisecond();
+		rt_hw_us_delay(10);
 
 		delaytime--;
 	}

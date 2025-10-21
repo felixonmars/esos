@@ -17,8 +17,6 @@ static void ccu_mix_disable(struct clk_hw *hw)
 	struct ccu_common * common = &mix->common;
 	struct ccu_gate_config *gate = mix->gate;
 	rt_uint64_t rate;
-	rt_uint64_t rate_delay;
-	rt_tick_t tick_delay, now;
 	rt_uint32_t tmp;
 	rt_uint64_t flags;
 
@@ -63,15 +61,7 @@ static void ccu_mix_disable(struct clk_hw *hw)
 			rt_kprintf("clock rate of %s is 0.\n", clk_hw_get_name(&common->hw));
 		else {
 			/* Need delay 2M cycles, translate to ms */
-			rate_delay = DIV_ROUND_UP(2000000, rate) / 1000;
-			if (rate_delay == 0)
-				rate_delay = 1;
-			tick_delay = rt_tick_from_millisecond(rate_delay);
-			now = rt_tick_get_millisecond();
-			tick_delay += now;
-
-			while (now < tick_delay)
-				now = rt_tick_get_millisecond();
+			rt_hw_us_delay(DIV_ROUND_UP(2000000, rate));
 		}
 	}
 
@@ -87,8 +77,6 @@ static int ccu_mix_enable(struct clk_hw *hw)
 	rt_uint32_t tmp;
 	rt_uint32_t val = 0;
 	int timeout_power = 1;
-	rt_uint64_t rate_delay = 10;
-	rt_tick_t tick_delay, now;
 	rt_uint64_t flags;
 
 	if (!gate)
@@ -133,12 +121,7 @@ static int ccu_mix_enable(struct clk_hw *hw)
 
 	while ((val & gate->gate_mask) != gate->val_enable && (timeout_power < TIMEOUT_LIMIT)) {
 
-		tick_delay = rt_tick_from_millisecond(rate_delay);
-		now = rt_tick_get_millisecond();
-		tick_delay += now;
-
-		while (now < tick_delay)
-			now = rt_tick_get_millisecond();
+		rt_hw_us_delay(timeout_power);
 
 		if (common->reg_type == CLK_DIV_TYPE_2REG_NOFC_V3
 		|| common->reg_type == CLK_DIV_TYPE_2REG_FC_V4)
@@ -162,16 +145,7 @@ static int ccu_mix_enable(struct clk_hw *hw)
 		if (rate == 0)
 			rt_kprintf("clock rate of %s is 0.\n", clk_hw_get_name(&common->hw));
 		else {
-			/* Need delay 2M cycles. */
-			rate_delay = DIV_ROUND_UP(2000000, rate) / 1000;
-			if (rate_delay == 0)
-				rate_delay = 10;
-			tick_delay = rt_tick_from_millisecond(rate_delay);
-			now = rt_tick_get_millisecond();
-			tick_delay += now;
-
-			while (now < tick_delay)
-				now = rt_tick_get_millisecond();
+			rt_hw_us_delay(DIV_ROUND_UP(2000000, rate));
 		}
 	}
 

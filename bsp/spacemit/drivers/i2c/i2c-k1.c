@@ -54,27 +54,12 @@ static void spacemit_i2c_flush_fifo_buffer(struct spacemit_i2c_dev *spacemit_i2c
 	spacemit_i2c_write_reg(spacemit_i2c, REG_RFIFO_RPTR, 0);
 }
 
-static void spacemit_i2c_mdelay(rt_uint32_t ms)
-{
-	rt_tick_t tick_delay, now;
-
-	if (ms < 10)
-		ms = 10;
-	tick_delay = rt_tick_from_millisecond(ms);
-	now = rt_tick_get_millisecond();
-	tick_delay += now;
-
-	while (now < tick_delay)
-		now = rt_tick_get_millisecond();
-}
-
 static void spacemit_i2c_controller_reset(struct spacemit_i2c_dev *spacemit_i2c)
 {
 	/* i2c controller reset */
 	spacemit_i2c_write_reg(spacemit_i2c, REG_CR, CR_UR);
 
-	/* udelay(5) */
-	spacemit_i2c_mdelay(10);
+	rt_hw_us_delay(10);
 
 	spacemit_i2c_write_reg(spacemit_i2c, REG_CR, 0);
 
@@ -97,8 +82,7 @@ static void spacemit_i2c_bus_reset(struct spacemit_i2c_dev *spacemit_i2c)
 	if (!(bus_status & BMR_SDA) || !(bus_status & BMR_SCL)) {
 		spacemit_i2c_controller_reset(spacemit_i2c);
 
-		/* usleep_range(10, 20); */
-		spacemit_i2c_mdelay(10);
+		rt_hw_us_delay(15);
 
 		/* check scl status again */
 		bus_status = spacemit_i2c_read_reg(spacemit_i2c, REG_BMR);
@@ -116,8 +100,7 @@ static void spacemit_i2c_bus_reset(struct spacemit_i2c_dev *spacemit_i2c)
 		spacemit_i2c_write_reg(spacemit_i2c, REG_RST_CYC, 0x1);
 		spacemit_i2c_write_reg(spacemit_i2c, REG_CR, CR_RSTREQ);
 
-		/* usleep_range(20, 30); */
-		spacemit_i2c_mdelay(20);
+		rt_hw_us_delay(25);
 
 		clk_cnt++;
 	}
@@ -153,9 +136,7 @@ static int spacemit_i2c_recover_bus_busy(struct spacemit_i2c_dev *spacemit_i2c)
 		if (cnt-- <= 0)
 			break;
 
-		/* usleep_range(timeout / 2, timeout); */
-		spacemit_i2c_mdelay(timeout / 2);
-
+		rt_hw_us_delay(timeout / 2);
 	}
 
 	if (cnt <= 0) {
@@ -172,8 +153,7 @@ static void spacemit_i2c_check_bus_release(struct spacemit_i2c_dev *spacemit_i2c
 	/* in case bus is not released after transfer completes */
 	if (spacemit_i2c_read_reg(spacemit_i2c, REG_SR) & SR_EBB) {
 		spacemit_i2c_bus_reset(spacemit_i2c);
-		/* usleep_range(90, 150); */
-		spacemit_i2c_mdelay(90);
+		rt_hw_us_delay(90);
 
 	}
 }
@@ -872,8 +852,7 @@ timeout_xfex:
 		xfer_try <= spacemit_i2c->drv_retries) {
 		rt_kprintf("i2c transfer retry %d, ret %d mode %d err 0x%x\n",
 				xfer_try, ret, spacemit_i2c->xfer_mode, spacemit_i2c->i2c_err);
-		/* usleep_range(150, 200); */
-		spacemit_i2c_mdelay(150);
+		rt_hw_us_delay(150);
 
 		ret = 0;
 		//goto xfer_retry;
@@ -994,8 +973,7 @@ static int spacemit_i2c_probe(void)
 			clk_prepare_enable(spacemit_i2c->rst);
 			clk_disable_unprepare(spacemit_i2c->rst);
 
-			/* udelay(200); */
-			spacemit_i2c_mdelay(10);
+			rt_hw_us_delay(200);
 
 			clk_prepare_enable(spacemit_i2c->rst);
 			rt_mutex_init(&spacemit_i2c->mtx, "i2c_mutex", RT_IPC_FLAG_PRIO);
