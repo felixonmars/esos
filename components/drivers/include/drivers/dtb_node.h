@@ -80,7 +80,11 @@ struct dtb_node
     struct dtb_node *parent;
     struct dtb_node *child;
     struct dtb_node *sibling;
+
+    void *data;
 };
+
+#define rt_dtb_data(np)			((struct dtb_node *)np)->data
 
 #define FDT_MAX_PHANDLE_ARGS 16
 
