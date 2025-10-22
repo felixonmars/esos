@@ -263,6 +263,134 @@
 			status = "disabled";
 		};
 
+		rtimer0: rtimer0@c0889000 {
+			compatible = "spacemit,rtimer0";
+			reg = <0xc0889000 0xc8>;
+			num_counter = <3>;
+			spacemit,timer-fastclk-frequency = <3250000>;
+			spacemit,timer-apb-frequency = <52000000>;
+			spacemit,timer-frequency = <1000000>;
+			clocks = <&ccu CLK_RCPU_TIMER1>, <&ccu CLK_RST_RCPU_TIMER1>;
+			status = "disabled";
+
+			count0 {
+				compatible = "timer0-counter0";
+				interrupt-parent = <&intc>;
+				interrupts = <0 8 0>;
+				status = "disabled";
+			};
+
+			count1 {
+				compatible = "timer0-counter1";
+				interrupt-parent = <&intc>;
+				interrupts = <0 9 0>;
+				status = "disabled";
+			};
+
+			count2 {
+				compatible = "timer0-counter2";
+				interrupt-parent = <&intc>;
+				interrupts = <0 10 0>;
+				status = "disabled";
+			};
+		};
+
+		rtimer1: rtimer1@c088c800 {
+			compatible = "spacemit,rtimer1";
+			reg = <0xc088c800 0xc8>;
+			num_counter = <3>;
+			spacemit,timer-fastclk-frequency = <3250000>;
+			spacemit,timer-apb-frequency = <52000000>;
+			spacemit,timer-frequency = <1000000>;
+			clocks = <&ccu CLK_RCPU_TIMER2>, <&ccu CLK_RST_RCPU_TIMER2>;
+			status = "disabled";
+
+			count0 {
+				compatible = "timer1-counter0";
+				interrupt-parent = <&intc>;
+				interrupts = <0 46 0>;
+				status = "disabled";
+			};
+
+			count1 {
+				compatible = "timer1-counter1";
+				interrupt-parent = <&intc>;
+				interrupts = <0 47 0>;
+				status = "disabled";
+			};
+
+			count2 {
+				compatible = "timer1-counter2";
+				interrupt-parent = <&intc>;
+				interrupts = <0 48 0>;
+				status = "disabled";
+			};
+		};
+
+		rtimer2: rtimer2@c088c900 {
+			compatible = "spacemit,rtimer2";
+			reg = <0xc088c900 0xc8>;
+			num_counter = <3>;
+			spacemit,timer-fastclk-frequency = <3250000>;
+			spacemit,timer-apb-frequency = <52000000>;
+			spacemit,timer-frequency = <1000000>;
+			clocks = <&ccu CLK_RCPU_TIMER3>, <&ccu CLK_RST_RCPU_TIMER3>;
+			status = "disabled";
+
+			count0 {
+				compatible = "timer2-counter0";
+				interrupt-parent = <&intc>;
+				interrupts = <0 76 0>;
+				status = "disabled";
+			};
+
+			count1 {
+				compatible = "timer2-counter1";
+				interrupt-parent = <&intc>;
+				interrupts = <0 77 0>;
+				status = "disabled";
+			};
+
+			count2 {
+				compatible = "timer2-counter2";
+				interrupt-parent = <&intc>;
+				interrupts = <0 78 0>;
+				status = "disabled";
+			};
+		};
+
+		rtimer3: rtimer3@c088ca00 {
+			compatible = "spacemit,rtimer3";
+			reg = <0xc088ca00 0xc8>;
+			num_counter = <3>;
+			spacemit,timer-fastclk-frequency = <3250000>;
+			spacemit,timer-apb-frequency = <52000000>;
+			spacemit,timer-frequency = <1000000>;
+			clocks = <&ccu CLK_RCPU_TIMER4>, <&ccu CLK_RST_RCPU_TIMER4>;
+			status = "disabled";
+
+			count0 {
+				compatible = "timer3-counter0";
+				interrupt-parent = <&intc>;
+				interrupts = <0 79 0>;
+				status = "disabled";
+			};
+
+			count1 {
+				compatible = "timer3-counter1";
+				interrupt-parent = <&intc>;
+				interrupts = <0 80 0>;
+				status = "disabled";
+			};
+
+			count2 {
+				compatible = "timer3-counter2";
+				interrupt-parent = <&intc>;
+				interrupts = <0 81 0>;
+				status = "disabled";
+			};
+		};
+
 		ri2c0: ri2c@c0887000 {
 			compatible = "spacemit,k1x-ri2c0";
 			reg = <0xc0887000 0x38>;
