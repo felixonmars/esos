@@ -29,11 +29,7 @@
 	status = "disabled";
 };
 
-&r_gpio0 {
-	status = "disabled";
-};
-
-&r_gpio1 {
+&r_gpio {
 	status = "disabled";
 };
 

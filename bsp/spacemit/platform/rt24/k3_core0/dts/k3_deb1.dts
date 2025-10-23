@@ -28,11 +28,7 @@
 	status = "okay";
 };
 
-&r_gpio0 {
-	status = "okay";
-};
-
-&r_gpio1 {
+&r_gpio {
 	status = "okay";
 };
 

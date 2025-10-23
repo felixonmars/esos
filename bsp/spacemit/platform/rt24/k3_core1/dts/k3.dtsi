@@ -119,24 +119,20 @@
 			compatible = "spacemit,k3-gpio";
 			reg = <0xd4019000 0x800>;
 			banks = <4>;
+			interrupt-parent = <&intc>;
+			interrupts = <0 93 0>;
 			gpio-controller;
 			#gpio-cells = <2>;
 			status = "disabled";
 		};
 
-		r_gpio0: r_gpio0@c0889400 {
-			compatible = "spacemit,k3-rgpio0";
+		r_gpio: r_gpio@c0889400 {
+			compatible = "spacemit,k3-rgpio";
 			reg = <0xc0889400 0x100>;
-			banks = <1>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			status = "disabled";
-		};
-
-		r_gpio1: r_gpio1@c0889440 {
-			compatible = "spacemit,k3-rgpio1";
-			reg = <0xc0889440 0x100>;
-			banks = <1>;
+			clocks = <&ccu CLK_RCPU_GPIO>, <&ccu CLK_RST_RCPU_GPIO>;
+			banks = <2>;
+			interrupt-parent = <&intc>;
+			interrupts = <0 49 0>;
 			gpio-controller;
 			#gpio-cells = <2>;
 			status = "disabled";
