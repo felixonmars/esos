@@ -37,6 +37,11 @@ menu "On-chip Peripheral Drivers"
         bool "Enable I2C"
         default n
 
+    config BSP_USING_WDT
+        bool "Enable Watchdog"
+        default n
+        select RT_USING_WDT
+
     config BSP_USING_IR
         bool "Enable IR"
         default n
