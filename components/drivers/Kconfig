@@ -499,6 +499,10 @@ menuconfig RT_USING_HWCRYPTO
         endif
     endif
 
+config RT_USING_HWSPINLOCK
+    bool "Using hwspinlock device drivers"
+    default n
+
 config RT_USING_PULSE_ENCODER
     bool "Using PULSE ENCODER device drivers"
     default n

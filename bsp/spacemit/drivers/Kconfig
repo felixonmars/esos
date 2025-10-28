@@ -59,6 +59,11 @@ menu "On-chip Peripheral Drivers"
         default n
         select RT_USING_HWTIMER
 
+    config BSP_USING_HWSPINLOCK
+        bool "Enable hwspinlock"
+        default n
+        select RT_USING_HWSPINLOCK
+
     config BSP_USING_MAILBOX
         bool "Enable MAILBOX"
         default n

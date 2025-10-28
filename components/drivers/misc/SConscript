@@ -26,6 +26,9 @@ if GetDepend(['RT_USING_PULSE_ENCODER']):
 if GetDepend(['RT_USING_INPUT_CAPTURE']):
     src = src + ['rt_inputcapture.c']
 
+if GetDepend(['RT_USING_HWSPINLOCK']):
+    src = src + ['hwspinlock.c']
+
 if len(src):
     group = DefineGroup('DeviceDrivers', src, depend = [''], CPPPATH = CPPPATH)
 
