@@ -71,3 +71,7 @@
 	status = "okay";
 	mboxes = <&mailbox3 0>;
 };
+
+&rspi0 {
+	status = "okay";
+};

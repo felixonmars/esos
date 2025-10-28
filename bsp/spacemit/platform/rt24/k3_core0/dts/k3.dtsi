@@ -413,7 +413,7 @@
 			clocks = <&ccu CLK_RCPU_SPI0>, <&ccu CLK_RST_RCPU_SPI0>;
 			clock-frequency = <26000000>;
 			interrupt-parent = <&intc>;
-			interrupts = <0 34 0>;
+			interrupts = <0 15 0>;
 			dmas = <&rdma 5 1
 				&rdma 4 1>;
 			dma-names = "rx", "tx";
