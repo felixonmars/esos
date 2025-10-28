@@ -263,6 +263,13 @@
 			status = "disabled";
 		};
 
+		hwspinlock: hwlock@cac91c00 {
+			compatible = "spacemit,k3-hwlock";
+			reg = <0xcac91c00 0x100>;
+			num_locks = <32>;
+			status = "disabled";
+		};
+
 		rtimer0: rtimer0@c0889000 {
 			compatible = "spacemit,rtimer0";
 			reg = <0xc0889000 0xc8>;
