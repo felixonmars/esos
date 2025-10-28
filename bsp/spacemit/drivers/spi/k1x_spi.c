@@ -247,7 +247,7 @@ static rt_int32_t k1x_spi_transfer_config(struct k1x_spi *priv)
 	top_ctrl |= priv->width;
 
 	writel(BIT_SSP_ROR | BIT_SSP_TINT, priv->base + REG_SSP_STATUS);
-	writel(0xbb8, priv->base + REG_SSP_TO);
+	writel(0x0, priv->base + REG_SSP_TO);
 
 	top_ctrl |= BIT_SSP_HOLD_FRAME_LOW;
 
@@ -540,8 +540,8 @@ static rt_int32_t spacemit_spi_probe(void)
 	struct dtb_node *dtb_head_node = get_dtb_node_head();
 
 	rt_int32_t property_size;
-	rt_uint32_t u32_value;
-	void * property_ptr;
+	rt_uint32_t u32_value, *u32_ptr;
+	void *property_ptr;
 
 	rt_int32_t ret = 0;
 
@@ -568,7 +568,7 @@ static rt_int32_t spacemit_spi_probe(void)
 				return -RT_ERROR;
 			}
 
-			for_each_property_cell(compatible_node, "clock-frequency", u32_value, property_ptr, property_size)
+			for_each_property_cell(compatible_node, "clock-frequency", u32_value, u32_ptr, property_size)
 			{
 				spacemit_spi->freq = u32_value;
 			}
