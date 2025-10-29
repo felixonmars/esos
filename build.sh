@@ -223,14 +223,32 @@ function build_kernel()
 	source ${ESOS_BASE_DEFCONF}
 	cd ${BSP_DIR}/platform/${TARGET_CHIP}/${TARGET_BOARD}/dts/
 	make
+	if [ $? -ne 0 ]; then
+		mk_error "Failed to build dtb"
+		cd -
+		return 1
+	fi
 	cd -
 
 	# build src 
 	source ${ESOS_BASE_DEFCONF}
+	# Export variables for Python scripts
+	export TARGET_CHIP TARGET_BOARD TARGET_ENTRY_POINT TARGET_DEFCONFIG
 	cd ${BSP_DIR}
 	scons --useconfig=.config
+	if [ $? -ne 0 ]; then
+		mk_error "Failed to load config"
+		cd -
+		return 1
+	fi
 	scons
+	if [ $? -ne 0 ]; then
+		mk_error "Failed to build esos"
+		cd -
+		return 1
+	fi
 	cd -
+	return 0
 }
 
 function build_single_core()
@@ -257,13 +275,30 @@ function build_single_core()
 	source ${ESOS_BASE_DEFCONF}
 	cd ${BSP_DIR}/platform/${TARGET_CHIP}/${TARGET_BOARD}/dts/
 	make
+	if [ $? -ne 0 ]; then
+		mk_error "Failed to build dtb for ${core_name}"
+		cd -
+		return 1
+	fi
 	cd -
 
 	# Build src
 	source ${ESOS_BASE_DEFCONF}
+	# Export variables for Python scripts
+	export TARGET_CHIP TARGET_BOARD TARGET_ENTRY_POINT TARGET_DEFCONFIG
 	cd ${BSP_DIR}
 	scons --useconfig=.config
+	if [ $? -ne 0 ]; then
+		mk_error "Failed to load config for ${core_name}"
+		cd -
+		return 1
+	fi
 	scons
+	if [ $? -ne 0 ]; then
+		mk_error "Failed to build ${core_name}"
+		cd -
+		return 1
+	fi
 	cd -
 
 	# Rename output files to avoid overwriting
@@ -275,11 +310,15 @@ function build_single_core()
 			mv "${BSP_DIR}/rtthread-rt24.elf" "${BSP_DIR}/k3_os1_rcpu.elf"
 			mk_info "Output: ${BSP_DIR}/k3_os1_rcpu.elf"
 		fi
+	else
+		mk_error "Build output file not found: ${BSP_DIR}/rtthread-rt24.elf"
+		return 1
 	fi
 	if [ -f "${BSP_DIR}/rtthread.bin" ]; then
 		mv "${BSP_DIR}/rtthread.bin" "${BSP_DIR}/rtthread-${output_suffix}.bin"
 		mk_info "Output: ${BSP_DIR}/rtthread-${output_suffix}.bin"
 	fi
+	return 0
 }
 
 function build_all_cores()
@@ -294,6 +333,10 @@ function build_all_cores()
 
 	# Build core0
 	build_single_core "k3_core0" "core0"
+	if [ $? -ne 0 ]; then
+		mk_error "Failed to build core0"
+		return 1
+	fi
 
 	# Clean for next build
 	cd ${BSP_DIR}
@@ -302,6 +345,10 @@ function build_all_cores()
 
 	# Build core1
 	build_single_core "k3_core1" "core1"
+	if [ $? -ne 0 ]; then
+		mk_error "Failed to build core1"
+		return 1
+	fi
 
 	# Create ITB package (signed or unsigned)
 	if [ "x${sign_mode}" = "xsign" ]; then
@@ -315,6 +362,7 @@ function build_all_cores()
 	mk_info "  - ${BSP_DIR}/k3_os0_rcpu.elf"
 	mk_info "  - ${BSP_DIR}/k3_os1_rcpu.elf"
 	mk_info "  - ${BSP_DIR}/esos.itb"
+	return 0
 }
 
 function create_esos_itb()
@@ -468,13 +516,15 @@ elif [ "x$1" = "x" ]; then
 		source ${ESOS_BASE_DEFCONF}
 		if [ "${TARGET_BOARD}" = "k3_all_cores" ]; then
 			build_all_cores
+			exit $?
 		else
 			build_kernel
+			exit $?
 		fi
 	else
 		build_kernel
+		exit $?
 	fi
-	exit 0
 elif [ "x$1" = "xclean" ]; then
 	clean_kernel
 	exit 0
