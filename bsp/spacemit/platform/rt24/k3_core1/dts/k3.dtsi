@@ -387,13 +387,45 @@
 			};
 		};
 
-		ri2c0: ri2c@c0887000 {
+		ri2c0: ri2c@c0886000 {
 			compatible = "spacemit,k1x-ri2c0";
-			reg = <0xc0887000 0x38>;
+			reg = <0xc0886000 0x38>;
 			/* usually i2c client has only 1 reg field */
 			clocks = <&ccu CLK_RCPU_I2C0>, <&ccu CLK_RST_RCPU_I2C0>;
 			interrupt-parent = <&intc>;
-			interrupts = <0 32 0>;
+			interrupts = <0 13 0>;
+			/* spacemit,i2c-fast-mode; */
+			/* spacemit,i2c-high-mode; */
+			spacemit,i2c-master-code = /bits/ 8 <0x0e>;
+			spacemit,i2c-clk-rate = <32000000>;
+			spacemit,i2c-lcr = <0x82c469f>;
+			spacemit,i2c-wcr = <0x142a>;
+			status = "disabled";
+		};
+
+		ri2c1: ri2c@c0886100 {
+			compatible = "spacemit,k1x-ri2c0";
+			reg = <0xc0886100 0x38>;
+			/* usually i2c client has only 1 reg field */
+			clocks = <&ccu CLK_RCPU_I2C1>, <&ccu CLK_RST_RCPU_I2C1>;
+			interrupt-parent = <&intc>;
+			interrupts = <0 14 0>;
+			/* spacemit,i2c-fast-mode; */
+			/* spacemit,i2c-high-mode; */
+			spacemit,i2c-master-code = /bits/ 8 <0x0e>;
+			spacemit,i2c-clk-rate = <32000000>;
+			spacemit,i2c-lcr = <0x82c469f>;
+			spacemit,i2c-wcr = <0x142a>;
+			status = "disabled";
+		};
+
+		ri2c2: ri2c@c0886200 {
+			compatible = "spacemit,k1x-ri2c0";
+			reg = <0xc0886200 0x38>;
+			/* usually i2c client has only 1 reg field */
+			clocks = <&ccu CLK_RCPU_I2C2>, <&ccu CLK_RST_RCPU_I2C2>;
+			interrupt-parent = <&intc>;
+			interrupts = <0 82 0>;
 			/* spacemit,i2c-fast-mode; */
 			/* spacemit,i2c-high-mode; */
 			spacemit,i2c-master-code = /bits/ 8 <0x0e>;
