@@ -108,5 +108,19 @@ choice
 	select ARCH_RISCV_FPU
 	select ARCH_RISCV_FPU_D
 	select RT_USING_CACHE
+
+   if SOC_SPACEMIT_K3
+       choice
+           prompt "select OS"
+           default SOC_SPACEMIT_K3_CORE0
+
+           config SOC_SPACEMIT_K3_CORE0
+           bool "Energy OS"
+
+
+          config SOC_SPACEMIT_K3_CORE1
+          bool "Runtime OS"
+       endchoice
+   endif
 endchoice
 endmenu
