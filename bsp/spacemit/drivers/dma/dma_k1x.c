@@ -31,6 +31,20 @@
 #define DMA_DCR_RESET		(0x1 << 1)
 #define DMA_DCR_AMODE		(0x1 << 2)
 
+/* DMA window: the engine only addresses 0x4000_0000~0x4FFF_FFFF (256MB) */
+#define K1X_DMA_WIN_BASE	(0x40000000U)
+#define K1X_DMA_WIN_SIZE	(0x10000000U)
+#define K1X_DMA_WIN_MASK	(K1X_DMA_WIN_SIZE - 1U)
+
+/* Global remap register: write 'x' to map window to (x << 32). Fixed to 4G. */
+#define K1X_DDR_REMAP_BASE_REG	((void *)0xc08800c0U)
+#define K1X_DMA_REMAP_UPPER_4G	(1U)
+
+#define K1X_DMA_FORBID_LOW_START	(0x00040000U)
+#define K1X_DMA_FORBID_LOW_END		(0x00080000U)
+#define K1X_DMA_FORBID_HIGH_START	(0xC0840000U)
+#define K1X_DMA_FORBID_HIGH_END		(0xC0880000U)
+
 /* DMA_CNTR */
 #define DMA_CNT_MSK		(0xffffff)
 #define DMA_MAX_LEN		(0xffffff)
@@ -133,6 +147,35 @@ struct mmp_pdma_device {
 	rt_container_of(dmadev, struct mmp_pdma_device, device)
 #define ctrl_to_mmp_pdma_device(dctrl)					\
 	rt_container_of(dctrl, struct mmp_pdma_device, ctrl)
+
+static inline rt_uint32_t k1x_dma_bus_addr_from_phys(rt_uint64_t phys)
+{
+	return K1X_DMA_WIN_BASE + (rt_uint32_t)(phys & K1X_DMA_WIN_MASK);
+}
+
+/* Small guard: reject accidental DMA into low SRAM areas */
+static inline int k1x_dma_bus_addr_forbidden(rt_uint32_t bus)
+{
+	if ((bus >= K1X_DMA_FORBID_LOW_START && bus <= K1X_DMA_FORBID_LOW_END) ||
+		(bus >= K1X_DMA_FORBID_HIGH_START && bus <= K1X_DMA_FORBID_HIGH_END))
+		return 1;
+	return 0;
+}
+
+#ifdef RT_USING_SMP
+static struct rt_spinlock g_dma_remap_lock;
+#else
+static rt_ubase_t g_dma_remap_lock;
+#endif
+
+static rt_err_t k1x_dma_program_remap(void)
+{
+	unsigned long flags = rt_spin_lock_irqsave(&g_dma_remap_lock);
+
+	writel(K1X_DMA_REMAP_UPPER_4G, K1X_DDR_REMAP_BASE_REG);
+	rt_spin_unlock_irqrestore(&g_dma_remap_lock, flags);
+	return 0;
+}
 
 static void enable_chan(struct mmp_pdma_phy *phy)
 {
@@ -378,6 +421,12 @@ rt_err_t mmp_pdma_prep_memcpy(struct rt_dma_chan *dchan,
 		rt_ubase_t dma_dst, rt_ubase_t dma_src, rt_size_t len)
 {
 	struct mmp_pdma_chan *chan;
+#if defined(SOC_SPACEMIT_K3)
+	rt_uint32_t src_upper = dma_src >> 32;
+	rt_uint32_t dst_upper = dma_dst >> 32;
+	rt_uint32_t off_src = (rt_uint32_t)(dma_src & K1X_DMA_WIN_MASK);
+	rt_uint32_t off_dst = (rt_uint32_t)(dma_dst & K1X_DMA_WIN_MASK);
+#endif
 
 	if (!dchan)
 		return RT_NULL;
@@ -385,6 +434,44 @@ rt_err_t mmp_pdma_prep_memcpy(struct rt_dma_chan *dchan,
 	if (!len)
 		return RT_NULL;
 
+#if defined(SOC_SPACEMIT_K3)
+	/* guard against illegal bus ranges */
+	if (k1x_dma_bus_addr_forbidden((rt_uint32_t)dma_src) ||
+	    k1x_dma_bus_addr_forbidden((rt_uint32_t)dma_dst))
+	{
+		rt_kprintf("error addr range (bus) sar=0x%x dar=0x%x\n",
+			   (unsigned)dma_src, (unsigned)dma_dst);
+		return -RT_ERROR;
+	}
+
+	/* Offsets must be inside the 256MB window */
+	if (off_src >= K1X_DMA_WIN_SIZE || off_dst >= K1X_DMA_WIN_SIZE)
+	{
+		rt_kprintf("DMA addr outside 256MB window: off_src=0x%x off_dst=0x%x len=0x%zx\n",
+				   off_src, off_dst, len);
+		return -RT_EINVAL;
+	}
+
+	if ((off_src + len) > K1X_DMA_WIN_SIZE || (off_dst + len) > K1X_DMA_WIN_SIZE)
+	{
+		rt_kprintf("DMA xfer crosses window: off_src=0x%x off_dst=0x%x len=0x%zx\n",
+				   off_src, off_dst, len);
+		return -RT_EINVAL;
+	}
+
+	/* Hardware constraint: remap supports only upper == 1 (4G segment) */
+	if ((src_upper != 1U) || (dst_upper != 1U))
+	{
+		rt_kprintf("DMA remap only supports upper==1 (4G segment): src=0x%x dst=0x%x\n",
+				   src_upper, dst_upper);
+		return -RT_EINVAL;
+	}
+
+	k1x_dma_program_remap();
+
+	dma_src = k1x_dma_bus_addr_from_phys(dma_src);
+	dma_dst = k1x_dma_bus_addr_from_phys(dma_dst);
+#endif
 	chan = to_mmp_pdma_chan(dchan);
 
 	if (!chan->dir) {
@@ -405,10 +492,39 @@ rt_err_t mmp_pdma_prep_single(struct rt_dma_chan *dchan,
 	enum rt_dma_transfer_direction dir)
 {
 	struct mmp_pdma_chan *chan = to_mmp_pdma_chan(dchan);
+#if defined(SOC_SPACEMIT_K3)
+	rt_uint32_t upper = dma_buf_addr >> 32;
+	rt_uint32_t off   = (rt_uint32_t)(dma_buf_addr & K1X_DMA_WIN_MASK);
+#endif
 
 	if ((dma_buf_addr == RT_NULL) || (buf_len == 0))
 		return RT_NULL;
 
+#if defined(SOC_SPACEMIT_K3)
+	/* guard against illegal bus ranges */
+	if (k1x_dma_bus_addr_forbidden((rt_uint32_t)dma_buf_addr))
+	{
+		rt_kprintf("error addr range (bus) addr=0x%x\n",
+			   (unsigned)dma_buf_addr);
+		return -RT_ERROR;
+	}
+
+	/* Offsets must be inside the 256MB window */
+	if (off >= K1X_DMA_WIN_SIZE || (off + buf_len) > K1X_DMA_WIN_SIZE)
+	{
+		rt_kprintf("DMA single64 crosses window: off=0x%x len=0x%zx\n", off, buf_len);
+		return -RT_EINVAL;
+	}
+
+	if (upper != 1U)
+	{
+		rt_kprintf("DMA remap only supports upper==1 (4G segment): upper=0x%x\n", upper);
+		return -RT_EINVAL;
+	}
+	k1x_dma_program_remap();
+
+	dma_buf_addr = k1x_dma_bus_addr_from_phys(dma_buf_addr);
+#endif
 	mmp_pdma_config_write(dchan, &chan->slave_config, dir);
 
 	if (dir == RT_DMA_DEV_TO_MEM) {
@@ -655,6 +771,9 @@ static int spacemit_k1x_dma_probe(void)
 
 			rt_list_init(&dma_dev->channels);
 			rt_spin_lock_init(&dma_dev->phy_lock);
+#ifdef RT_USING_SMP
+			rt_spin_lock_init(&g_dma_remap_lock);
+#endif
 
 			for (i = 0; i < dma_dev->dma_channels; i++) {
 				ret = mmp_pdma_chan_init(dma_dev, i);
