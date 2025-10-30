@@ -142,7 +142,7 @@
 			compatible = "spacemit,k1x-rdma";
 			reg = <0xc0884000 0x470>;
 			interrupt-parent = <&intc>;
-			interrupts = <0 19 0>;
+			interrupts = <0 32 0>;
 			#dma-cells= <2>;
 			#dma-channels = <16>;
 			max-burst-size = <64>;
