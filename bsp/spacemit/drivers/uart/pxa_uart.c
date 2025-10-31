@@ -286,7 +286,6 @@ rt_int32_t pxa_uart_config(uart_handle_t handle,
 {
     rt_int32_t ret;
 
-#ifndef SOC_SPACEMIT_K3
     /* control the data_bit of the uart*/
     ret = pxa_uart_config_baudrate(handle, baud);
 
@@ -294,7 +293,6 @@ rt_int32_t pxa_uart_config(uart_handle_t handle,
     {
         return ret;
     }
-#endif
     /* control mode of the uart*/
     ret = pxa_uart_config_mode(handle, mode);
 
@@ -360,6 +358,11 @@ uart_handle_t pxa_uart_initialize(rt_int32_t idx, uart_event_cb_t cb_event)
     /* enable received data available */
     addr->IER = IER_RDA_INT_ENABLE | IIR_RECV_LINE_ENABLE;
     addr->IER |= UART_IER_UUE;
+    addr->MCR |= UART_MCR_OUT2;
+
+    /* enable tx&rx fifo */
+    addr->FCR = UART_FCR_ENABLE_FIFO |
+                UART_FCR_CLEAR_RCVR | UART_FCR_CLEAR_XMIT;
 
     return uart_priv;
 }

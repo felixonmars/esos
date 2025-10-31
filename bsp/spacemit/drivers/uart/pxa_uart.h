@@ -34,6 +34,10 @@ extern "C" {
 #define IIR_NO_ISQ_PEND         0x01
 #define UART_IER_UUE		0x40
 
+#define UART_FCR_ENABLE_FIFO    0x01 /* Enable the FIFO */
+#define UART_FCR_CLEAR_RCVR     0x02 /* Clear the RCVR FIFO */
+#define UART_FCR_CLEAR_XMIT     0x04 /* Clear the XMIT FIFO */
+
 #define LCR_SET_DLAB            0x80
 #define LCR_PARITY_ENABLE       0x08
 #define LCR_PARITY_EVEN         0x10
@@ -44,6 +48,8 @@ extern "C" {
 #define LCR_WORD_SIZE_8         0x03
 #define LCR_STOP_BIT1           0xfb
 #define LCR_STOP_BIT2           0x04
+
+#define UART_MCR_OUT2           0x08
 
 #define DW_LSR_PFE              0x80
 #define DW_LSR_TEMT             0x40
