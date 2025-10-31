@@ -1002,4 +1002,4 @@ static int spacemit_i2c_probe(void)
 err_out:
 	return ret;
 }
-INIT_DEVICE_EXPORT(spacemit_i2c_probe);
+INIT_PREV_EXPORT(spacemit_i2c_probe);
