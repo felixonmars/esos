@@ -58,6 +58,7 @@ rt_err_t rt_regulator_register(struct rt_regulator_node *reg_np)
     {
         regulator_enable(reg_np);
     }
+
     rt_device_register(reg_np->dev, reg_np->param->name, RT_DEVICE_FLAG_RDWR);
 
     return RT_EOK;
@@ -286,19 +287,26 @@ static rt_err_t regulator_disable(struct rt_regulator_node *reg_np)
 {
     rt_err_t err = RT_EOK;
 
-    if (reg_np->ops->disable)
+    if (reg_np->enabled_count-- == 0)
     {
-        err = reg_np->ops->disable(reg_np);
-
-        if (!err)
+        if (reg_np->ops->disable)
         {
-            if (reg_np->param->off_on_delay)
-            {
-                regulator_delay(reg_np->param->off_on_delay);
-            }
+           err = reg_np->ops->disable(reg_np);
 
-            err = regulator_notifier_call_chain(reg_np, RT_REGULATOR_MSG_DISABLE, RT_NULL);
+           if (!err)
+           {
+              if (reg_np->param->off_on_delay)
+              {
+                  regulator_delay(reg_np->param->off_on_delay);
+              }
+
+              err = regulator_notifier_call_chain(reg_np, RT_REGULATOR_MSG_DISABLE, RT_NULL);
+           }
         }
+    }
+    else
+    {
+        return err;
     }
 
     if (!err && reg_np->parent)
@@ -324,7 +332,6 @@ rt_err_t rt_regulator_disable(struct rt_regulator *reg)
         return RT_EOK;
     }
 
-    reg->reg_np->enabled_count--;
     rt_mutex_take(&reg_np->mutex, RT_WAITING_FOREVER);
 
     err = regulator_disable(reg->reg_np);
@@ -506,24 +513,33 @@ rt_int32_t rt_regulator_get_mode(struct rt_regulator *reg)
 
 static void regulator_check_parent(struct rt_regulator_node *reg_np)
 {
+    int ret;
+    phandle parent_phandle = 0;
+    struct dtb_node *np;
+
     if (reg_np->parent)
     {
         return;
     }
     else
     {
-        phandle parent_phandle = 0;
-        struct dtb_node *np = reg_np->dev->node;
+        while (np = reg_np->dev->node)
+        {
 
-            dtb_node_read_u32(np, "vin-supply", &parent_phandle);
+            ret = dtb_node_read_u32(np, "vin-supply", &parent_phandle);
+            if (ret != 0)
+                break;
+
             np = dtb_node_find_node_by_phandle(parent_phandle);
             if (!(reg_np->parent = rt_dtb_data(np)))
             {
-                LOG_W("%s parent dtb node = %s not init",
-                        reg_np->supply_name, np->name);
+                  rt_kprintf("%s parent dtb node = %s not init",
+                             reg_np->supply_name, np->name);
+                  return;
             }
-
             rt_list_insert_after(&reg_np->parent->children_nodes, &reg_np->list);
+            reg_np = reg_np->parent;
+        }
     }
 }
 
@@ -538,7 +554,7 @@ struct rt_regulator *rt_regulator_get(struct dtb_node *np, const char *id)
         goto _end;
     }
 
-    if (!np)
+    if (np)
     {
         phandle supply_phandle;
         char supply_name[64];

@@ -8,14 +8,15 @@
  * 2023-09-23     GuEe-GUI     first version
  */
 
-#include "regulator_dm.h"
+#include <drivers/regulator_dm.h>
 
 struct regulator_fixed
 {
     struct rt_regulator_node parent;
     struct rt_regulator_param param;
 
-    struct gpio_desc *enable_gpio;
+    struct rt_device dev;
+    int enable_gpio;
     const char *input_supply;
 };
 
@@ -31,8 +32,7 @@ static rt_err_t regulator_fixed_enable(struct rt_regulator_node *reg_np)
         return RT_EOK;
     }
 
-    gpio_direction_output(rf->enable_gpio);
-    __gpio_set_value(rf->enable_gpio, param->enable_active_high ? 1 : 0);
+    gpio_direction_output(rf->enable_gpio, param->enable_active_high ? 1 : 0);
 
     return RT_EOK;
 }
@@ -47,8 +47,7 @@ static rt_err_t regulator_fixed_disable(struct rt_regulator_node *reg_np)
         return RT_EOK;
     }
 
-    gpio_direction_output(rf->enable_gpio);
-    __gpio_set_value(rf->enable_gpio, param->enable_active_high ? 0 : 1);
+    gpio_direction_output(rf->enable_gpio, param->enable_active_high ? 0 : 1);
 
     return RT_EOK;
 }
@@ -81,12 +80,6 @@ static int regulator_fixed_get_voltage(struct rt_regulator_node *reg_np)
     return rf->param.min_uvolt + (rf->param.max_uvolt - rf->param.min_uvolt) / 2;
 }
 
-static const struct dtb_compatible_array __compatible[] =
-{
-    { .compatible = "regulator-fixed" },
-    { /* sentinel */ }
-};
-
 static const struct rt_regulator_ops regulator_fixed_ops =
 {
     .enable = regulator_fixed_enable,
@@ -95,58 +88,68 @@ static const struct rt_regulator_ops regulator_fixed_ops =
     .get_voltage = regulator_fixed_get_voltage,
 };
 
-static rt_err_t regulator_fixed_probe(void)
+#define for_each_property_of_node(dn, pp) \
+    for (pp = dn->properties; pp != NULL; pp = pp->next)
+
+static int regulator_fixed_probe(void)
 {
     rt_err_t err;
     rt_uint32_t val;
-    struct rt_device *dev = &pdev->parent;
-    struct regulator_fixed *rf = rt_calloc(1, sizeof(*rf));
-    struct dtb_node *np;
+    phandle supply_phandle;
+    struct dtb_property *pp;
+    struct dtb_node *np, *fdt_aliases;
     struct dtb_node *dtb_head_node = get_dtb_node_head();
     struct rt_regulator_node *rnp;
 
-    if (!rf)
-    {
-        return -RT_ENOMEM;
+    fdt_aliases = dtb_node_get_dtb_node_by_path(dtb_head_node, "/aliases");
+    if (fdt_aliases < 0) {
+        rt_kprintf("Get alias error\n");
+        return -RT_EINVAL;
     }
 
-    for (i = 0; i < sizeof(__compatible) / sizeof(__compatible[0]); ++i) {
-	np = dtb_node_find_compatible_node(dtb_head_node, __compatible[i].compatible);
-	if (np != RT_NULL) {
-	    if (!dtb_node_device_is_available(np))
-		continue;
-	    regulator_dtb_parse(np, &rf->param);
+    for_each_property_of_node(fdt_aliases, pp)
+    {
+        if (strncmp(pp->name, "regulator-fixed", 15) != 0)
+            continue;
 
-	    rnp = &rf->parent;
-	    rnp->supply_name = rf->param.name;
-	    rnp->ops = &regulator_fixed_ops;
-	    rnp->param = &rf->param;
-	    rnp->dev = &pdev->parent;
+         dtb_node_read_u32(fdt_aliases, pp->name, &supply_phandle);
+         np = dtb_node_find_node_by_phandle(supply_phandle);
+         if (!np)
+         {
+             rt_kprintf("%s:%d: %s, get node error\n", __func__, __LINE__, pp->value);
+             return -RT_EINVAL;
+         }
 
-	    rf->enable_gpio = of_get_named_gpio_flags(node, "enable-gpios", 0, OF_GPIO_ACTIVE_LOW);
-	    if (val < 0) {
-		    rt_free(rf);
-		    return val;
-	    }
+         struct regulator_fixed *rf = rt_calloc(1, sizeof(*rf));
+         regulator_dtb_parse(np, &rf->param);
 
-	    val = gpio_request(rf->enable_gpio, RT_NULL);
-	    if (val < 0) {
-	    	rt_free(rf);
-		return val;
-	    }
+         rnp = &rf->parent;
+         rnp->supply_name = rf->param.name;
+         rnp->ops = &regulator_fixed_ops;
+         rnp->param = &rf->param;
+         rnp->dev = &rf->dev;
+         rnp->dev->node = np;
 
-	    if (!dtb_node_read_u32(np, "startup-delay-us", &val))
-		    rf->param.enable_delay = val;
-	    if (!dtb_node_read_u32(np, "off-on-delay-us", &val))
-		    rf->param.off_on_delay = val;
+         rf->enable_gpio = of_get_named_gpio_flags(np, "enable-gpios", 0, RT_NULL);
+         if (rf->enable_gpio < 0)
+             goto no_gpios;
 
-	    if ((err = rt_regulator_register(rnp))) {
-		    rt_free(rf);
-		    return err;
-	    }
-	}
+         err = gpio_request(rf->enable_gpio, RT_NULL);
+         if (err < 0)
+             goto no_gpios;
+no_gpios:
+         if (!dtb_node_read_u32(np, "startup-delay-us", &val))
+             rf->param.enable_delay = val;
+         if (!dtb_node_read_u32(np, "off-on-delay-us", &val))
+             rf->param.off_on_delay = val;
+
+         if ((err = rt_regulator_register(rnp)))
+         {
+              rt_free(rf);
+              return err;
+         }
     }
 
     return RT_EOK;
 }
-INIT_DEVICE_EXPORT(regulator_fixed_probe);
+INIT_PREV_EXPORT(regulator_fixed_probe);

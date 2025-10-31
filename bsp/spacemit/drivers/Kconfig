@@ -78,6 +78,11 @@ menu "On-chip Peripheral Drivers"
         bool "Enable rpmsg"
         default y
         select RT_USING_RPMSG_SERVICE
+
+    config BSP_USING_REGULATOR
+        bool "Enable regulator"
+        default y
+        select RT_USING_REGULATOR
 endmenu
 
 menu "Board extended module Drivers"
