@@ -13,6 +13,9 @@
 	#address-cells = <2>;
 	#size-cells = <2>;
 
+	aliases: aliases {
+	};
+
 	cpus: cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -641,5 +644,8 @@
 				status = "disabled";
 			};
 		};
+	};
+
+	regulators: regulators {
 	};
 };

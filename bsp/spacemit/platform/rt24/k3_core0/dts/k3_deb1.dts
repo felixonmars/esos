@@ -71,3 +71,230 @@
 &rspi0 {
 	status = "okay";
 };
+
+&aliases {
+	regulator-fixed0 = <&p5v0>;
+	regulator-fixed1 = <&leaf_a100>;
+	regulator-fixed2 = <&leaf_x100>;
+	regulator-fixed3 = <&exter_3v3>;
+	regulator-fixed4 = <&exter_1v8>;
+	regulator-fixed5 = <&pwren_x100>;
+	regulator-fixed6 = <&pwren_a100>;
+	regulator-fixed7 = <&pwren_exterdc>;
+};
+
+&regulators {
+	p5v0: p5v0 {
+		compatible = "regulator-fixed";
+		regulator-name = "p_5v0";
+		regulator-boot-on;
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+	};
+
+	/* a100 */
+	leaf_a100: leaf_a100 {
+		bind_driver = "ri2c2";
+		slave_addr = <0x31>;
+		compatible = "regulator-mpq8655_0";
+		regulator-name = "leaf_a100";
+		regulator-min-microvolt = <500000>;
+		regulator-max-microvolt = <3450000>;
+		vin-supply = <&pwren_a100>;
+	};
+
+	/* x100 */
+	leaf_x100: leaf_x100 {
+		bind_driver = "ri2c2";
+		slave_addr = <0x30>;
+		compatible = "regulator-mpq8655_1";
+		regulator-name = "leaf_x100";
+		regulator-min-microvolt = <500000>;
+		regulator-max-microvolt = <3450000>;
+		vin-supply = <&pwren_x100>;
+	};
+
+	/* 3v3 */
+	exter_3v3: dcdc_3v3 {
+		compatible = "regulator-fixed";
+		regulator-name = "exter_3v3";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		vin-supply = <&exter_1v8>;
+	};
+
+	/* 1v8 */
+	exter_1v8: dcdc_1v8 {
+		compatible = "regulator-fixed";
+		regulator-name = "exter_1v8";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		vin-supply = <&pwren_exterdc>;
+	};
+
+	p1: p1 {
+		compatible = "p1-regulator", "regulator-dynamic";
+		bind_driver = "ri2c2";
+		slave_addr = <0x41>;
+		num_regulators = <19>;
+
+		dcdc1_2: DCDC_REG12 {
+			compatible = "regulator-dynamic";
+			regulator-name = "dcdc1_2";
+			regulator-min-microvolt = <500000>;
+			regulator-max-microvolt = <3450000>;
+			regulator-ramp-delay = <5000>;
+			vin-supply = <&p5v0>;
+		};
+
+		dcdc_3: DCDC_REG3 {
+			compatible = "regulator-dynamic";
+                        regulator-name = "dcdc3";
+                        regulator-min-microvolt = <500000>;
+                        regulator-max-microvolt = <1800000>;
+                        regulator-ramp-delay = <5000>;
+			vin-supply = <&p5v0>;
+		};
+
+		dcdc_4: DCDC_REG4 {
+			compatible = "regulator-dynamic";
+                        regulator-name = "dcdc4";
+                        regulator-min-microvolt = <500000>;
+                        regulator-max-microvolt = <3300000>;
+                        regulator-ramp-delay = <5000>;
+			vin-supply = <&p5v0>;
+		};
+
+		dcdc_5: DCDC_REG5 {
+			compatible = "regulator-dynamic";
+                        regulator-name = "dcdc5";
+                        regulator-min-microvolt = <500000>;
+                        regulator-max-microvolt = <3450000>;
+                        regulator-ramp-delay = <5000>;
+			vin-supply = <&p5v0>;
+		};
+
+		dcdc_6: DCDC_REG6 {
+			compatible = "regulator-dynamic";
+                        regulator-name = "dcdc6";
+                        regulator-min-microvolt = <500000>;
+                        regulator-max-microvolt = <3450000>;
+                        regulator-ramp-delay = <5000>;
+			vin-supply = <&p5v0>;
+		};
+
+		/* aldo */
+		ldo_1: LDO_REG1 {
+			compatible = "regulator-dynamic";
+                        regulator-name = "ldo1";
+                        regulator-min-microvolt = <500000>;
+                        regulator-max-microvolt = <3400000>;
+			vin-supply = <&p5v0>;
+		};
+
+		ldo_2: LDO_REG2 {
+			compatible = "regulator-dynamic";
+                        regulator-name = "ldo2";
+                        regulator-min-microvolt = <500000>;
+                        regulator-max-microvolt = <3400000>;
+			vin-supply = <&p5v0>;
+		};
+
+		ldo_3: LDO_REG3 {
+			compatible = "regulator-dynamic";
+                        regulator-name = "ldo3";
+                        regulator-min-microvolt = <500000>;
+                        regulator-max-microvolt = <3400000>;
+			vin-supply = <&p5v0>;
+		};
+
+		ldo_4: LDO_REG4 {
+			compatible = "regulator-dynamic";
+                        regulator-name = "ldo4";
+                        regulator-min-microvolt = <500000>;
+                        regulator-max-microvolt = <3400000>;
+			vin-supply = <&p5v0>;
+		};
+
+		/* dldo */
+		ldo_5: LDO_REG5 {
+			compatible = "regulator-dynamic";
+                        regulator-name = "ldo5";
+                        regulator-min-microvolt = <500000>;
+                        regulator-max-microvolt = <3400000>;
+			vin-supply = <&p5v0>;
+		};
+
+		ldo_6: LDO_REG6 {
+			compatible = "regulator-dynamic";
+                        regulator-name = "ldo6";
+                        regulator-min-microvolt = <500000>;
+                        regulator-max-microvolt = <3400000>;
+			vin-supply = <&p5v0>;
+		};
+
+		ldo_7: LDO_REG7 {
+			compatible = "regulator-dynamic";
+                        regulator-name = "ldo7";
+                        regulator-min-microvolt = <500000>;
+                        regulator-max-microvolt = <3400000>;
+			vin-supply = <&p5v0>;
+		};
+
+		ldo_8: LDO_REG8 {
+			compatible = "regulator-dynamic";
+                        regulator-name = "ldo8";
+                        regulator-min-microvolt = <500000>;
+                        regulator-max-microvolt = <3400000>;
+			vin-supply = <&p5v0>;
+		};
+
+		ldo_9: LDO_REG9 {
+			compatible = "regulator-dynamic";
+                        regulator-name = "ldo9";
+                        regulator-min-microvolt = <500000>;
+                        regulator-max-microvolt = <3400000>;
+			vin-supply = <&p5v0>;
+		};
+
+		ldo_10: LDO_REG10 {
+			compatible = "regulator-dynamic";
+                        regulator-name = "ldo10";
+                        regulator-min-microvolt = <500000>;
+                        regulator-max-microvolt = <3400000>;
+			vin-supply = <&p5v0>;
+		};
+
+		ldo_11: LDO_REG11 {
+			compatible = "regulator-dynamic";
+                        regulator-name = "ldo11";
+                        regulator-min-microvolt = <500000>;
+                        regulator-max-microvolt = <3400000>;
+			vin-supply = <&p5v0>;
+		};
+
+		pwren_x100: pwren_x100 {
+			compatible = "regulator-fixed";
+			regulator-name = "pwr_x100";
+			regulator-min-microvolt = <500000>;
+			regulator-max-microvolt = <3400000>;
+			vin-supply = <&p5v0>;
+		};
+
+		pwren_a100: pwren_a100 {
+			compatible = "regulator-fixed";
+			regulator-name = "pwr_a100";
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			vin-supply = <&p5v0>;
+		};
+
+		pwren_exterdc: pwren_extdc {
+			compatible = "regulator-fixed";
+			regulator-name = "pwr_ext";
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			vin-supply = <&p5v0>;
+		};
+	};
+};
