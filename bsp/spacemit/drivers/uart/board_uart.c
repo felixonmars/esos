@@ -47,6 +47,30 @@ struct
             .compatible = "spacemit,pxa-uart1",
         },
     },
+
+    {
+        .name = "uart2",
+        .handler = uart_irqhandler,
+        .__compatible = {
+            .compatible = "spacemit,pxa-uart2",
+        },
+    },
+
+    {
+        .name = "uart3",
+        .handler = uart_irqhandler,
+        .__compatible = {
+            .compatible = "spacemit,pxa-uart3",
+        },
+    },
+
+    {
+        .name = "uart4",
+        .handler = uart_irqhandler,
+        .__compatible = {
+            .compatible = "spacemit,pxa-uart4",
+        },
+    },
 };
 
 rt_int32_t target_uart_init(rt_int32_t idx, rt_uint32_t *base, rt_uint32_t *irq, void **handler)
