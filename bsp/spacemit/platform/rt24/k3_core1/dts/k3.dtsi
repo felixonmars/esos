@@ -149,23 +149,50 @@
 			status = "disabled";
 		};
 
-		uart0: serial0@c0881000 {
+		uart0: serial0@c0881100 {
 			compatible = "spacemit,pxa-uart0";
-			// reg = <0xc0881000 0x100>;
+			// reg = <0xc0881100 0x100>;
 			/* the uart of RCPU on fpga is multiplexed with AP */
 			reg = <0xd4017000 0x100>;
 			interrupt-parent = <&intc>;
-			interrupts = <0 17 0>;
-			clocks = <&ccu CLK_RCPU_UART0>, <&ccu CLK_RST_RCPU_UART0>;
+			interrupts = <0 18 0>;
+			clocks = <&ccu CLK_RCPU_UART1>, <&ccu CLK_RST_RCPU_UART1>;
 			status = "disabled";
 		};
 
-		uart1: serial1@c088d000 {
+		uart1: serial1@c0881200 {
 			compatible = "spacemit,pxa-uart1";
-			reg = <0xc088d000 0x100>;
+			reg = <0xc0881200 0x100>;
 			interrupt-parent = <&intc>;
-			interrupts = <0 36 0>;
-			clocks = <&ccu CLK_RCPU_UART1>, <&ccu CLK_RST_RCPU_UART1>;
+			interrupts = <0 19 0>;
+			clocks = <&ccu CLK_RCPU_UART2>, <&ccu CLK_RST_RCPU_UART2>;
+			status = "disabled";
+		};
+
+		uart2: serial2@c0881300 {
+			compatible = "spacemit,pxa-uart2";
+			reg = <0xc0881300 0x100>;
+			interrupt-parent = <&intc>;
+			interrupts = <0 20 0>;
+			clocks = <&ccu CLK_RCPU_UART3>, <&ccu CLK_RST_RCPU_UART3>;
+			status = "disabled";
+		};
+
+		uart3: serial3@c0881400 {
+			compatible = "spacemit,pxa-uart3";
+			reg = <0xc0881400 0x100>;
+			interrupt-parent = <&intc>;
+			interrupts = <0 21 0>;
+			clocks = <&ccu CLK_RCPU_UART4>, <&ccu CLK_RST_RCPU_UART4>;
+			status = "disabled";
+		};
+
+		uart4: serial4@c0881500 {
+			compatible = "spacemit,pxa-uart4";
+			reg = <0xc0881500 0x100>;
+			interrupt-parent = <&intc>;
+			interrupts = <0 44 0>;
+			clocks = <&ccu CLK_RCPU_UART5>, <&ccu CLK_RST_RCPU_UART5>;
 			status = "disabled";
 		};
 
