@@ -6,6 +6,9 @@ cwd  = GetCurrentDir()
 src     = Glob('*.c')
 CPPPATH = [cwd]
 
+if GetDepend('BSP_REGULATOR_TEST') == False:
+    SrcRemove(src, ['regulator_test.c'])
+
 group = DefineGroup('Drivers_rproc', src, depend = ['BSP_USING_REGULATOR'], CPPPATH = CPPPATH)
 
 Return('group')

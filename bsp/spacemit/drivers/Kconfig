@@ -83,6 +83,12 @@ menu "On-chip Peripheral Drivers"
         bool "Enable regulator"
         default y
         select RT_USING_REGULATOR
+
+    if BSP_USING_REGULATOR
+       config BSP_REGULATOR_TEST
+          bool "Enable regulator test driver"
+          default n
+    endif
 endmenu
 
 menu "Board extended module Drivers"
@@ -99,33 +105,33 @@ choice
 
     config SOC_SPACEMIT_K1_X
     bool "SOC_SPACEMIT_K1_X"
-    	select RT_USING_COMPONENTS_INIT
-    	select RT_USING_USER_MAIN
-    	select ARCH_RISCV32
-   	select RT_USING_CACHE
+        select RT_USING_COMPONENTS_INIT
+        select RT_USING_USER_MAIN
+        select ARCH_RISCV32
+        select RT_USING_CACHE
 
 
     config SOC_SPACEMIT_K3
     bool "SOC_SPACEMIT_K3"
-	select RT_USING_COMPONENTS_INIT
-	select RT_USING_USER_MAIN
-	select ARCH_RISCV64
-	select ARCH_RISCV_FPU
-	select ARCH_RISCV_FPU_D
-	select RT_USING_CACHE
+        select RT_USING_COMPONENTS_INIT
+        select RT_USING_USER_MAIN
+        select ARCH_RISCV64
+        select ARCH_RISCV_FPU
+        select ARCH_RISCV_FPU_D
+        select RT_USING_CACHE
 
-   if SOC_SPACEMIT_K3
-       choice
-           prompt "select OS"
-           default SOC_SPACEMIT_K3_CORE0
+if SOC_SPACEMIT_K3
+    choice
+        prompt "select OS"
+        default SOC_SPACEMIT_K3_CORE0
 
-           config SOC_SPACEMIT_K3_CORE0
-           bool "Energy OS"
+        config SOC_SPACEMIT_K3_CORE0
+        bool "Energy OS"
 
 
-          config SOC_SPACEMIT_K3_CORE1
-          bool "Runtime OS"
-       endchoice
-   endif
+        config SOC_SPACEMIT_K3_CORE1
+        bool "Runtime OS"
+    endchoice
+endif
 endchoice
 endmenu
