@@ -633,5 +633,16 @@
 			mac-address = [00 11 22 33 44 55];
 			status = "disabled";
 		};
+
+		ec_master: ethercat {
+			compatible = "spacemit,k3-ec-master";
+			debug-level = <0>;
+			master-count = <1>;
+			status = "disabled";
+
+			master0 {
+				main-device = <&eth0>;
+			};
+		};
 	};
 };

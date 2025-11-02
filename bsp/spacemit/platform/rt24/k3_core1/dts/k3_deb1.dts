@@ -92,3 +92,7 @@
 		};
 	};
 };
+
+&ec_master {
+	status = "okay";
+};
