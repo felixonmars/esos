@@ -1,0 +1,56 @@
+# master/SConscript
+import os
+from building import *
+
+cwd = GetCurrentDir()
+
+# Source files in subdir 'master'
+# src = ['test/test.c', 'test/test1.c']
+
+src = [
+    'base.c',
+    'datagram.c',
+    'coe_emerg_ring.c',
+    'datagram_pair.c',
+    'device.c',
+    'reg_request.c',
+    'soe_request.c',
+    'soe_error.c',       
+    'pdo_entry.c',
+    'pdo_list.c',
+    'pdo.c',
+    'sdo_entry.c',
+    'sdo_request.c',
+    'sdo.c',
+    'flag.c',
+    'sync.c',
+    'sync_config.c',
+    'slave_config.c',
+    'domain.c',
+    'fmmu_config.c',
+    'foe_request.c',
+    'fsm_change.c',
+    'fsm_coe.c',
+    'fsm_foe.c',
+    'fsm_master.c',
+    'fsm_pdo_entry.c',
+    'fsm_pdo.c',
+    'fsm_sii.c',
+    'fsm_slave_config.c',
+    'fsm_slave_scan.c',
+    'fsm_soe.c',
+    'fsm_slave.c',   
+    'module.c',
+    'mailbox.c',
+    'slave.c',
+    'master.c',
+    'voe_handler.c',
+]
+
+# Private headers for the master module
+CPPPATH = []
+
+# Define a build group for EtherCAT kernel-side (master) sources
+group = DefineGroup('EtherCAT.master', src, depend=['RT_USING_ETHERCAT'], CPPPATH=CPPPATH)
+
+Return('group')

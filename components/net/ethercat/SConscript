@@ -1,0 +1,27 @@
+# Top-level SConscript for EtherCAT
+import os
+from building import *
+
+cwd = GetCurrentDir()
+
+# top-level source files
+src = []
+
+# Public include path(s) for global access
+CPPPATH = [
+	'include',
+	'device',
+]
+
+group = DefineGroup('EtherCAT', src, depend=['RT_USING_ETHERCAT'], CPPPATH=CPPPATH)
+
+objs = [group]
+
+# Recursively include subdirectory SConscript files if present
+list = os.listdir(cwd)
+for d in list:
+    path = os.path.join(cwd, d)
+    if os.path.isfile(os.path.join(path, 'SConscript')):
+        objs += SConscript(os.path.join(d, 'SConscript'))
+
+Return('objs')

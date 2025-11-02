@@ -1,0 +1,14 @@
+# device/SConscript
+import os
+from building import *
+
+cwd = GetCurrentDir()
+
+src = []
+
+CPPPATH = [cwd]
+
+# Define build group for EtherCAT device module
+group = DefineGroup('EtherCAT.device', src, depend=['RT_USING_ETHERCAT'], CPPPATH=CPPPATH)
+
+Return('group')
