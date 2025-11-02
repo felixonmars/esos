@@ -1,5 +1,9 @@
 menu "Network"
 
+config RT_USING_ETHERCAT
+    bool "Enable IGH EtherCAT support"
+    default n
+
 menu "Socket abstraction layer"
 
 config RT_USING_SAL
