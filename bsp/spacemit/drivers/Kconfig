@@ -89,6 +89,11 @@ menu "On-chip Peripheral Drivers"
           bool "Enable regulator test driver"
           default n
     endif
+
+    config BSP_USING_GMAC
+        bool "Enable GMAC"
+        default n
+
 endmenu
 
 menu "Board extended module Drivers"
