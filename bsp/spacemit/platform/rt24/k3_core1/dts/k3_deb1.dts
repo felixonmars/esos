@@ -68,3 +68,27 @@
 &rpmi {
 	status = "disabled";
 };
+
+&eth0 {
+	phy-reset-pin = <80>;
+	max-speed = <100>;
+	clk-tuning-enable = <1>;
+	clk-tuning-by-reg = <1>;
+	tx-phase = <0>;
+	rx-phase = <0>;
+
+	phy-mode = "rgmii";
+	phy-addr = <0>;
+	phy-handle = <&rgmii>;
+
+	status = "okay";
+
+	mdio {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		rgmii: phy@0 {
+			reg = <0x0>;
+		};
+	};
+};

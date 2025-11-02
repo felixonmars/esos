@@ -620,5 +620,18 @@
 				status = "disabled";
 			};
 		};
+
+		eth0: ethernet@20000000 {
+			compatible = "spacemit,k3-gmac";
+			reg = <0x20000000 0x2000>;
+			clocks = <&ccu CLK_RST_RCPU_EMAC>,
+				 <&ccu CLK_RCPU_EMAC_BUS>;
+			clock-names = "mac_reset", "master_bus_clk";
+			ctrl-reg = <0xc08800e4>;
+			dline-reg = <0xc08800e8>;
+
+			mac-address = [00 11 22 33 44 55];
+			status = "disabled";
+		};
 	};
 };
