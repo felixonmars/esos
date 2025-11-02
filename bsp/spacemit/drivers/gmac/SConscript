@@ -1,0 +1,14 @@
+from building import *
+
+src = [
+    'genphy.c',
+    'dwc_eth_qos.c',
+    'dwc_eth_qos_spacemit.c',
+]
+
+CPPPATH = []
+
+group = DefineGroup('drv_gmac', src, depend = ['BSP_USING_GMAC'], CPPPATH = CPPPATH)
+
+Return('group')
+
