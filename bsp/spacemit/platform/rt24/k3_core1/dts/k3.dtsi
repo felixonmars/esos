@@ -431,7 +431,7 @@
 		};
 
 		ri2c1: ri2c@c0886100 {
-			compatible = "spacemit,k1x-ri2c0";
+			compatible = "spacemit,k1x-ri2c1";
 			reg = <0xc0886100 0x38>;
 			/* usually i2c client has only 1 reg field */
 			clocks = <&ccu CLK_RCPU_I2C1>, <&ccu CLK_RST_RCPU_I2C1>;
@@ -447,7 +447,7 @@
 		};
 
 		ri2c2: ri2c@c0886200 {
-			compatible = "spacemit,k1x-ri2c0";
+			compatible = "spacemit,k1x-ri2c2";
 			reg = <0xc0886200 0x38>;
 			/* usually i2c client has only 1 reg field */
 			clocks = <&ccu CLK_RCPU_I2C2>, <&ccu CLK_RST_RCPU_I2C2>;

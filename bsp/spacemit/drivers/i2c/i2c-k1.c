@@ -922,6 +922,8 @@ spacemit_i2c_parse_dt(struct dtb_node * dnode, struct spacemit_i2c_dev *spacemit
 
 static struct dtb_compatible_array __compatible[] = {
 	{ .compatible = "spacemit,k1x-ri2c0", "ri2c0"},
+	{ .compatible = "spacemit,k1x-ri2c1", "ri2c1"},
+	{ .compatible = "spacemit,k1x-ri2c2", "ri2c2"},
 	{}
 };
 
