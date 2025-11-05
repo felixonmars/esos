@@ -164,7 +164,7 @@ static enum rpmi_error __rpmi_voltage_set_state(struct rpmi_voltage_group *volta
 			rpmi_env_unlock(voltage->lock);
 			return RPMI_ERR_ALREADY;
 		}
-
+#if 0
 		/* If the voltage domain has no child or its a parent with single enable
 		 * count then - disable, update cache and return */
 		if (!voltage->child_count || voltage->enable_count == 1) {
@@ -196,7 +196,27 @@ static enum rpmi_error __rpmi_voltage_set_state(struct rpmi_voltage_group *volta
 
 		voltage->current_state = state;
 		voltage->enable_count -= 1;
+#else
+		voltage->enable_count -= 1;
 
+		if (voltage->enable_count == 0) {
+			ret = voltagegrp->ops->set_config(voltagegrp->ops_priv, voltage->id, state);
+			if (ret) {
+				rpmi_env_unlock(voltage->lock);
+				return ret;
+			}
+
+			voltage->current_state = state;
+		}
+
+		if (voltage->parent) {
+			ret = __rpmi_voltage_set_state(voltagegrp, voltage->parent, state);
+			if (ret && ret != RPMI_ERR_ALREADY) {
+				rpmi_env_unlock(voltage->lock);
+				return ret;
+			}
+		}
+#endif
 		/* FIXME: We are only traversing voltage domain sub-tree of requested
 		 * voltage. Need to traverse the parents to check if the disable
 		 * condition is met or not and disable if rules are met */
@@ -467,7 +487,7 @@ rpmi_voltage_sg_get_supp_levels(struct rpmi_service_group *group,
 		/* max, min and step */
 		for (i = 0; i < 3; i++) {
 			resp[4 + i] = rpmi_to_xe32(trans->is_be,
-				(rpmi_uint32_t)(level_array[i + voltage_level_idx * sizeof(struct rpmi_voltage_level_liner)]));
+				(rpmi_uint32_t)(level_array[i + voltage_level_idx * sizeof(struct rpmi_voltage_level_liner) / sizeof(level_array[0])]));
 		}
 		returned = 1;
 		remaining = level_count - (voltage_level_idx + returned);

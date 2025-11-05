@@ -246,4 +246,4 @@ rt_int32_t rt_hw_rpmi_init(void)
 
 	return 0;
 }
-INIT_COMPONENT_EXPORT(rt_hw_rpmi_init);
+INIT_ENV_EXPORT(rt_hw_rpmi_init);
