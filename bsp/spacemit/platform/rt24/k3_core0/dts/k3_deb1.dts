@@ -74,13 +74,57 @@
 
 &aliases {
 	regulator-fixed0 = <&p5v0>;
-	regulator-fixed1 = <&leaf_a100>;
-	regulator-fixed2 = <&leaf_x100>;
-	regulator-fixed3 = <&exter_3v3>;
-	regulator-fixed4 = <&exter_1v8>;
-	regulator-fixed5 = <&pwren_x100>;
-	regulator-fixed6 = <&pwren_a100>;
-	regulator-fixed7 = <&pwren_exterdc>;
+	regulator-fixed1 = <&exter_3v3>;
+	regulator-fixed2 = <&exter_1v8>;
+	regulator-fixed3 = <&pwren_x100>;
+	regulator-fixed4 = <&pwren_a100>;
+	regulator-fixed5 = <&pwren_exterdc>;
+
+	regulator-dynamic0 = <&leaf_a100>;
+	regulator-dynamic1 = <&leaf_x100>;
+	regulator-dynamic2 = <&dcdc1_2>;
+	regulator-dynamic3 = <&dcdc_3>;
+	regulator-dynamic4 = <&dcdc_4>;
+	regulator-dynamic5 = <&dcdc_5>;
+	regulator-dynamic6 = <&dcdc_6>;
+	regulator-dynamic7 = <&ldo_1>;
+	regulator-dynamic8 = <&ldo_2>;
+	regulator-dynamic9 = <&ldo_3>;
+	regulator-dynamic10 = <&ldo_4>;
+	regulator-dynamic11 = <&ldo_5>;
+	regulator-dynamic12 = <&ldo_6>;
+	regulator-dynamic13 = <&ldo_7>;
+	regulator-dynamic14 = <&ldo_8>;
+	regulator-dynamic15 = <&ldo_9>;
+	regulator-dynamic16 = <&ldo_10>;
+	regulator-dynamic17 = <&ldo_11>;
+};
+
+&rpmi_voltage0 {
+	p_5v0-supply = <&p5v0>;
+	leaf_a100-supply = <&leaf_a100>;
+	leaf_x100-supply = <&leaf_x100>;
+	exter_3v3-supply = <&exter_3v3>;
+	exter_1v8-supply = <&exter_1v8>;
+	dcdc1_2-supply = <&dcdc1_2>;
+	dcdc3-supply = <&dcdc_3>;
+	dcdc4-supply = <&dcdc_4>;
+	dcdc5-supply = <&dcdc_5>;
+	dcdc6-supply = <&dcdc_6>;
+	ldo1-supply = <&ldo_1>;
+	ldo2-supply = <&ldo_2>;
+	ldo3-supply = <&ldo_3>;
+	ldo4-supply = <&ldo_4>;
+	ldo5-supply = <&ldo_5>;
+	ldo6-supply = <&ldo_6>;
+	ldo7-supply = <&ldo_7>;
+	ldo8-supply = <&ldo_8>;
+	ldo9-supply = <&ldo_9>;
+	ldo10-supply = <&ldo_10>;
+	ldo11-supply = <&ldo_11>;
+	pwr_x100-supply = <&pwren_x100>;
+	pwr_a100-supply = <&pwren_a100>;
+	pwr_ext-supply = <&pwren_exterdc>;
 };
 
 &regulators {
@@ -90,6 +134,7 @@
 		regulator-boot-on;
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
+		index = <0>;
 	};
 
 	/* a100 */
@@ -101,6 +146,7 @@
 		regulator-min-microvolt = <500000>;
 		regulator-max-microvolt = <3450000>;
 		vin-supply = <&pwren_a100>;
+		index = <22>;
 	};
 
 	/* x100 */
@@ -112,6 +158,7 @@
 		regulator-min-microvolt = <500000>;
 		regulator-max-microvolt = <3450000>;
 		vin-supply = <&pwren_x100>;
+		index = <23>;
 	};
 
 	/* 3v3 */
@@ -121,15 +168,17 @@
 		regulator-min-microvolt = <3300000>;
 		regulator-max-microvolt = <3300000>;
 		vin-supply = <&exter_1v8>;
+		index = <3>;
 	};
 
 	/* 1v8 */
 	exter_1v8: dcdc_1v8 {
 		compatible = "regulator-fixed";
 		regulator-name = "exter_1v8";
-		regulator-min-microvolt = <1800000>;
-		regulator-max-microvolt = <1800000>;
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
 		vin-supply = <&pwren_exterdc>;
+		index = <2>;
 	};
 
 	p1: p1 {
@@ -145,6 +194,7 @@
 			regulator-max-microvolt = <3450000>;
 			regulator-ramp-delay = <5000>;
 			vin-supply = <&p5v0>;
+			index = <6>;
 		};
 
 		dcdc_3: DCDC_REG3 {
@@ -154,6 +204,7 @@
                         regulator-max-microvolt = <1800000>;
                         regulator-ramp-delay = <5000>;
 			vin-supply = <&p5v0>;
+			index = <7>;
 		};
 
 		dcdc_4: DCDC_REG4 {
@@ -163,6 +214,7 @@
                         regulator-max-microvolt = <3300000>;
                         regulator-ramp-delay = <5000>;
 			vin-supply = <&p5v0>;
+			index = <8>;
 		};
 
 		dcdc_5: DCDC_REG5 {
@@ -172,6 +224,7 @@
                         regulator-max-microvolt = <3450000>;
                         regulator-ramp-delay = <5000>;
 			vin-supply = <&p5v0>;
+			index = <9>;
 		};
 
 		dcdc_6: DCDC_REG6 {
@@ -181,6 +234,7 @@
                         regulator-max-microvolt = <3450000>;
                         regulator-ramp-delay = <5000>;
 			vin-supply = <&p5v0>;
+			index = <10>;
 		};
 
 		/* aldo */
@@ -190,6 +244,7 @@
                         regulator-min-microvolt = <500000>;
                         regulator-max-microvolt = <3400000>;
 			vin-supply = <&p5v0>;
+			index = <11>;
 		};
 
 		ldo_2: LDO_REG2 {
@@ -198,6 +253,7 @@
                         regulator-min-microvolt = <500000>;
                         regulator-max-microvolt = <3400000>;
 			vin-supply = <&p5v0>;
+			index = <12>;
 		};
 
 		ldo_3: LDO_REG3 {
@@ -206,6 +262,7 @@
                         regulator-min-microvolt = <500000>;
                         regulator-max-microvolt = <3400000>;
 			vin-supply = <&p5v0>;
+			index = <13>;
 		};
 
 		ldo_4: LDO_REG4 {
@@ -214,6 +271,7 @@
                         regulator-min-microvolt = <500000>;
                         regulator-max-microvolt = <3400000>;
 			vin-supply = <&p5v0>;
+			index = <14>;
 		};
 
 		/* dldo */
@@ -223,6 +281,7 @@
                         regulator-min-microvolt = <500000>;
                         regulator-max-microvolt = <3400000>;
 			vin-supply = <&p5v0>;
+			index = <15>;
 		};
 
 		ldo_6: LDO_REG6 {
@@ -231,6 +290,7 @@
                         regulator-min-microvolt = <500000>;
                         regulator-max-microvolt = <3400000>;
 			vin-supply = <&p5v0>;
+			index = <16>;
 		};
 
 		ldo_7: LDO_REG7 {
@@ -239,6 +299,7 @@
                         regulator-min-microvolt = <500000>;
                         regulator-max-microvolt = <3400000>;
 			vin-supply = <&p5v0>;
+			index = <17>;
 		};
 
 		ldo_8: LDO_REG8 {
@@ -247,6 +308,7 @@
                         regulator-min-microvolt = <500000>;
                         regulator-max-microvolt = <3400000>;
 			vin-supply = <&p5v0>;
+			index = <18>;
 		};
 
 		ldo_9: LDO_REG9 {
@@ -255,6 +317,7 @@
                         regulator-min-microvolt = <500000>;
                         regulator-max-microvolt = <3400000>;
 			vin-supply = <&p5v0>;
+			index = <19>;
 		};
 
 		ldo_10: LDO_REG10 {
@@ -263,6 +326,7 @@
                         regulator-min-microvolt = <500000>;
                         regulator-max-microvolt = <3400000>;
 			vin-supply = <&p5v0>;
+			index = <20>;
 		};
 
 		ldo_11: LDO_REG11 {
@@ -271,14 +335,16 @@
                         regulator-min-microvolt = <500000>;
                         regulator-max-microvolt = <3400000>;
 			vin-supply = <&p5v0>;
+			index = <21>;
 		};
 
 		pwren_x100: pwren_x100 {
 			compatible = "regulator-fixed";
 			regulator-name = "pwr_x100";
-			regulator-min-microvolt = <500000>;
-			regulator-max-microvolt = <3400000>;
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
 			vin-supply = <&p5v0>;
+			index = <4>;
 		};
 
 		pwren_a100: pwren_a100 {
@@ -287,6 +353,7 @@
 			regulator-min-microvolt = <3300000>;
 			regulator-max-microvolt = <3300000>;
 			vin-supply = <&p5v0>;
+			index = <5>;
 		};
 
 		pwren_exterdc: pwren_extdc {
@@ -295,6 +362,7 @@
 			regulator-min-microvolt = <3300000>;
 			regulator-max-microvolt = <3300000>;
 			vin-supply = <&p5v0>;
+			index = <1>;
 		};
 	};
 };
