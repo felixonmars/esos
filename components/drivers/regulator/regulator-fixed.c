@@ -77,7 +77,7 @@ static int regulator_fixed_get_voltage(struct rt_regulator_node *reg_np)
 {
     struct regulator_fixed *rf = raw_to_regulator_fixed(reg_np);
 
-    return rf->param.min_uvolt + (rf->param.max_uvolt - rf->param.min_uvolt) / 2;
+    return rf->param.min_uvolt/* + (rf->param.max_uvolt - rf->param.min_uvolt) / 2 */;
 }
 
 static const struct rt_regulator_ops regulator_fixed_ops =

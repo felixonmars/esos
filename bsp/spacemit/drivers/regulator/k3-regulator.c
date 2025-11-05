@@ -14,24 +14,19 @@
 #include "regulator.h"
 
 static struct regulator_linear_range p1_buck_ranges[] = {
-	REGULATOR_LINEAR_RANGE(500000, 0x0, 0xaa, 5000),
-	REGULATOR_LINEAR_RANGE(1375000, 0xab, 0xfe, 25000),
+	[0] = REGULATOR_LINEAR_RANGE(500000, 0x0, 0xaa, 5000),
+	[1] = REGULATOR_LINEAR_RANGE(1375000, 0xab, 0xfe, 25000),
 };
 
 static struct regulator_linear_range p1_ldo_ranges[] = {
-	REGULATOR_LINEAR_RANGE(500000, 0xb, 0x7f, 25000),
+	[0] = REGULATOR_LINEAR_RANGE(500000, 0xb, 0x7f, 25000),
 };
 
 static const struct regulator_desc p1_regulator_descs[]  = {
-	REGULATOR_DESC_COMMON(P1_ID_DCDC1,
+	REGULATOR_DESC_COMMON(P1_ID_DCDC1_2,
 			255, P1_BUCK1_VSEL_REG, P1_BUCK_VSEL_MASK,
 			P1_BUCK1_CTRL_REG, P1_BUCK_EN_MASK,
 			P1_BUCK1_SVSEL_REG, P1_BUCK_SVSEL_MASK,
-			p1_buck_ranges),
-	REGULATOR_DESC_COMMON(P1_ID_DCDC2,
-			255, P1_BUCK2_VSEL_REG, P1_BUCK_VSEL_MASK,
-			P1_BUCK2_CTRL_REG, P1_BUCK_EN_MASK,
-			P1_BUCK2_SVSEL_REG, P1_BUCK_SVSEL_MASK,
 			p1_buck_ranges),
 	REGULATOR_DESC_COMMON(P1_ID_DCDC3,
 			255, P1_BUCK3_VSEL_REG, P1_BUCK_VSEL_MASK,
@@ -108,30 +103,26 @@ static const struct regulator_desc p1_regulator_descs[]  = {
 			P1_DLDO7_CTRL_REG, P1_DLDO_EN_MASK,
 			P1_DLDO7_SVOLT_REG, P1_DLDO_SVSEL_MASK,
 			p1_ldo_ranges),
+
+	/* leaf */
+	REGULATOR_DESC_COMMON(EXTERN_LEAF_A100,
+			128, P1_DLDO7_VOLT_REG, P1_DLDO_VSEL_MASK,
+			P1_DLDO7_CTRL_REG, P1_DLDO_EN_MASK,
+			P1_DLDO7_SVOLT_REG, P1_DLDO_SVSEL_MASK,
+			p1_ldo_ranges),
+	REGULATOR_DESC_COMMON(EXTERN_LEAF_X100,
+			128, P1_DLDO7_VOLT_REG, P1_DLDO_VSEL_MASK,
+			P1_DLDO7_CTRL_REG, P1_DLDO_EN_MASK,
+			P1_DLDO7_SVOLT_REG, P1_DLDO_SVSEL_MASK,
+			p1_ldo_ranges),
+
 };
 
 static struct dtb_compatible_array __compatible[] = {
-	{ .compatible = "regulator-mpq8655_0", .data = (void *)&p1_regulator_descs },
-	{ .compatible = "regulator-mpq8655_1", .data = (void *)&p1_regulator_descs },
-	{ .compatible = "p1-regulator", .data = (void *)&p1_regulator_descs },
+	{ .compatible = "regulator-mpq8655_0", .data = (void *)p1_regulator_descs },
+	{ .compatible = "regulator-mpq8655_1", .data = (void *)p1_regulator_descs },
+	{ .compatible = "p1-regulator", .data = (void *)p1_regulator_descs },
 	{}
-};
-
-struct spacemit_regulator;
-
-struct regulator_dynamic {
-	struct rt_regulator_node parent;
-	struct rt_regulator_param param;
-	struct rt_device dev;
-	struct spacemit_regulator *sr;
-};
-
-struct spacemit_regulator {
-	/* using i2c */
-	int slave_addr;
-	struct rt_i2c_bus_device *handle_driver;
-	struct regulator_dynamic *rd;
-	void *priv_data;
 };
 
 static rt_err_t regulator_dynamic_enable(struct rt_regulator_node *reg)
@@ -146,7 +137,7 @@ static rt_err_t regulator_dynamic_enable(struct rt_regulator_node *reg)
 	desc = (struct regulator_desc *)sr->priv_data;
 
 	/* regulator index */
-	index = rd - sr->rd;
+	index = reg->param->index;
 
 	msgs[0].addr  = sr->slave_addr;
 	msgs[0].flags = RT_I2C_WR;
@@ -199,7 +190,7 @@ static rt_err_t regulator_dynamic_disable(struct rt_regulator_node *reg)
 	desc = (struct regulator_desc *)sr->priv_data;
 
 	/* regulator index */
-	index = rd - sr->rd;
+	index = reg->param->index;
 
 	msgs[0].addr  = sr->slave_addr;
 	msgs[0].flags = RT_I2C_WR;
@@ -252,7 +243,7 @@ static rt_bool_t regulator_dynamic_is_enabled(struct rt_regulator_node *reg)
 	desc = (struct regulator_desc *)sr->priv_data;
 
 	/* regulator index */
-	index = rd - sr->rd;
+	index = reg->param->index;
 
 	msgs[0].addr  = sr->slave_addr;
 	msgs[0].flags = RT_I2C_WR;
@@ -395,7 +386,7 @@ static rt_err_t regulator_dynamic_set_voltage(struct rt_regulator_node *reg, int
 	desc = (struct regulator_desc *)sr->priv_data;
 
 	/* regulator index */
-	index = rd - sr->rd;
+	index = reg->param->index;
 
 	sel = regulator_map_voltage_linear_range(&desc[index], min_uvolt, max_uvolt);
 	if (sel >= 0) {
@@ -456,7 +447,7 @@ static int regulator_dynamic_get_voltage(struct rt_regulator_node *reg)
 	desc = (struct regulator_desc *)sr->priv_data;
 
 	/* regulator index */
-	index = rd - sr->rd;
+	index = reg->param->index;
 
 	msgs[0].addr  = sr->slave_addr;
 	msgs[0].flags = RT_I2C_WR;
@@ -524,7 +515,7 @@ static rt_int32_t spacemit_regulator_probe(void)
 
 			sr->priv_data = (void *)__compatible[i].data;
 
-			if (dtb_node_get_dtb_node_compatible_match(compatible_node, "regulator-dynamic")) {
+			if (dtb_node_get_dtb_node_compatible_match(compatible_node, "p1-regulator")) {
 				/* this is the parent node */
 				dtb_node_read_u32_array(compatible_node, "num_regulators", &val, 1);
 
@@ -550,6 +541,7 @@ static rt_int32_t spacemit_regulator_probe(void)
 					rnp->param = &sr->rd[j].param;
 					rnp->dev = &sr->rd[j].dev;
 					rnp->dev->node = child_node;
+					rnp->priv = &sr->rd[j];
 
 					sr->rd[j].sr = sr;
 
@@ -580,6 +572,7 @@ static rt_int32_t spacemit_regulator_probe(void)
 				rnp->dev->node = compatible_node;
 
 				sr->rd->sr = sr;
+				rnp->priv = sr->rd;
 
 				/* register the regulator */
 				ret = rt_regulator_register(rnp);

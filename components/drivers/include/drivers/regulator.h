@@ -27,7 +27,7 @@ struct rt_regulator_param
     int ramp_delay;     /* In uV/usec */
     int enable_delay;   /* In usec */
     int off_on_delay;   /* In usec */
-
+    int index; /* regulator index */
     rt_uint32_t enable_active_high:1;
     rt_uint32_t boot_on:1;                  /* Is enabled on boot */
     rt_uint32_t always_on:1;                /* Must be enabled */

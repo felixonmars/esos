@@ -97,6 +97,11 @@ rt_err_t regulator_dtb_parse(struct dtb_node *np, struct rt_regulator_param *par
         param->enable_delay = pval;
     }
 
+    if (!dtb_node_read_u32(np, "index", &pval))
+    {
+        param->index = pval;
+    }
+
     param->enable_active_high = dtb_node_read_bool(np, "enable-active-high");
     param->boot_on = dtb_node_read_bool(np, "regulator-boot-on");
     param->always_on = dtb_node_read_bool(np, "regulator-always-on");

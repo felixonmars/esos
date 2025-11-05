@@ -94,9 +94,14 @@ struct regulator_desc {
 	const struct regulator_linear_range *linear_ranges;
 };
 
-enum p1_regulator_index {
-	P1_ID_DCDC1,
-	P1_ID_DCDC2,
+enum k3_regulator_index {
+	EXTERN_P5V,
+	EXTERN_DCDC,
+	EXTERN_1V8,
+	EXTERN_3V3,
+	EXTERN_X100,
+	EXTERN_A100,
+	P1_ID_DCDC1_2,
 	P1_ID_DCDC3,
 	P1_ID_DCDC4,
 	P1_ID_DCDC5,
@@ -112,7 +117,32 @@ enum p1_regulator_index {
 	P1_ID_LDO9,
 	P1_ID_LDO10,
 	P1_ID_LDO11,
+	EXTERN_LEAF_A100,
+	EXTERN_LEAF_X100,
 };
+
+struct spacemit_regulator;
+
+struct regulator_dynamic {
+	struct rt_regulator_node parent;
+	struct rt_regulator_param param;
+	struct rt_device dev;
+	struct spacemit_regulator *sr;
+	rt_uint32_t enabled;
+	rt_uint32_t voltage;
+};
+
+struct spacemit_regulator {
+	struct regulator_dynamic *rd;
+	/* using i2c */
+	int slave_addr;
+	struct rt_i2c_bus_device *handle_driver;
+	void *priv_data;
+};
+
+#ifndef ARRAY_SIZE
+#define ARRAY_SIZE(x)    (sizeof(x) / sizeof(x[0]))
+#endif
 
 /* Initialize struct linear_range for regulators */
 #define REGULATOR_LINEAR_RANGE(_min_uV, _min_sel, _max_sel, _step_uV)   \
