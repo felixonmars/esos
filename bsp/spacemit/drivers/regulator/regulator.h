@@ -75,6 +75,9 @@
 #define P1_DLDO_EN_MASK		        0x1
 #define P1_DLDO_VSEL_MASK		0x7f
 
+#define P1_GPIO_ODR_REG			0x1
+#define P1_GPIO_ODR_MSK			0x3f
+
 struct regulator_linear_range {
 	unsigned int min;
 	unsigned int min_sel;

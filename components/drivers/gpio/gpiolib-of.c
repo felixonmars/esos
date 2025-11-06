@@ -71,7 +71,6 @@ static void of_gpiochip_add_pin_range(struct gpio_chip *chip)
 					pinspec.args[0],
 					pinspec.args[1],
 					pinspec.args[2]);
-		
 		if (ret)
 			break;
 	}
@@ -106,7 +105,7 @@ static int of_gpiochip_find_and_xlate(struct gpio_chip *gc, void *data)
 		return false;
 
 	gg_data->out_gpio = ret + gc->base;
-	
+
 	return true;
 }
 
@@ -139,15 +138,12 @@ int of_get_named_gpio_flags(struct dtb_node *np, const char *propname,
 
 	ret = dtb_node_parse_phandle_with_args(np, propname, "#gpio-cells", index,
                                          &gg_data.gpiospec);
-	if (ret) {
-		rt_kprintf("%s: can't parse gpios property\n", __func__);
+	if (ret)
 		return ret;
-	}
 
 	gpiochip_find(&gg_data, of_gpiochip_find_and_xlate);
 
 	dtb_node_put(gg_data.gpiospec.np);
-	rt_kprintf("%s exited with status %d\n", __func__, gg_data.out_gpio);
 
 	return gg_data.out_gpio;
 }

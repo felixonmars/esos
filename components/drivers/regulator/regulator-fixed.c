@@ -152,4 +152,4 @@ no_gpios:
 
     return RT_EOK;
 }
-INIT_PREV_EXPORT(regulator_fixed_probe);
+INIT_DEVICE_EXPORT(regulator_fixed_probe);
