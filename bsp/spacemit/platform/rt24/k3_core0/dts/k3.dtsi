@@ -141,6 +141,18 @@
 			status = "disabled";
 		};
 
+		pwr_gpio: pwr_gpio@0 {
+			compatible = "spacemit,k3-pwrgpio";
+			reg = <0x0 0x0>;
+			bind_driver = "ri2c2";
+			slave_addr = <0x41>;
+			gpio_base = <0>;
+			ngpios = <6>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
 		rdma: pdma@c0884000 {
 			compatible = "spacemit,k1x-rdma";
 			reg = <0xc0884000 0x470>;
