@@ -343,6 +343,8 @@
 			regulator-name = "pwr_x100";
 			regulator-min-microvolt = <3300000>;
 			regulator-max-microvolt = <3300000>;
+			enable-active-high = <1>;
+			enable-gpios = <&pwr_gpio 1 0>;
 			vin-supply = <&p5v0>;
 			index = <4>;
 		};
@@ -352,7 +354,9 @@
 			regulator-name = "pwr_a100";
 			regulator-min-microvolt = <3300000>;
 			regulator-max-microvolt = <3300000>;
+			enable-active-high = <1>;
 			vin-supply = <&p5v0>;
+			enable-gpios = <&pwr_gpio 2 0>;
 			index = <5>;
 		};
 
@@ -361,7 +365,9 @@
 			regulator-name = "pwr_ext";
 			regulator-min-microvolt = <3300000>;
 			regulator-max-microvolt = <3300000>;
+			enable-active-high = <1>;
 			vin-supply = <&p5v0>;
+			enable-gpios = <&pwr_gpio 3 0>;
 			index = <1>;
 		};
 	};
