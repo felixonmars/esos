@@ -22,6 +22,10 @@ static struct regulator_linear_range p1_ldo_ranges[] = {
 	[0] = REGULATOR_LINEAR_RANGE(500000, 0xb, 0x7f, 25000),
 };
 
+static struct regulator_linear_range is6608_buck_ranges[] = {
+	[0] = REGULATOR_LINEAR_RANGE(400000, 0xc8, 0x9c4, 2000),
+};
+
 static const struct regulator_desc p1_regulator_descs[]  = {
 	REGULATOR_DESC_COMMON(P1_ID_DCDC1_2,
 			255, P1_BUCK1_VSEL_REG, P1_BUCK_VSEL_MASK,
@@ -104,23 +108,19 @@ static const struct regulator_desc p1_regulator_descs[]  = {
 			P1_DLDO7_SVOLT_REG, P1_DLDO_SVSEL_MASK,
 			p1_ldo_ranges),
 
-	/* leaf */
-	REGULATOR_DESC_COMMON(EXTERN_LEAF_A100,
-			128, P1_DLDO7_VOLT_REG, P1_DLDO_VSEL_MASK,
-			P1_DLDO7_CTRL_REG, P1_DLDO_EN_MASK,
-			P1_DLDO7_SVOLT_REG, P1_DLDO_SVSEL_MASK,
-			p1_ldo_ranges),
-	REGULATOR_DESC_COMMON(EXTERN_LEAF_X100,
-			128, P1_DLDO7_VOLT_REG, P1_DLDO_VSEL_MASK,
-			P1_DLDO7_CTRL_REG, P1_DLDO_EN_MASK,
-			P1_DLDO7_SVOLT_REG, P1_DLDO_SVSEL_MASK,
-			p1_ldo_ranges),
+};
 
+static const struct regulator_desc is6608_regulator_descs[]  = {
+	/* leaf */
+	REGULATOR_DESC_COMMON(EXTERN_LEAF_X100,
+			4096, IS6608_BUCK1_VOLT_REG, IS6608_BUCK1_VSEL_MSK,
+			0, 0,
+			0, 0,
+			is6608_buck_ranges),
 };
 
 static struct dtb_compatible_array __compatible[] = {
-	{ .compatible = "regulator-mpq8655_0", .data = (void *)p1_regulator_descs },
-	{ .compatible = "regulator-mpq8655_1", .data = (void *)p1_regulator_descs },
+	{ .compatible = "regulator-is6608", .data = (void *)is6608_regulator_descs },
 	{ .compatible = "p1-regulator", .data = (void *)p1_regulator_descs },
 	{}
 };
@@ -480,6 +480,125 @@ static const struct rt_regulator_ops regulator_dynamic_ops =
 	.set_voltage = regulator_dynamic_set_voltage
 };
 
+static rt_err_t regulator_independ_enable(struct rt_regulator_node *reg)
+{
+	return 0;
+}
+
+static rt_err_t regulator_independ_disable(struct rt_regulator_node *reg)
+{
+	return 0;
+}
+
+static int regulator_independ_get_voltage(struct rt_regulator_node *reg)
+{
+	int index, sel;
+	rt_uint16_t val_temp = 0;
+	rt_uint8_t val[2], cmd;
+	struct rt_i2c_msg msgs[3];
+	struct regulator_desc *desc;
+	struct regulator_dynamic *rd = (struct regulator_dynamic *)reg;
+	struct spacemit_regulator *sr = rd->sr;
+
+	desc = (struct regulator_desc *)sr->priv_data;
+
+	/* regulator index */
+	index = reg->param->index;
+
+	msgs[0].addr  = sr->slave_addr;
+	msgs[0].flags = RT_I2C_WR;
+	msgs[0].buf = (rt_uint8_t *)&desc[index].vsel_reg;
+	msgs[0].len = 1;
+
+	/* read the value */
+	msgs[1].addr  = sr->slave_addr;
+	msgs[1].flags = RT_I2C_RD;
+	msgs[1].buf = val;
+	msgs[1].len = 2;
+
+	if (rt_i2c_transfer(sr->handle_driver, msgs, 3) != 3) {
+		rt_kprintf("%s:%d, transfer error\n", __func__, __LINE__);
+		return -RT_ERROR;
+	}
+
+	val_temp = ((rt_uint16_t)val[1] << 8) | val[0];
+
+	val_temp &= desc[index].vsel_msk;
+	val_temp >>= (ffs(desc[index].vsel_msk) - 1);
+
+	return regulator_desc_list_voltage_linear_range(&desc[0], val_temp);
+}
+
+static rt_err_t regulator_independ_set_voltage(struct rt_regulator_node *reg, int min_uvolt, int max_uvolt)
+{
+	int index, sel;
+	rt_uint16_t val_temp = 0;
+	rt_uint8_t val[2], cmd;
+	struct rt_i2c_msg msgs[3];
+	struct regulator_desc *desc;
+	struct regulator_dynamic *rd = (struct regulator_dynamic *)reg;
+	struct spacemit_regulator *sr = rd->sr;
+
+	desc = (struct regulator_desc *)sr->priv_data;
+	/* regulator index */
+	index = reg->param->index;
+
+	sel = regulator_map_voltage_linear_range(&desc[index], min_uvolt, max_uvolt);
+	if (sel >= 0) {
+		sel <<= ffs(desc[index].vsel_msk) - 1;
+
+		msgs[0].addr  = sr->slave_addr;
+		msgs[0].flags = RT_I2C_WR;
+		msgs[0].buf = (rt_uint8_t *)&desc[index].vsel_reg;
+		msgs[0].len = 1;
+
+		/* read the value */
+		msgs[1].addr  = sr->slave_addr;
+		msgs[1].flags = RT_I2C_RD;
+		msgs[1].buf = val;
+		msgs[1].len = 2;
+
+		if (rt_i2c_transfer(sr->handle_driver, msgs, 3) != 3) {
+			rt_kprintf("%s:%d, transfer error\n", __func__, __LINE__);
+			return -RT_ERROR;
+		}
+
+		val_temp = ((rt_uint16_t)val[1] << 8) | val[0];
+		val_temp &= ~(desc[index].vsel_msk);
+		val_temp |= sel;
+
+		/* set the value */
+		msgs[0].addr  = sr->slave_addr;
+		msgs[0].flags = RT_I2C_WR;
+		msgs[0].buf = (rt_uint8_t *)&desc[index].vsel_reg;
+		msgs[0].len = 1;
+
+		/* write the value */
+		val[1] = (val_temp & 0xff00) >> 8;
+		val[1] = val_temp & 0xff;
+		msgs[1].addr  = sr->slave_addr;
+		msgs[1].flags = RT_I2C_WR;
+		msgs[1].buf = val;
+		msgs[1].len = 2;
+
+		if (rt_i2c_transfer(sr->handle_driver, msgs, 3) != 3) {
+			rt_kprintf("%s:%d, transfer error\n", __func__, __LINE__);
+			return -RT_ERROR;
+		}
+	} else {
+		rt_kprintf("%s:%d, set the wrong voltage\n", __func__, __LINE__);
+		return -RT_EINVAL;
+	}
+}
+
+static const struct rt_regulator_ops regulator_independ_ops =
+{
+	.enable = regulator_independ_enable,
+	.disable = regulator_independ_disable,
+	.get_voltage = regulator_independ_get_voltage,
+	.set_voltage = regulator_independ_set_voltage
+};
+
 static rt_int32_t spacemit_regulator_probe(void)
 {
 	int ret;
@@ -566,7 +685,7 @@ static rt_int32_t spacemit_regulator_probe(void)
 
 				rnp = &sr->rd->parent;
 				rnp->supply_name = sr->rd->param.name;
-				rnp->ops = &regulator_dynamic_ops;
+				rnp->ops = &regulator_independ_ops;
 				rnp->param = &sr->rd->param;
 				rnp->dev = &sr->rd->dev;
 				rnp->dev->node = compatible_node;

@@ -78,6 +78,9 @@
 #define P1_GPIO_ODR_REG			0x1
 #define P1_GPIO_ODR_MSK			0x3f
 
+#define IS6608_BUCK1_VOLT_REG		0x21
+#define IS6608_BUCK1_VSEL_MSK		0xfff
+
 struct regulator_linear_range {
 	unsigned int min;
 	unsigned int min_sel;
