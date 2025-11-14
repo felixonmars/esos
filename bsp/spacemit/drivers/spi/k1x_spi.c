@@ -50,6 +50,7 @@ struct k1x_spi {
 	struct rt_dma_chan *tx_chan;
 	struct rt_dma_chan *rx_chan;
 	rt_bool_t support_dma;
+	rt_bool_t use_dma;
 	rt_bool_t tx_cb;
 	void *tmp;
 };
@@ -175,7 +176,7 @@ static rt_int32_t u32_reader(struct k1x_spi *priv)
 static void k1x_stop_ssp(struct k1x_spi *priv)
 {
 	writel(BIT_SSP_ROR | BIT_SSP_TINT, priv->base + REG_SSP_STATUS);
-	writel(BITS_SSP_RFT(9) | BITS_SSP_TFT(8), priv->base + REG_SSP_FIFO_CTRL);
+	writel(BITS_SSP_RFT(15) | BITS_SSP_TFT(15), priv->base + REG_SSP_FIFO_CTRL);
 	writel(0, priv->base + REG_SSP_TO);
 
 }
@@ -203,16 +204,12 @@ rt_uint32_t k1x_spi_pio_xfer(struct k1x_spi *priv)
 	return 0;
 }
 
-//callback
+//callback: interrupt context -- keep it minimal
 void spi_dma_callback(struct rt_dma_chan *chan, rt_size_t size)
 {
 	struct k1x_spi *priv = (struct k1x_spi *)chan->priv;
 
-	rt_dma_chan_stop(priv->rx_chan);
-	rt_dma_chan_stop(priv->tx_chan);
-	rt_free(priv->tmp);
-
-	//transmit or receive complete
+	/* Defer stopping channels and freeing buffers to thread context. */
 	rt_completion_done(&priv->complete);
 }
 
@@ -272,7 +269,7 @@ static rt_uint32_t k1x_spi_transfer_enable(struct k1x_spi *priv)
 	rt_uint32_t top_ctrl;
 	rt_uint32_t data_len;
 
-	priv->len = msg->length >> 3;
+	priv->len = msg->length;
 	priv->tx = (void *)msg->send_buf;
 	priv->tx_end = priv->tx + priv->len;
 	priv->rx = msg->recv_buf;
@@ -309,7 +306,7 @@ static rt_uint32_t k1x_spi_transfer_enable(struct k1x_spi *priv)
 		priv->read = null_reader;
 	}
 
-	if (priv->support_dma) {
+	if (priv->support_dma && priv->use_dma) {
 		data_len = priv->len;
 		priv->tmp = (void *)rt_calloc(1, data_len);
 		rt_memset(priv->tmp, 0, data_len);
@@ -338,8 +335,8 @@ static rt_uint32_t k1x_spi_transfer_enable(struct k1x_spi *priv)
 			conf.dst_addr = (rt_ubase_t)(priv->base + REG_SSP_DATAR);
 			conf.src_addr_width = priv->data_length >> 3;
 			conf.dst_addr_width = priv->data_length >> 3;
-			conf.src_maxburst = 8;
-			conf.dst_maxburst = 8;
+			conf.src_maxburst = 16;
+			conf.dst_maxburst = 16;
 
 			rt_dma_chan_config(chan, &conf);
 
@@ -362,8 +359,8 @@ static rt_uint32_t k1x_spi_transfer_enable(struct k1x_spi *priv)
 			conf.dst_addr = (rt_ubase_t)priv->rx;
 			conf.src_addr_width = priv->data_length >> 3;
 			conf.dst_addr_width = priv->data_length >> 3;
-			conf.src_maxburst = 8;
-			conf.dst_maxburst = 8;
+			conf.src_maxburst = 16;
+			conf.dst_maxburst = 16;
 
 			rt_dma_chan_config(chan, &conf);
 
@@ -375,7 +372,7 @@ static rt_uint32_t k1x_spi_transfer_enable(struct k1x_spi *priv)
 		}
 	}
 
-	if (priv->support_dma) {
+	if (priv->support_dma && priv->use_dma) {
 		//clear status
 		writel(0xFFFFFFFF, priv->base + REG_SSP_STATUS);
 		//start transmit and receive
@@ -385,7 +382,7 @@ static rt_uint32_t k1x_spi_transfer_enable(struct k1x_spi *priv)
 		top_ctrl = readl(priv->base + REG_SSP_TOP_CTRL);
 		writel(top_ctrl | BIT_SSP_TRAIL, priv->base + REG_SSP_TOP_CTRL);
 		writel(BIT_SSP_TIM | BIT_SSP_RIM, priv->base + REG_SSP_INT_EN);
-		writel(BIT_SSP_TSRE | BIT_SSP_RSRE | BITS_SSP_RFT(9) | BITS_SSP_TFT(8),
+		writel(BIT_SSP_TSRE | BIT_SSP_RSRE | BITS_SSP_RFT(15) | BITS_SSP_TFT(15),
 			priv->base + REG_SSP_FIFO_CTRL);
 
 		return 0;
@@ -443,18 +440,30 @@ static rt_uint32_t k1x_spi_xfer(struct rt_spi_device *dev, struct rt_spi_message
 	rt_int32_t ret = 0;
 
 	priv->msg = msg;
+
+	if (priv->msg->length >= 15)
+		priv->use_dma = 1;
+
 	k1x_spi_transfer_config(priv);
 
 	k1x_spi_transfer_enable(priv);
 
 	ret = rt_completion_wait(&priv->complete, RT_WAITING_FOREVER);
-		if (ret != 0) {
-			rt_kprintf("msg completion timeout\n");
-			ret = -RT_ETIMEOUT;
-		}
+	if (ret != 0) {
+		rt_kprintf("msg completion timeout\n");
+		ret = -RT_ETIMEOUT;
+	}
 
-	if (priv->support_dma) {
-		writel(BITS_SSP_RFT(9) | BITS_SSP_TFT(8), priv->base + REG_SSP_FIFO_CTRL);
+	if (priv->support_dma && priv->use_dma) {
+		/* Stop DMA channels safely in thread context */
+		rt_dma_chan_stop(priv->rx_chan);
+		rt_dma_chan_stop(priv->tx_chan);
+		/* Restore FIFO thresholds and clean temp buffer */
+		writel(BITS_SSP_RFT(15) | BITS_SSP_TFT(15), priv->base + REG_SSP_FIFO_CTRL);
+		if (priv->tmp) {
+			rt_free(priv->tmp);
+			priv->tmp = RT_NULL;
+		}
 	}
 
 	if (msg->cs_release)
@@ -464,6 +473,8 @@ static rt_uint32_t k1x_spi_xfer(struct rt_spi_device *dev, struct rt_spi_message
 		val &= ~(BIT_SSP_SSE | BIT_SSP_HOLD_FRAME_LOW);
 		writel(val, priv->base + REG_SSP_TOP_CTRL);
 	}
+
+	priv->use_dma = 0;
 
 	return !ret;
 }
@@ -624,7 +635,7 @@ static rt_int32_t spacemit_spi_probe(void)
 			/* current default settings */
 			writel(0, spacemit_spi->base + REG_SSP_TOP_CTRL);
 			writel(0, spacemit_spi->base + REG_SSP_FIFO_CTRL);
-			writel(BITS_SSP_RFT(9) | BITS_SSP_TFT(8), spacemit_spi->base + REG_SSP_FIFO_CTRL);
+			writel(BITS_SSP_RFT(15) | BITS_SSP_TFT(15), spacemit_spi->base + REG_SSP_FIFO_CTRL);
 			writel(SSP_DATA_8_BIT, spacemit_spi->base + REG_SSP_TOP_CTRL);
 			spacemit_spi->data_length = SSP_DATA_8BIT;
 			writel(0, spacemit_spi->base + REG_SSP_TO);
