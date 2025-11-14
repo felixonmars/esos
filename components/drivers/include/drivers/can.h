@@ -20,6 +20,25 @@
 #ifndef RT_CANSND_BOX_NUM
 #define RT_CANSND_BOX_NUM   1
 #endif
+enum CAN_DLC
+{
+    CAN_MSG_0BYTE = 0,
+    CAN_MSG_1BYTE,
+    CAN_MSG_2BYTES,
+    CAN_MSG_3BYTES,
+    CAN_MSG_4BYTES,
+    CAN_MSG_5BYTES,
+    CAN_MSG_6BYTES,
+    CAN_MSG_7BYTES,
+    CAN_MSG_8BYTES,
+    CAN_MSG_12BYTES,
+    CAN_MSG_16BYTES,
+    CAN_MSG_20BYTES,
+    CAN_MSG_24BYTES,
+    CAN_MSG_32BYTES,
+    CAN_MSG_48BYTES,
+    CAN_MSG_64BYTES,
+};
 
 enum CANBAUD
 {
@@ -35,9 +54,9 @@ enum CANBAUD
 };
 
 #define RT_CAN_MODE_NORMAL              0
-#define RT_CAN_MODE_LISEN               1
+#define RT_CAN_MODE_LISTEN              1
 #define RT_CAN_MODE_LOOPBACK            2
-#define RT_CAN_MODE_LOOPBACKANLISEN     3
+#define RT_CAN_MODE_LOOPBACKANLISTEN    3
 
 #define RT_CAN_MODE_PRIV                0x01
 #define RT_CAN_MODE_NOPRIV              0x00
@@ -96,6 +115,19 @@ struct rt_can_filter_config
     struct rt_can_filter_item *items;
 };
 
+struct rt_can_bit_timing
+{
+    rt_uint16_t prescaler;  /**< Baud rate prescaler. */
+    rt_uint16_t num_seg1;   /**< Bit Timing Segment 1, in terms of Time Quanta (Tq). */
+    rt_uint16_t num_seg2;   /**< Bit Timing Segment 2, in terms of Time Quanta (Tq). */
+    rt_uint8_t num_sjw;     /**< Synchronization Jump Width, in terms of Time Quanta (Tq). */
+    rt_uint8_t num_sspoff;  /**< Secondary Sample Point Offset, in terms of Time Quanta (Tq) for CAN-FD. */
+};
+struct rt_can_bit_timing_config
+{
+    rt_uint32_t count;                  /**< The number of bit-timing configurations (typically 1 for CAN, 2 for CAN-FD). */
+    struct rt_can_bit_timing *items;    /**< A pointer to an array of bit-timing structures. */
+};
 struct can_configure
 {
     rt_uint32_t baud_rate;
@@ -107,6 +139,17 @@ struct can_configure
     rt_uint32_t ticks;
 #ifdef RT_CAN_USING_HDR
     rt_uint32_t maxhdr;
+#endif
+
+#ifdef RT_CAN_USING_CANFD
+    rt_uint32_t baud_rate_fd;       /**< The baud rate for the CAN-FD data phase. */
+    rt_uint32_t use_bit_timing: 8;  /**< A flag to indicate that `can_timing` and `canfd_timing` should be used instead of `baud_rate`. */
+    rt_uint32_t enable_canfd : 8;   /**< A flag to enable CAN-FD functionality. */
+    rt_uint32_t reserved1 : 16;     /**< Reserved for future use. */
+
+    /* The below fields take effect only if use_bit_timing is non-zero */
+    struct rt_can_bit_timing can_timing;    /**< Custom bit-timing for the arbitration phase. */
+    struct rt_can_bit_timing canfd_timing;  /**< Custom bit-timing for the data phase. */
 #endif
 };
 
@@ -183,6 +226,26 @@ typedef struct rt_can_status_ind_type
     void *args;
 } *rt_can_status_ind_type_t;
 typedef void (*rt_can_bus_hook)(struct rt_can_device *);
+struct rt_can_msg
+{
+    rt_uint32_t id  : 29;           /**< CAN ID (Standard or Extended). */
+    rt_uint32_t ide : 1;            /**< Identifier type: 0=Standard ID, 1=Extended ID. */
+    rt_uint32_t rtr : 1;            /**< Frame type: 0=Data Frame, 1=Remote Frame. */
+    rt_uint32_t rsv : 1;            /**< Reserved bit. */
+    rt_uint32_t len : 8;            /**< Data Length Code (DLC) from 0 to 8. */
+    rt_uint32_t priv : 8;           /**< Private data, used to specify the hardware mailbox in private mode. */
+    rt_int32_t hdr_index : 8;       /**< For received messages, the index of the hardware filter that matched the message. */
+#ifdef RT_CAN_USING_CANFD
+    rt_uint32_t fd_frame : 1;       /**< CAN-FD frame indicator. */
+    rt_uint32_t brs : 1;            /**< Bit-rate switching indicator for CAN-FD. */
+#endif
+#ifdef RT_CAN_USING_CANFD
+    rt_uint8_t data[64];            /**< CAN-FD message payload (up to 64 bytes). */
+#else
+    rt_uint8_t data[8];             /**< CAN message payload (up to 8 bytes). */
+#endif
+};
+typedef struct rt_can_msg *rt_can_msg_t;
 struct rt_can_device
 {
     struct rt_device parent;
@@ -213,19 +276,6 @@ typedef struct rt_can_device *rt_can_t;
 #define RT_CAN_RTR   1
 
 typedef struct rt_can_status *rt_can_status_t;
-struct rt_can_msg
-{
-    rt_uint32_t id  : 29;
-    rt_uint32_t ide : 1;
-    rt_uint32_t rtr : 1;
-    rt_uint32_t rsv : 1;
-    rt_uint32_t len : 8;
-    rt_uint32_t priv : 8;
-    rt_int32_t hdr : 8;
-    rt_uint32_t reserved : 8;
-    rt_uint8_t data[8];
-};
-typedef struct rt_can_msg *rt_can_msg_t;
 
 struct rt_can_msg_list
 {
