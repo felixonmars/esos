@@ -572,6 +572,8 @@
 		/* RPMI node, similar structure to rproc for mailbox communication */
 		rpmi: rpmi@1 {
 			compatible = "spacemit,k3-os0-rpmi";
+			#address-cells = <1>;
+			#size-cells = <1>;
 			reg = <0x0 0x0>;
 			status = "disabled";
 			mbox-names = "rpmi_mbox";
@@ -600,6 +602,57 @@
 			rpmi_domain0: rpmi-domain@0 {
 				compatible = "k3-os0-rpmi-domain";
 				status = "disabled";
+				num_domains = <6>;
+				reg = <0xd4282800 0x400>;
+
+				vpu: vpu@0 {
+					bit_isolation = <1>;
+					bit_sleep1 = <2>;
+					bit_sleep2 = <3>;
+					bit_pwr_stat = <1>;
+					offset = <0xa8>;
+				};
+
+				gpu: gpu@1 {
+					bit_isolation = <1>;
+					bit_sleep1 = <2>;
+					bit_sleep2 = <3>;
+					bit_pwr_stat = <0>;
+					offset = <0xd0>;
+				};
+
+				audio: audio@2 {
+					bit_isolation = <1>;
+					bit_sleep1 = <2>;
+					bit_sleep2 = <3>;
+					bit_hw_mode = <4>;
+					bit_pwr_stat = <3>;
+					/* bit_auto_pwr_on = <1>; */
+					offset = <0x378>;
+				};
+
+				lcd0: lcd@0 {
+					bit_isolation = <1>;
+					bit_sleep1 = <2>;
+					bit_sleep2 = <3>;
+					bit_hw_mode = <4>;
+					bit_pwr_stat = <4>;
+					/* bit_auto_pwr_on = <1>; */
+					offset = <0x380>;
+				};
+
+				lcd1: lcd@1 {
+					bit_isolation = <1>;
+					bit_sleep1 = <2>;
+					bit_sleep2 = <3>;
+					bit_hw_mode = <4>;
+					bit_pwr_stat = <5>;
+					/* bit_auto_pwr_on = <1>; */
+					offset = <0x3f4>;
+				};
+
+				dummy: dummy@0 {
+				};
 			};
 
 			rpmi_rtc: rpmi-rtc@0 {
