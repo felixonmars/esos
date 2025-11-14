@@ -370,7 +370,7 @@ static struct rpmi_service rpmi_device_power_services[RPMI_DEVICE_POWER_SRV_ID_M
 	},
 	[RPMI_DEVICE_POWER_SRV_SET_STATE] = {
 		.service_id = RPMI_DEVICE_POWER_SRV_SET_STATE,
-		.min_a2p_request_datalen = 16,
+		.min_a2p_request_datalen = 4,
 		.process_a2p_request = rpmi_domain_sg_set_state,
 	},
 	[RPMI_DEVICE_POWER_SRV_GET_STATE] = {
