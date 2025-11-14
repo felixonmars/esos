@@ -12,93 +12,76 @@
 #include <drivers/dtb_node.h>
 #include "../spacemit-rpmi.h"
 
-#define DEVICE_POWER_CTRL_BASE		0xd4282800
-#define DEVICE_POWER_STATE_OFFSET	0xf0
-#define PWR_NAME_MAX			15
+#define DEVICE_POWER_STATE_OFFSET 0XF0
+
 struct rt_domain_data {
-	char name[PWR_NAME_MAX];
 	uint32_t offset;
 	uint32_t bit_hw_mode;
 	uint32_t bit_sleep2;
 	uint32_t bit_sleep1;
 	uint32_t bit_isolation;
 	uint32_t bit_pwr_stat;
-	uint32_t bit_hw_pwr_stat;
 	uint32_t bit_auto_pwr_on;
 	uint32_t use_hw;
+	int dummy;
 	enum rpmi_device_power_state current_state;
-};
-
-struct rt_domain_data pm_data[1];
-
-static struct dtb_compatible_array __compatible[] = {
-	{ .compatible = "test-domain" },
-	{},
-};
-
-struct rpmi_device_power_attrs k3_os0_domain_data[1] = {
-	[0] = {
-		.name = "domain-test",
-	},
 };
 
 static rt_int32_t  _k3_os0_domain_init(void *priv)
 {
+	int ret = 0;
 	/* platform releated, get the registers or other thing what you want */
 	struct spacemit_rpmi_domain_config *config = priv;
-	struct dtb_node *compatible_node;
-	struct dtb_node *dtb_head_node = get_dtb_node_head();
-	struct rt_device *dev;
-	int property_size;
-	rt_uint32_t *property_ptr;
-	rt_uint32_t u32_value;
+	struct dtb_property *pp;
+	struct dtb_node *node;
+	struct rt_domain_data *ptr;
+	struct rpmi_device_power_attrs *attr;
 
-	config->domain_count = 1;
+	/* get the domain count */
+	dtb_node_read_u32(config->node, "num_domains", &config->domain_count);
 
-	config->domain_data = k3_os0_domain_data;
+	/* get the register base */
+	config->base = (void *)dtb_node_get_addr_index(config->node, 0);
+	if (config->base < 0) {
+		rt_kprintf("%s:%d, get power domain base failed\n", __func__, __LINE__);
+		return -RT_EINVAL;
+	}
 
-	for (int i = 0; i < config->domain_count; i++) {
-		compatible_node = dtb_node_find_compatible_node(dtb_head_node,
-				__compatible[i].compatible);
-		if (compatible_node != RT_NULL) {
-			memcpy(pm_data[i].name, __compatible[i].compatible, PWR_NAME_MAX);
-			pm_data[i].current_state = 0;
-			for_each_property_cell(compatible_node, "bit_sleep2", u32_value, property_ptr, property_size)
-			{
-				pm_data[i].bit_sleep2 = u32_value;
-			}
-			for_each_property_cell(compatible_node, "bit_sleep1", u32_value, property_ptr, property_size)
-			{
-				pm_data[i].bit_sleep1 = u32_value;
-			}
-			for_each_property_cell(compatible_node, "bit_isolation", u32_value, property_ptr, property_size)
-			{
-				pm_data[i].bit_isolation = u32_value;
-			}
-			for_each_property_cell(compatible_node, "use_hw", u32_value, property_ptr, property_size)
-			{
-				pm_data[i].use_hw = u32_value;
-			}
-			if (pm_data[i].use_hw == 0)
-				for_each_property_cell(compatible_node, "bit_pwr_stat", u32_value, property_ptr, property_size)
-				{
-					pm_data[i].bit_pwr_stat = u32_value;
-				}
-			else {
-				for_each_property_cell(compatible_node, "bit_hw_pwr_stat", u32_value, property_ptr, property_size)
-				{
-					pm_data[i].bit_hw_pwr_stat = u32_value;
-				}
-				for_each_property_cell(compatible_node, "bit_hw_mode", u32_value, property_ptr, property_size)
-				{
-					pm_data[i].bit_hw_mode = u32_value;
-				}
-			}
-			for_each_property_cell(compatible_node, "offset", u32_value, property_ptr, property_size)
-			{
-				pm_data[i].offset = u32_value;
-			}
+	config->priv = (void *)rt_calloc(config->domain_count, sizeof(struct rt_domain_data));
+	if (!config->priv) {
+		rt_kprintf("%s:%d, No memory\n", __func__, __LINE__);
+		return -RT_EINVAL;
+	}
+
+	config->domain_data = (struct rpmi_device_power_attrs *)rt_calloc(config->domain_count,
+				sizeof(struct rpmi_device_power_attrs));
+	if (!config->domain_data) {
+		rt_kprintf("%s:%d, No memory\n", __func__, __LINE__);
+		return -RT_EINVAL;
+	}
+
+	node = config->node;
+	ptr = (struct rt_domain_data *)config->priv;
+	attr = (struct rpmi_device_power_attrs *)config->domain_data;
+
+	for_each_node_child(node) {
+		ret = dtb_node_read_u32(node, "bit_isolation", &ptr->bit_isolation);
+		dtb_node_read_u32(node, "bit_sleep1", &ptr->bit_sleep1);
+		dtb_node_read_u32(node, "bit_sleep2", &ptr->bit_sleep2);
+		dtb_node_read_u32(node, "bit_hw_mode", &ptr->bit_hw_mode);
+		dtb_node_read_u32(node, "bit_pwr_stat", &ptr->bit_pwr_stat);
+		dtb_node_read_u32(node, "offset", &ptr->offset);
+		dtb_node_read_u32(node, "bit_auto_pwr_on", &ptr->bit_auto_pwr_on);
+		dtb_node_read_u32(node, "use_hw", &ptr->use_hw);
+		attr->name = node->name;
+
+		++ptr;
+		++attr;
+		if (ret) {
+			/* dummy power domain */
+			ptr->dummy = 1;
 		}
+
 	}
 
 	return 0;
@@ -107,90 +90,96 @@ static rt_int32_t  _k3_os0_domain_init(void *priv)
 /** Set the power domain state ON_STATE */
 static enum rpmi_error spacemit_set_state(void *priv, rpmi_uint32_t domain_id, enum rpmi_device_power_state state)
 {
-	void *base = (void *)DEVICE_POWER_CTRL_BASE;
+	struct spacemit_rpmi_domain_config *config = priv;
+	struct rt_domain_data *ptr = config->priv;
 	rt_uint32_t val;
 
 	if (state == RPMI_DEVICE_POWER_STATE_ON) {
-		if (pm_data[domain_id].use_hw == 0) {
-			val = readl(base + pm_data[domain_id].offset);
-			val |= (1 << pm_data[domain_id].bit_sleep1);
-			writel(val, base + pm_data[domain_id].offset);
-			//rt_hw_us_delay(20);
-			rt_thread_delay(1);
+		if (ptr->dummy) {
+			ptr[domain_id].current_state = 1;
+			return 0;
+		}
 
-			val = readl(base + pm_data[domain_id].offset);
-			val |= (1 << pm_data[domain_id].bit_sleep2);
-			writel(val, base + pm_data[domain_id].offset);
-			//rt_hw_us_delay(20);
-			rt_thread_delay(1);
+		if (ptr[domain_id].use_hw == 0) {
+			val = readl((config->base + ptr[domain_id].offset));
+			val |= (1 << ptr[domain_id].bit_sleep1);
+			writel(val, (config->base + ptr[domain_id].offset));
+			rt_hw_us_delay(20);
 
-			val = readl(base + pm_data[domain_id].offset);
-			val |= (1 << pm_data[domain_id].bit_isolation);
-			writel(val, base + pm_data[domain_id].offset);
-			//rt_hw_us_delay(10);
-			rt_thread_delay(1);
+			val = readl((config->base + ptr[domain_id].offset));
+			val |= (1 << ptr[domain_id].bit_sleep2);
+			writel(val, (config->base + ptr[domain_id].offset));
+			rt_hw_us_delay(20);
+
+			val = readl((config->base + ptr[domain_id].offset));
+			val |= (1 << ptr[domain_id].bit_isolation);
+			writel(val, (config->base + ptr[domain_id].offset));
+			rt_hw_us_delay(10);
 		} else {
-			val = readl(base + pm_data[domain_id].offset);
-			val |= (1 << pm_data[domain_id].bit_auto_pwr_on) |
-				(1 << pm_data[domain_id].bit_hw_mode);
-			writel(val, base + pm_data[domain_id].offset);
-			//rt_hw_us_delay(290);
-			rt_thread_delay(1);
+			val = readl((config->base + ptr[domain_id].offset));
+			val |= (1 << ptr[domain_id].bit_auto_pwr_on) |
+				(1 << ptr[domain_id].bit_hw_mode);
+			writel(val, (config->base + ptr[domain_id].offset));
+			rt_hw_us_delay(290);
 		}
 
 		for (int loop = 10000; loop >= 0; --loop){
-			val = readl(base + DEVICE_POWER_STATE_OFFSET);
-			if ((val & (1 << pm_data[domain_id].bit_pwr_stat)) == 1)
+			val = readl((config->base + DEVICE_POWER_STATE_OFFSET));
+			if ((val & (1 << ptr[domain_id].bit_pwr_stat)) == 1)
 				break;
-			//rt_hw_us_delay(4);
-			rt_thread_delay(1);
+			rt_hw_us_delay(4);
 		}
 
-		pm_data[domain_id].current_state = 1;
+		ptr[domain_id].current_state = 1;
 	} else {
-		if (pm_data[domain_id].use_hw == 0) {
-			val = readl(base + pm_data[domain_id].offset);
-			val &= ~(1 << pm_data[domain_id].bit_sleep1);
-			writel(val, base + pm_data[domain_id].offset);
-			//rt_hw_us_delay(20);
-			rt_thread_delay(1);
+		if (ptr->dummy) {
+			ptr[domain_id].current_state = 0;
+			return 0;
+		}
 
-			val = readl(base + pm_data[domain_id].offset);
-			val &= ~(1 << pm_data[domain_id].bit_sleep2);
-			writel(val, base + pm_data[domain_id].offset);
-			//rt_hw_us_delay(20);
-			rt_thread_delay(1);
+		if (ptr[domain_id].use_hw == 0) {
+			val = readl((config->base + ptr[domain_id].offset));
+			val &= ~(1 << ptr[domain_id].bit_sleep1);
+			writel(val, (config->base + ptr[domain_id].offset));
+			rt_hw_us_delay(20);
 
-			val = readl(base + pm_data[domain_id].offset);
-			val &= ~(1 << pm_data[domain_id].bit_isolation);
-			writel(val, base + pm_data[domain_id].offset);
-			//rt_hw_us_delay(10);
-			rt_thread_delay(1);
+			val = readl((config->base + ptr[domain_id].offset));
+			val &= ~(1 << ptr[domain_id].bit_sleep2);
+			writel(val, (config->base + ptr[domain_id].offset));
+			rt_hw_us_delay(20);
+
+			val = readl((config->base + ptr[domain_id].offset));
+			val &= ~(1 << ptr[domain_id].bit_isolation);
+			writel(val, (config->base + ptr[domain_id].offset));
+			rt_hw_us_delay(10);
 		} else {
-			val = readl(base + pm_data[domain_id].offset);
-			val &= ~(1 << pm_data[domain_id].bit_auto_pwr_on);
-			val &= ~(1 << pm_data[domain_id].bit_hw_mode);
-			writel(val, base + pm_data[domain_id].offset);
-			//rt_hw_us_delay(290);
-			rt_thread_delay(1);
+			val = readl((config->base + ptr[domain_id].offset));
+			val &= ~(1 << ptr[domain_id].bit_auto_pwr_on);
+			val &= ~(1 << ptr[domain_id].bit_hw_mode);
+			writel(val, (config->base + ptr[domain_id].offset));
+			rt_hw_us_delay(290);
 		}
 
 		for (int loop = 10000; loop >= 0; --loop){
-			val = readl(base + DEVICE_POWER_STATE_OFFSET);
-			if ((val & (1 << pm_data[domain_id].bit_pwr_stat)) == 0)
+			val = readl((config->base + DEVICE_POWER_STATE_OFFSET));
+			if ((val & (1 << ptr[domain_id].bit_pwr_stat)) == 0)
 				break;
-			//rt_hw_us_delay(4);
-			rt_thread_delay(1);
+			rt_hw_us_delay(4);
 		}
 
-		pm_data[domain_id].current_state = 0;
+		ptr[domain_id].current_state = 0;
 	}
+
 	return 0;
 }
 
 static enum rpmi_error spacemit_get_state(void *priv, rpmi_uint32_t domain_id, enum rpmi_device_power_state *state)
 {
-	*state = pm_data[domain_id].current_state;
+	struct spacemit_rpmi_domain_config *config = priv;
+	struct rt_domain_data *ptr = config->priv;
+
+	*state = ptr[domain_id].current_state;
+
 	return 0;
 }
 

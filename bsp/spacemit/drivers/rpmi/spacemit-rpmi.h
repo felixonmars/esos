@@ -99,7 +99,9 @@ struct spacemit_rpmi_voltage_ops {
 
 /* RPMI device power structures */
 struct spacemit_rpmi_domain_config {
+	struct dtb_node *node;
 	rt_int32_t domain_count;
+	void *base;
 	struct rpmi_device_power_attrs *domain_data;
 	struct rpmi_domain_platform_ops *ops;
 	/* reserved for future use */

@@ -28,6 +28,8 @@ static rt_int32_t spacemit_rpmi_get_domain_config(struct dtb_node *node, void *c
 	}
 	rt_mutex_release(&rpmi_device_power_mtx);
 
+	config->node = node;
+
 	if (pos) {
 		config->ops = pos->domain_ops;
 		ret = pos->init((void *)config);
