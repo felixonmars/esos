@@ -32,6 +32,8 @@ menu "On-chip Peripheral Drivers"
     config BSP_USING_CAN
         bool "Enable CAN"
         default n
+        select RT_USING_CAN
+        select RT_CAN_USING_CANFD
 
     config BSP_USING_I2C
         bool "Enable I2C"
