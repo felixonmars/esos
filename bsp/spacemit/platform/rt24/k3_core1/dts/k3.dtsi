@@ -196,6 +196,56 @@
 			status = "disabled";
 		};
 
+		flexcan0: can0@c0710000 {
+			compatible = "spacemit,flexcan0";
+			reg = <0xc0710000 0x10000>;
+			interrupt-parent = <&intc>;
+			interrupts = <0 36 0>;
+			clocks = <&ccu CLK_RCPU_CAN0>, <&ccu CLK_RST_RCPU_CAN0>;
+			clock-frequency = <80000000>;
+			status = "disabled";
+		};
+
+		flexcan1: can1@c0720000 {
+			compatible = "spacemit,flexcan1";
+			reg = <0xc0720000 0x10000>;
+			interrupt-parent = <&intc>;
+			interrupts = <0 41 0>;
+			clocks = <&ccu CLK_RCPU_CAN1>, <&ccu CLK_RST_RCPU_CAN1>;
+			clock-frequency = <80000000>;
+			status = "disabled";
+		};
+
+		flexcan2: can2@c0730000 {
+			compatible = "spacemit,flexcan2";
+			reg = <0xc0730000 0x10000>;
+			interrupt-parent = <&intc>;
+			interrupts = <0 58 0>;
+			clocks = <&ccu CLK_RCPU_CAN2>, <&ccu CLK_RST_RCPU_CAN2>;
+			clock-frequency = <80000000>;
+			status = "disabled";
+		};
+
+		flexcan3: can3@c0740000 {
+			compatible = "spacemit,flexcan3";
+			reg = <0xc0740000 0x10000>;
+			interrupt-parent = <&intc>;
+			interrupts = <0 60 0>;
+			clocks = <&ccu CLK_RCPU_CAN3>, <&ccu CLK_RST_RCPU_CAN3>;
+			clock-frequency = <80000000>;
+			status = "disabled";
+		};
+
+		flexcan4: can4@c0750000 {
+			compatible = "spacemit,flexcan4";
+			reg = <0xc0750000 0x10000>;
+			interrupt-parent = <&intc>;
+			interrupts = <0 62 0>;
+			clocks = <&ccu CLK_RCPU_CAN4>, <&ccu CLK_RST_RCPU_CAN4>;
+			clock-frequency = <80000000>;
+			status = "disabled";
+		};
+
 		rpwm0: pwm@c0888100 {
 			compatible = "spacemit,k1x-rpwm0";
 			reg = <0xc0888100 0x10>;
