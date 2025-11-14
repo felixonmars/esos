@@ -494,7 +494,7 @@
 			dmas = <&rdma 5 1
 				&rdma 4 1>;
 			dma-names = "rx", "tx";
-			k1x,ssp-disable-dma;
+			/* k1x,ssp-disable-dma; */
 			status = "disabled";
 		};
 
