@@ -1,11 +1,7 @@
 #include <rtconfig.h>
 #include "riscv_encoding.h"
 
-#if defined(SOC_SPACEMIT_K1_X)
 .section .data
-#elif defined(SOC_SPACEMIT_K3)
-.section .dtb_table
-#endif
 
 .global __irf_start
 __irf_start:
