@@ -84,6 +84,13 @@ menu "On-chip Peripheral Drivers"
     config BSP_USING_SPI
         bool "Enable SPI"
         default n
+        select RT_USING_SPI
+
+    if BSP_USING_SPI
+       config BSP_SPI_TEST
+          bool "Enable spi test driver"
+          default n
+    endif
 
     if BSP_USING_SPI || BSP_USING_DMA
        config BSP_SPI_DMA_TEST

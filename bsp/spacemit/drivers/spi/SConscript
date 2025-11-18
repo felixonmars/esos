@@ -6,6 +6,9 @@ cwd  = GetCurrentDir()
 src     = Glob('*.c')
 CPPPATH = [cwd]
 
+if GetDepend('BSP_SPI_TEST') == False:
+    SrcRemove(src, ['k1x_spi_test.c'])
+
 group = DefineGroup('Drivers_spi_service', src, depend = ['BSP_USING_SPI'], CPPPATH = CPPPATH)
 
 Return('group')
