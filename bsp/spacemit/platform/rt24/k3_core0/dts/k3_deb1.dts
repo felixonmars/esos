@@ -68,10 +68,6 @@
 	mboxes = <&mailbox3 0>;
 };
 
-&rspi0 {
-	status = "okay";
-};
-
 &aliases {
 	regulator-fixed0 = <&p5v0>;
 	regulator-fixed1 = <&exter_3v3>;
