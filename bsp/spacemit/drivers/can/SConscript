@@ -9,6 +9,9 @@ CPPPATH = [cwd]
 if GetDepend('SOC_SPACEMIT_K1_X') == False:
     SrcRemove(src, ['can_drv.c'])
 
+if GetDepend('SOC_SPACEMIT_K3') == False:
+    SrcRemove(src, ['drv_can.c', 'fsl_flexcan.c', 'flexcan-test.c'])
+
 group = DefineGroup('Drivers_can', src, depend = ['BSP_USING_CAN'], CPPPATH = CPPPATH)
 
 Return('group')
