@@ -200,7 +200,7 @@ struct remoteproc_ops spacemit_proc_ops = {
 static struct remoteproc *platform_create_proc(struct spacemit_rproc *rproc)
 {
 	rt_int32_t ret, i = 0;
-	char *string;
+	char *string, *strend;
 	rt_int32_t size;
 	void *rsc_table;
 	rt_int32_t rsc_size;
@@ -219,7 +219,7 @@ static struct remoteproc *platform_create_proc(struct spacemit_rproc *rproc)
 	rproc->event = rt_event_create("proc_tick", RT_IPC_FLAG_FIFO);
 
 	/* request the mailbox */
-	for_each_property_string(rproc->node, "mbox-names", string, size) {
+	for_each_property_string_extend(rproc->node, "mbox-names", string, strend, size) {
 		++i;
 	}
 
@@ -230,7 +230,7 @@ static struct remoteproc *platform_create_proc(struct spacemit_rproc *rproc)
 	}
 
 	i = 0;
-	for_each_property_string(rproc->node, "mbox-names", string, size) {
+	for_each_property_string_extend(rproc->node, "mbox-names", string, strend, size) {
 
 		rproc->priv[i].event = rproc->event;
 		rproc->priv[i].evtype = 1 << i;

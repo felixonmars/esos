@@ -603,7 +603,7 @@ static rt_int32_t spacemit_regulator_probe(void)
 {
 	int ret;
 	rt_int32_t i, val, j = 0;
-	char *string;
+	char *string, *strend;
 	rt_int32_t size;
 	struct spacemit_regulator *sr;
 	struct rt_regulator_node *rnp;
@@ -621,7 +621,7 @@ static rt_int32_t spacemit_regulator_probe(void)
 			}
 
 			/* get the handle driver */
-			for_each_property_string(compatible_node, "bind_driver", string, size) {
+			for_each_property_string_extend(compatible_node, "bind_driver", string, strend, size) {
 				sr->handle_driver = rt_i2c_bus_device_find(string);
 				if (sr->handle_driver == RT_NULL) {
 					rt_kprintf("%s:%d, the bind driver has not registered\n", __func__, __LINE__);

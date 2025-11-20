@@ -457,6 +457,7 @@ struct mbox_chan *mbox_request_channel_byname(struct mbox_client *cl,
 	struct dtb_node *np = cl->dev;
 	int prop_size;
 	const char *mbox_name;
+	char *mbox_name_end;
 	int index = 0;
 
 	if (!np) {
@@ -469,7 +470,7 @@ struct mbox_chan *mbox_request_channel_byname(struct mbox_client *cl,
 		return ERR_PTR(-RT_EINVAL);
 	}
 
-	for_each_property_string(np, "mbox-names", mbox_name, prop_size) {
+	for_each_property_string_extend(np, "mbox-names", mbox_name, mbox_name_end, prop_size) {
 		if (!rt_strncmp(name, mbox_name, rt_strlen(name)))
 			return mbox_request_channel(cl, index);
 		index++;

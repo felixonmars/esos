@@ -50,7 +50,7 @@ static void can_trigger_irq_thread_entry(void *parameter)
 static int spacemit_rcan_probe(void)
 {
 	int i;
-	char *string;
+	char *string, *strend;
 	int size;
 	struct spacemit_rcan *rcan;
 	struct dtb_node *compatible_node;
@@ -80,7 +80,7 @@ static int spacemit_rcan_probe(void)
 			}
 
 			/* we konw that, we used one mailbox */
-			for_each_property_string(rcan->node, "mbox-names", string, size) {
+			for_each_property_string_extend(rcan->node, "mbox-names", string, strend, size) {
 				rcan->client.dev = rcan->node;
 				rcan->client.tx_block = true;
 				rcan->client.rx_callback = rcan_rx_callback;

@@ -97,7 +97,7 @@ static void spacemit_rpmi_poll(void *priv)
 
 		/* Use proper API function as suggested by compiler */
 		rpmi_context_process_a2p_request(ppriv->cntx);
-		
+
 		rpmi_context_process_all_events(ppriv->cntx);
 	}
 }
@@ -105,7 +105,7 @@ static void spacemit_rpmi_poll(void *priv)
 static rt_int32_t spacemit_rpmi_create_foundation(char *name, struct spacemit_rpmi_priv *priv, rt_int32_t number_service)
 {
 	char *tmp;
-	char *string;
+	char *string, *strend;
 	rt_int32_t size;
 	struct rpmi_shmem* shmem = NULL;
 	struct rpmi_transport* transport = NULL;
@@ -140,9 +140,9 @@ static rt_int32_t spacemit_rpmi_create_foundation(char *name, struct spacemit_rp
 		rt_kprintf("%s: create cntx failed\n", name);
 		return -RT_EINVAL;
 	}
-	
+
 	/* get the mailbox */
-	for_each_property_string(priv->node, "mbox-names", string, size) {
+	for_each_property_string_extend(priv->node, "mbox-names", string, strend, size) {
 		priv->client.dev = priv->node;
 		priv->client.tx_block = true;
 		priv->client.rx_callback = rpmi_rx_callback;

@@ -266,6 +266,12 @@ const uint32_t *dtb_node_get_address(const struct dtb_node *dev, int index,
          str && *str;                                                           \
          str = dtb_node_get_dtb_string_list_value_next((void *)str, (void *)(size_t)size))
 
+#define for_each_property_string_extend(node_ptr, property_name, str, strend, size)            \
+    for (str = dtb_node_get_dtb_node_property_value(node_ptr, property_name, &size), \
+        strend = (typeof(strend))((size_t)str + size);                                      \
+         str && *str;                                                           \
+         str = dtb_node_get_dtb_string_list_value_next((void *)str, (void *)(size_t)strend))
+
 #define for_each_property_cell(node_ptr, property_name, value, list, size)       \
     for (list = dtb_node_get_dtb_node_property_value(node_ptr, property_name, &size), \
         value = dtb_node_get_dtb_cell_value(list),                                    \

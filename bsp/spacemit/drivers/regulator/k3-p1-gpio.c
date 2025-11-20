@@ -130,7 +130,7 @@ static int pmic_gpio_of_xlate(struct gpio_chip *chip,
 static int spacemit_pmic_gpio_init(void)
 {
 	int i, ret;
-	char *string;
+	char *string, *strend;
 	rt_int32_t size;
 	struct spacemit_pmic_chip *chip;
 	struct dtb_node *dtb_head_node = get_dtb_node_head();
@@ -154,7 +154,7 @@ static int spacemit_pmic_gpio_init(void)
 			dtb_node_read_u32_array(compatible_node, "gpio_base", &chip->gbase, 1);
 			dtb_node_read_u32_array(compatible_node, "ngpios", &chip->ngpio, 1);
 
-			for_each_property_string(compatible_node, "bind_driver", string, size) {
+			for_each_property_string_extend(compatible_node, "bind_driver", string, strend, size) {
 				chip->handle_driver = rt_i2c_bus_device_find(string);
 				if (chip->handle_driver == RT_NULL) {
 					rt_kprintf("%s:%d, the bind driver has not registered\n", __func__, __LINE__);
