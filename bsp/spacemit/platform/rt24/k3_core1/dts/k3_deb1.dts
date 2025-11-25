@@ -57,7 +57,7 @@
 &mailbox7 {
 	interrupts = <0 66 0>;
 	rcpu-communicate;
-	status = "okay";
+	status = "disabled";
 };
 
 &rproc0 {
@@ -95,4 +95,9 @@
 
 &ec_master {
 	status = "okay";
+};
+
+&rcpu_comm {
+	mboxes = <&mailbox7 0>, <&mailbox7 1>;
+	mbox-names = "rx_test", "tx_test";
 };

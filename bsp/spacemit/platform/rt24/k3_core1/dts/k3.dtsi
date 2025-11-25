@@ -584,6 +584,12 @@
 			status = "disabled";
 		};
 
+		rcpu_comm: rcpu_communicate@0 {
+			compatible = "spacemit,mailbox-test";
+			reg = <0x0 0x0>;
+			status = "disabled";
+		};
+
 		rproc0: rproc0@0 {
 			compatible = "spacemit,k3-rproc0";
 			reg = <0x0 0x0>;

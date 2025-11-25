@@ -55,7 +55,7 @@
 };
 
 &mailbox7 {
-	status = "okay";
+	status = "disabled";
 };
 
 &rproc0 {
@@ -365,4 +365,10 @@
 			index = <1>;
 		};
 	};
+};
+
+&rcpu_comm {
+	mboxes = <&mailbox7 0>, <&mailbox7 1>;
+	mbox-names = "tx_test", "rx_test";
+	master = <1>;
 };
