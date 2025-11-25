@@ -76,6 +76,12 @@ menu "On-chip Peripheral Drivers"
         default n
         select RT_USING_MAILBOX
 
+    if BSP_USING_MAILBOX
+       config BSP_MAILBOX_TEST
+          bool "Enable mailbox test driver"
+          default n
+    endif
+
     config BSP_USING_RPMSG
         bool "Enable rpmsg"
         default y
