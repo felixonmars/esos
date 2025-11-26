@@ -11,9 +11,11 @@
 #include <openamp/rpmsg.h>
 #include <openamp/rpmsg_virtio.h>
 
-#define APPLICATION_NAME	"rpmsg:demo1"
-#define RPMSG_ADDR_SRC		999
-#define RPMSG_ADDR_DST		777
+#ifdef RT_USING_FINSH
+
+#define APPLICATION_NAME	"rpmsg:demo0"
+#define RPMSG_ADDR_SRC		888
+#define RPMSG_ADDR_DST		666
 
 extern struct rpmsg_device *rpdev;
 
@@ -68,7 +70,7 @@ test_0:
 	}
 }
 
-int double_os_demo_init(void)
+static int rproc_test(void)
 {
 	int ret;
 	rt_thread_t tid;
@@ -95,4 +97,7 @@ int double_os_demo_init(void)
 
 	return 0;
 }
-/* INIT_APP_EXPORT(double_os_demo_init); */
+
+#include <finsh.h>
+MSH_CMD_EXPORT(rproc_test, rproc test driver);
+#endif

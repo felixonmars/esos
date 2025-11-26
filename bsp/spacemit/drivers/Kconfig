@@ -93,6 +93,12 @@ menu "On-chip Peripheral Drivers"
         default y
         select RT_USING_RPMSG_SERVICE
 
+    if BSP_USING_RPMSG
+       config BSP_RPROC_TEST
+          bool "Enable rproc test driver"
+          default n
+    endif
+
     config BSP_USING_REGULATOR
         bool "Enable regulator"
         default y
