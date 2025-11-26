@@ -135,4 +135,36 @@
 /* bits definitions for register REG_SSP0_SSP_RWOT_CVWRn */
 #define BITS_SSP_SSPRWOTCVWR(_X_)		(_X_)
 
+struct k1x_spi {
+	void *base;
+	char *name;
+	struct rt_spi_bus bus;
+	struct clk *clk;
+	struct clk *reset;
+	rt_uint32_t width;
+	rt_uint32_t freq;
+	rt_uint32_t mode;
+	rt_int32_t flags;
+	rt_int32_t n_bytes;
+	rt_int32_t (*write)(struct k1x_spi *priv);
+	rt_int32_t (*read)(struct k1x_spi *priv);
+	rt_int32_t data_length;
+	void *tx;
+	void *tx_end;
+	void *rx;
+	void *rx_end;
+	rt_int32_t len;
+	struct rt_completion	complete;
+	struct rt_spi_message *msg;
+	rt_int32_t irq;
+	struct rt_device dev;
+	struct rt_dma_chan *tx_chan;
+	struct rt_dma_chan *rx_chan;
+	rt_bool_t support_dma;
+	rt_bool_t use_dma;
+	rt_bool_t tx_cb;
+	void *tmp;
+};
+
+
 #endif /* _K1X_SPI_H */
