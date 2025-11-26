@@ -9,6 +9,9 @@ CPPPATH = [cwd]
 if GetDepend('SOC_SPACEMIT_K1_X') == False:
     SrcRemove(src, ['i2c_service.c'])
 
+if GetDepend('BSP_I2C_TEST') == False:
+    SrcRemove(src, ['i2c-test.c'])
+
 group = DefineGroup('Drivers_i2c_service', src, depend = ['BSP_USING_I2C'], CPPPATH = CPPPATH)
 
 Return('group')

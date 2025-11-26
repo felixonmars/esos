@@ -122,6 +122,12 @@ menu "On-chip Peripheral Drivers"
           default n
     endif
 
+    if BSP_USING_I2C
+       config BSP_I2C_TEST
+          bool "Enable I2C test driver"
+          default n
+    endif
+
     config BSP_USING_GMAC
         bool "Enable GMAC"
         default n
