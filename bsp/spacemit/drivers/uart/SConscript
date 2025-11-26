@@ -9,6 +9,10 @@ CPPPATH = [cwd]
 if GetDepend('SOC_SPACEMIT_K1_X') == False:
     SrcRemove(src, ['uart_service.c'])
 
+# Remove UART test file if BSP_UART_TEST is not enabled
+if GetDepend('BSP_UART_TEST') == False:
+    SrcRemove(src, ['uart-test.c'])
+
 group   = DefineGroup('drv_uart', src, depend = ['BSP_USING_UART'], CPPPATH = CPPPATH)
 
 Return('group')

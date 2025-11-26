@@ -27,6 +27,12 @@ menu "On-chip Peripheral Drivers"
         default y
         select RT_USING_SERIAL
 
+    if BSP_USING_UART
+       config BSP_UART_TEST
+          bool "Enable uart test driver"
+          default n
+    endif
+
     config BSP_USING_ADMA
         bool "Enable ADMA"
         default n
