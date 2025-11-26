@@ -16,6 +16,12 @@ menu "On-chip Peripheral Drivers"
         select RT_USING_GPIO
         default y
 
+    if BSP_USING_GPIO
+       config BSP_GPIO_TEST
+          bool "Enable gpio test driver"
+          default n
+    endif
+
     config BSP_USING_UART
         bool "Enable UART"
         default y
