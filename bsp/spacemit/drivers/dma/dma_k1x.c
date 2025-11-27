@@ -141,6 +141,14 @@ struct mmp_pdma_device {
 	int			irq;
 };
 
+/*
+ * Global DMA controller device pointer for self-test code
+ * (e.g. dma_test_k1x.c) to request mem2mem channels via
+ * rt_dma_chan_request(g_dev, RT_NULL).
+ */
+struct rt_device *g_dev = RT_NULL;
+
+
 #define to_mmp_pdma_chan(dchan)					\
 	rt_container_of(dchan, struct mmp_pdma_chan, chan)
 #define to_mmp_pdma_dev(dmadev)					\
@@ -784,6 +792,8 @@ static int spacemit_k1x_dma_probe(void)
 			ctrl = &dma_dev->ctrl;
 			ctrl->ops = &dma_ctrl_ops;
 			ctrl->dev = &dma_dev->dev;
+			/* expose controller device to dma_codex_k1x.c self-test */
+			g_dev = &dma_dev->dev;
 
 			rt_bitmap_set_bit(ctrl->dir_cap, RT_DMA_MEM_TO_MEM);
 			rt_bitmap_set_bit(ctrl->dir_cap, RT_DMA_MEM_TO_DEV);

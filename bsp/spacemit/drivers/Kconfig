@@ -29,6 +29,12 @@ menu "On-chip Peripheral Drivers"
         bool "Enable DMA"
         default n
 
+    if BSP_USING_DMA
+       config BSP_DMA_TEST
+          bool "Enable dma test driver"
+          default n
+    endif
+
     config BSP_USING_CAN
         bool "Enable CAN"
         default n
