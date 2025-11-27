@@ -67,6 +67,12 @@ menu "On-chip Peripheral Drivers"
         bool "Enable SPI"
         default n
 
+    if BSP_USING_SPI || BSP_USING_DMA
+       config BSP_SPI_DMA_TEST
+          bool "Enable spi dma test driver"
+          default n
+    endif
+
     config BSP_USING_HWTIMER
         bool "Enable HWtimer"
         default n

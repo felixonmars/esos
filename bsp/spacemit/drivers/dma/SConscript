@@ -9,6 +9,9 @@ CPPPATH = [cwd]
 if GetDepend('BSP_DMA_TEST') == False:
     SrcRemove(src, ['dma_test_k1x.c'])
 
+if GetDepend('BSP_SPI_DMA_TEST') == False:
+    SrcRemove(src, ['dma_k1_spi_test.c'])
+
 group = DefineGroup('Drivers_dma', src, depend = ['BSP_USING_DMA'], CPPPATH = CPPPATH)
 
 Return('group')
