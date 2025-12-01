@@ -74,7 +74,7 @@
 	max-speed = <100>;
 	clk-tuning-enable = <1>;
 	clk-tuning-by-reg = <1>;
-	tx-phase = <0>;
+	tx-phase = <2>;
 	rx-phase = <0>;
 
 	phy-mode = "rgmii";
