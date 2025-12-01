@@ -10,6 +10,7 @@
 #include <rtthread.h>
 #include <rtdevice.h>
 #include <riscv-ops.h>
+#include <drivers/misc.h>
 #include "dwc_eth_qos.h"
 
 #define CLK_PHASE_CNT			256
@@ -83,26 +84,26 @@ static inline void *dev_get_plat_priv(struct eqos_device *eqos)
 #define AXI_SINGLE_ID			BIT(13)
 
 #define RMII_TX_PHASE_OFFSET		(16)
-#define RMII_TX_PHASE_MASK		GENMASK(18, 16)
+#define RMII_TX_PHASE_MASK		RT_GENMASK(18, 16)
 #define RMII_RX_PHASE_OFFSET		(20)
-#define RMII_RX_PHASE_MASK		GENMASK(22, 20)
+#define RMII_RX_PHASE_MASK		RT_GENMASK(22, 20)
 
 #define RGMII_TX_PHASE_OFFSET		(24)
-#define RGMII_TX_PHASE_MASK		GENMASK(26, 24)
+#define RGMII_TX_PHASE_MASK		RT_GENMASK(26, 24)
 #define RGMII_RX_PHASE_OFFSET		(20)
-#define RGMII_RX_PHASE_MASK		GENMASK(22, 20)
+#define RGMII_RX_PHASE_MASK		RT_GENMASK(22, 20)
 
 #define EMAC_RX_DLINE_EN		BIT(0)
 #define EMAC_RX_DLINE_STEP_OFFSET	(4)
-#define EMAC_RX_DLINE_STEP_MASK		GENMASK(5, 4)
+#define EMAC_RX_DLINE_STEP_MASK		RT_GENMASK(5, 4)
 #define EMAC_RX_DLINE_CODE_OFFSET	(8)
-#define EMAC_RX_DLINE_CODE_MASK		GENMASK(15, 8)
+#define EMAC_RX_DLINE_CODE_MASK		RT_GENMASK(15, 8)
 
 #define EMAC_TX_DLINE_EN		BIT(16)
 #define EMAC_TX_DLINE_STEP_OFFSET	(20)
-#define EMAC_TX_DLINE_STEP_MASK		GENMASK(21, 20)
+#define EMAC_TX_DLINE_STEP_MASK		RT_GENMASK(21, 20)
 #define EMAC_TX_DLINE_CODE_OFFSET	(24)
-#define EMAC_TX_DLINE_CODE_MASK		GENMASK(31, 24)
+#define EMAC_TX_DLINE_CODE_MASK		RT_GENMASK(31, 24)
 
 static rt_bool_t phy_iface_is_rmii(struct spacemit_plat_data *priv)
 {

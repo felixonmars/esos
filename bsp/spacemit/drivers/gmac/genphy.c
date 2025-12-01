@@ -566,9 +566,14 @@ static void phy_monitor_thread(void *priv_data)
 		old_speed = phydev->speed;
 		old_duplex = phydev->duplex;
 
-		/* Update the current state */
-		genphy_update_link_noblock(phydev);
-		genphy_parse_link(phydev);
+		/* Keep previous state if loopback is enabled because some PHYs
+		 * report that Link is Down when loopback is enabled.
+		 */
+		if (!phydev->loopback_enabled) {
+			/* Update the current state */
+			genphy_update_link_noblock(phydev);
+			genphy_parse_link(phydev);
+		}
 
 		/* Check if any of the link, speed, or duplex values have changed */
 		if (phydev->link != old_link ||

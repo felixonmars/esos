@@ -810,6 +810,7 @@ static rt_err_t eqos_send_native(struct eqos_device *eqos, void *packet, rt_int3
 	eqos->config->ops->eqos_flush_buffer(packet, length);
 
 	tx_desc = eqos_get_desc(eqos, eqos->tx_desc_idx, RT_FALSE);
+	eqos->config->ops->eqos_inval_desc(tx_desc);
 	if ((readl(&tx_desc->des3) & EQOS_DESC3_OWN))
 		return -RT_EBUSY;
 
