@@ -144,6 +144,12 @@ menu "On-chip Peripheral Drivers"
         bool "Enable GMAC"
         default n
 
+    if BSP_USING_GMAC
+       config BSP_USING_MACCTL_TOOL
+          bool "Enable MAC Control Tool"
+          default n
+    endif
+
 endmenu
 
 menu "Board extended module Drivers"

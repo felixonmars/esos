@@ -6,6 +6,9 @@ src = [
     'dwc_eth_qos_spacemit.c',
 ]
 
+if GetDepend('BSP_USING_MACCTL_TOOL'):
+    src.append('dwc_eth_qos_tool.c')
+
 CPPPATH = []
 
 group = DefineGroup('drv_gmac', src, depend = ['BSP_USING_GMAC'], CPPPATH = CPPPATH)
