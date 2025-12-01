@@ -53,6 +53,13 @@ int pxa_pwm_config(struct rt_device_pwm *dev,
 	rt_uint32_t period_cycles, prescale, pv, dc;
 	rt_uint32_t offset = 0;
 
+	/* Validate duty cycle does not exceed period */
+	if (duty_ns > period_ns)
+	{
+		rt_kprintf("[PWM] duty %llu ns exceeds period %llu ns\n", duty_ns, period_ns);
+		return -RT_EINVAL;
+	}
+
 	c = clk_get_rate(pc->clk);
 	c = c * period_ns;
 	do_div(c, 1000000000);
@@ -64,7 +71,10 @@ int pxa_pwm_config(struct rt_device_pwm *dev,
 	pv = period_cycles / (prescale + 1) - 1;
 
 	if (prescale > 63)
+	{
+		rt_kprintf("[PWM] prescale %u exceeds hardware limit \n", prescale);
 		return -RT_EINVAL;
+	}
 
 	if (duty_ns == period_ns)
 #ifdef SOC_SPACEMIT_K1_X
