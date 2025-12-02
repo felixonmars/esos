@@ -104,7 +104,7 @@
 			status = "okay";
 		};
 
-		pmx_core: pinmux@d401e000 {
+		pinctrl: pinctrl@d401e000 {
 			compatible = "pinctrl-single";
 			reg = <0xd401e000 0x250>;
 			#gpio-range-cells = <3>;

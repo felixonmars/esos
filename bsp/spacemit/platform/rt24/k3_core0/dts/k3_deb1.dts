@@ -9,22 +9,8 @@
 #include "k3.dtsi"
 #include "k3-pinctrl.h"
 
-&pmx_core {
-	status = "okay";
-        pinctrl-single,gpio-range = <
-		&range GPIO_49  2 (MUX_MODE0 | EDGE_NONE | PULL_UP | PAD_DS4)
-	>;
-
-	pinctrl_rcpu: pinctrl_rcpu_grp {
-		pinctrl-single,pins = <
-			K3_PADCONF(GPIO_47, (MUX_MODE1 | EDGE_NONE | PULL_UP | PAD_DS4))     /* r_uart0_tx */
-			K3_PADCONF(GPIO_48, (MUX_MODE1 | EDGE_NONE | PULL_UP | PAD_DS4))     /* r_uart0_rx */
-		>;
-	};
-};
-
 &gpio {
-	gpio-ranges = <&pmx_core 49  GPIO_49  2>;
+	/*gpio-ranges = <&pinctrl 49  GPIO_49  2>;*/
 	status = "okay";
 };
 
@@ -35,7 +21,7 @@
 &uart0 {
 	pinctrl-names = "default";
 	status = "okay";
-//	pinctrl-0 = <&pinctrl_rcpu>;
+//	pinctrl-0 = <&ruart0_0_cfg>;
 };
 
 &mailbox3 {
