@@ -6,6 +6,9 @@ cwd  = GetCurrentDir()
 src     = Glob('*.c')
 CPPPATH = [cwd]
 
+if GetDepend("BSP_WDT_TEST") == False:
+    SrcRemove(src, ['wdt_test.c'])
+
 group = DefineGroup('Drivers_wdt', src, depend = ['BSP_USING_WDT'], CPPPATH = CPPPATH)
 
 Return('group')

@@ -56,6 +56,12 @@ menu "On-chip Peripheral Drivers"
         default n
         select RT_USING_WDT
 
+    if BSP_USING_WDT
+        config BSP_WDT_TEST
+            bool "Enable wdt test"
+            default n
+    endif
+
     config BSP_USING_IR
         bool "Enable IR"
         default n
