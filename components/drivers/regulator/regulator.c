@@ -233,22 +233,24 @@ static rt_err_t regulator_enable(struct rt_regulator_node *reg_np)
     rt_uint32_t enable_delay = regulator_get_enable_time(reg_np);
 
     if (reg_np->parent)
-	    err = regulator_enable(reg_np->parent);
+        err = regulator_enable(reg_np->parent);
 
     if (!err && reg_np->ops->enable)
     {
-        err = reg_np->ops->enable(reg_np);
+        if (reg_np->enabled_count == 0) {
+            err = reg_np->ops->enable(reg_np);
 
-        if (!err)
-        {
-            if (enable_delay)
+            if (!err)
             {
-                regulator_delay(enable_delay);
-            }
+                if (enable_delay)
+                {
+                    regulator_delay(enable_delay);
+                }
 
-	    reg_np->enabled_count++;
-            err = regulator_notifier_call_chain(reg_np, RT_REGULATOR_MSG_ENABLE, RT_NULL);
+                err = regulator_notifier_call_chain(reg_np, RT_REGULATOR_MSG_ENABLE, RT_NULL);
+            }
         }
+        reg_np->enabled_count++;
     }
 
     if (err && reg_np->parent)
@@ -269,11 +271,6 @@ rt_err_t rt_regulator_enable(struct rt_regulator *reg)
         return -RT_EINVAL;
     }
 
-    if (rt_regulator_is_enabled(reg))
-    {
-        return RT_EOK;
-    }
-
     rt_mutex_take(&reg_np->mutex, RT_WAITING_FOREVER);
 
     err = regulator_enable(reg->reg_np);
@@ -287,7 +284,7 @@ static rt_err_t regulator_disable(struct rt_regulator_node *reg_np)
 {
     rt_err_t err = RT_EOK;
 
-    if (reg_np->enabled_count-- == 0)
+    if (--reg_np->enabled_count == 0)
     {
         if (reg_np->ops->disable)
         {
@@ -303,10 +300,6 @@ static rt_err_t regulator_disable(struct rt_regulator_node *reg_np)
               err = regulator_notifier_call_chain(reg_np, RT_REGULATOR_MSG_DISABLE, RT_NULL);
            }
         }
-    }
-    else
-    {
-        return err;
     }
 
     if (!err && reg_np->parent)
@@ -325,11 +318,6 @@ rt_err_t rt_regulator_disable(struct rt_regulator *reg)
     if (!reg)
     {
         return -RT_EINVAL;
-    }
-
-    if (!rt_regulator_is_enabled(reg))
-    {
-        return RT_EOK;
     }
 
     rt_mutex_take(&reg_np->mutex, RT_WAITING_FOREVER);
@@ -611,6 +599,6 @@ void rt_regulator_put(struct rt_regulator *reg)
 
     reg->reg_np->open_count -= 1;
     if (reg->reg_np->open_count == 0)
-	    rt_regulator_unregister(reg->reg_np);
+        rt_regulator_unregister(reg->reg_np);
     rt_free(reg);
 }
