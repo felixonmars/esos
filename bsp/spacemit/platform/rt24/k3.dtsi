@@ -6,21 +6,24 @@
 
 /dts-v1/;
 
-#include "../../ccu-spacemit-k3.h"
+#include "ccu-spacemit-k3.h"
 
 / {
 	compatible = "spacemit,k3";
 	#address-cells = <2>;
 	#size-cells = <2>;
 
+	aliases: aliases {
+	};
+
 	cpus: cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		cpu_1: cpu@1 {
+		cpu_0: cpu@0 {
 			compatible = "spacemit,rt24", "riscv";
 			device_type = "cpu";
-			reg = <1>;
+			reg = <0>;
 			status = "okay";
 		};
 	};
@@ -101,7 +104,7 @@
 			status = "okay";
 		};
 
-		pmx_core: pinmux@d401e000 {
+		pinctrl: pinctrl@d401e000 {
 			compatible = "pinctrl-single";
 			reg = <0xd401e000 0x250>;
 			#gpio-range-cells = <3>;
@@ -138,6 +141,18 @@
 			status = "disabled";
 		};
 
+		pwr_gpio: pwr_gpio@0 {
+			compatible = "spacemit,k3-pwrgpio";
+			reg = <0x0 0x0>;
+			bind_driver = "ri2c2";
+			slave_addr = <0x41>;
+			gpio_base = <0>;
+			ngpios = <6>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
 		rdma: pdma@c0884000 {
 			compatible = "spacemit,k1x-rdma";
 			reg = <0xc0884000 0x470>;
@@ -149,14 +164,11 @@
 			status = "disabled";
 		};
 
-		uart0: serial0@c0881100 {
+		uart0: serial0@c0881xxx {
 			compatible = "spacemit,pxa-uart0";
-			// reg = <0xc0881100 0x100>;
+			// reg = <0xc0881000 0x100>;
 			/* the uart of RCPU on fpga is multiplexed with AP */
-			reg = <0xd4017000 0x100>;
 			interrupt-parent = <&intc>;
-			interrupts = <0 18 0>;
-			clocks = <&ccu CLK_RCPU_UART1>, <&ccu CLK_RST_RCPU_UART1>;
 			status = "disabled";
 		};
 
@@ -333,6 +345,13 @@
 			clocks = <&ccu CLK_RCPU_PWM9>, <&ccu CLK_RST_RCPU_PWM9>;
 			clock-rate = <24576000>;
 			k1x,pwm-disable-fd;
+			status = "disabled";
+		};
+
+		hwspinlock: hwlock@cac91c00 {
+			compatible = "spacemit,k3-hwlock";
+			reg = <0xcac91c00 0x100>;
+			num_locks = <32>;
 			status = "disabled";
 		};
 
@@ -518,19 +537,16 @@
 			clocks = <&ccu CLK_RCPU_SPI0>, <&ccu CLK_RST_RCPU_SPI0>;
 			clock-frequency = <26000000>;
 			interrupt-parent = <&intc>;
-			interrupts = <0 34 0>;
+			interrupts = <0 15 0>;
 			dmas = <&rdma 5 1
 				&rdma 4 1>;
 			dma-names = "rx", "tx";
-			k1x,ssp-disable-dma;
+			/* k1x,ssp-disable-dma; */
 			status = "disabled";
 		};
 
-		rwdt: wdt@c088c800 {
+		rwdt: wdt@c088xxxx {
 			compatible = "spacemit,k3-wdt";
-			reg = <0xc088c800 0x100>,
-			      <0xd4050000 0x1030>;
-			clocks = <&ccu CLK_RCPU_TIMER2>, <&ccu CLK_RST_RCPU_TIMER2>;
 			status = "disabled";
 		};
 
@@ -548,8 +564,8 @@
 			compatible = "spacemit,k3-mailbox4";
 			reg = <0xcac91000 0x400>;
 			/* put here to register the mailbox irq */
-			interrupts = <0 69 0>;
 			interrupt-parent = <&intc>;
+			interrupts = <0 69 0>;
 			#mbox-cells = <1>;
 			status = "disabled";
 		};
@@ -584,18 +600,12 @@
 			status = "disabled";
 		};
 
-		rcpu_comm: rcpu_communicate@0 {
-			compatible = "spacemit,mailbox-test";
-			reg = <0x0 0x0>;
-			status = "disabled";
-		};
-
-		rproc0: rproc0@0 {
+		rproc: rproc@1 {
 			compatible = "spacemit,k3-rproc0";
 			reg = <0x0 0x0>;
-			shared_mem_pa_base = <0x0 0xc086c000>;
-			shared_mem_buf_offset = <0x40498000>;
-			shared_mem_size	= <0x40594000>;
+			shared_mem_pa_base = <0x0 0xc0876000>;
+			shared_mem_buf_offset = <0x3fe8a000>;
+			shared_mem_size	= <0x3ff86000>;
 			proc_id = <0>;
 			rsc_id = <0>;
 			vdev_id = <0>;
@@ -604,15 +614,16 @@
 		};
 
 		/* RPMI node, similar structure to rproc for mailbox communication */
-		rpmi: rpmi@1 {
+		rpmi: rpmi@2 {
 			compatible = "spacemit,k3-os0-rpmi";
+			#address-cells = <1>;
+			#size-cells = <1>;
 			reg = <0x0 0x0>;
 			status = "disabled";
-			mboxes = <&mailbox3 0>;
 			mbox-names = "rpmi_mbox";
 
 			/* Shared memory configuration */
-			shmem-base = <0x1 0xe00000>;
+			shmem-base = <0x1 0x800000>;
 			shmem-size = <0x4000>;
 
 			/* Message and queue configuration */
@@ -620,29 +631,112 @@
 			a2p-queue-size = <4096>;
 			p2a-queue-size = <4096>;
 
-			rpmi_clock0: rpmi-clock@0 {
+			rpmi_clock: rpmi-clock@3 {
 				compatible = "k3-os0-rpmi-clock";
+				reg = <0x0 0x0>;
 				num_clks = <1>;
 				status = "okay";
 			};
 
-			rpmi_voltage0: rpmi-voltage@0 {
+			rpmi_voltage: rpmi-voltage@4 {
 				compatible = "k3-os0-rpmi-voltage";
+				reg = <0x0 0x0>;
 				num_domains = <1>;
 				status = "okay";
 			};
 
-			rpmi_hsm0: rpmi-hsm@0 {
+			rpmi_domain: rpmi-domain@5 {
+				compatible = "k3-os0-rpmi-domain";
+				status = "disabled";
+				#address-cells = <1>;
+				#size-cells = <1>;
+				num_domains = <6>;
+				reg = <0xd4282800 0x400>;
+
+				vpu: vpu@6 {
+					reg = <0x0 0x0>;
+					bit_isolation = <1>;
+					bit_sleep1 = <2>;
+					bit_sleep2 = <3>;
+					bit_pwr_stat = <1>;
+					offset = <0xa8>;
+				};
+
+				gpu: gpu@7 {
+					reg = <0x0 0x0>;
+					bit_isolation = <1>;
+					bit_sleep1 = <2>;
+					bit_sleep2 = <3>;
+					bit_pwr_stat = <0>;
+					offset = <0xd0>;
+				};
+
+				audio: audio@8 {
+					reg = <0x0 0x0>;
+					bit_isolation = <1>;
+					bit_sleep1 = <2>;
+					bit_sleep2 = <3>;
+					bit_hw_mode = <4>;
+					bit_pwr_stat = <3>;
+					/* bit_auto_pwr_on = <1>; */
+					offset = <0x378>;
+				};
+
+				lcd0: lcd@9 {
+					reg = <0x0 0x0>;
+					bit_isolation = <1>;
+					bit_sleep1 = <2>;
+					bit_sleep2 = <3>;
+					bit_hw_mode = <4>;
+					bit_pwr_stat = <4>;
+					/* bit_auto_pwr_on = <1>; */
+					offset = <0x380>;
+				};
+
+				lcd1: lcd@10 {
+					reg = <0x0 0x0>;
+					bit_isolation = <1>;
+					bit_sleep1 = <2>;
+					bit_sleep2 = <3>;
+					bit_hw_mode = <4>;
+					bit_pwr_stat = <5>;
+					/* bit_auto_pwr_on = <1>; */
+					offset = <0x3f4>;
+				};
+
+				dummy: dummy@11 {
+					reg = <0x0 0x0>;
+				};
+			};
+
+			rpmi_rtc: rpmi-rtc@12 {
+				compatible = "k3-os0-rpmi-rtc";
+				reg = <0x0 0x0>;
+				status = "disabled";
+			};
+
+			rpmi_pwrkey: rpmi-pwrkey@13 {
+				compatible = "k3-os0-rpmi-pwrkey";
+				reg = <0x0 0x0>;
+				status = "disabled";
+			};
+
+			rpmi_hsm: rpmi-hsm@14 {
 				compatible = "k3-os0-rpmi-hsm";
 				/* hartids*/
-				hartids = <0x0 0x1 0x2 0x3 0x4 0x5 0x6 0x7>;
+				hartids = <0x0 0x1 0x2 0x3 0x4 0x5 0x6 0x7 0x8 0x9 0xa 0xb 0xc 0xd 0xe 0xf>;
+				reg = <0x0 0x0>;
 
-				risv,support-syssup;
+				risv,support-syssup = <1>;
+
+				#address-cells = <1>;
+				#size-cells = <1>;
 
 				status = "disabled";
 
-				CPU_NONRET: cpu-nonretentive {
+				CPU_NONRET: cpu-nonretentive@15 {
 					compatible = "riscv,idle-state";
+					reg = <0x0 0x0>;
 					riscv,sbi-suspend-param = <0x90000000>;
 					local-timer-stop;
 					entry-latency-us = <250>;
@@ -650,8 +744,9 @@
 					min-residency-us = <950>;
 				};
 
-				CLUSTER_NONRET: cluster-nonretentive {
+				CLUSTER_NONRET: cluster-nonretentive@16 {
 					compatible = "riscv,idle-state";
+					reg = <0x0 0x0>;
 					riscv,sbi-suspend-param = <0x91000000>;
 					local-timer-stop;
 					entry-latency-us = <600>;
@@ -660,8 +755,9 @@
 					wakeup-latency-us = <1500>;
 				};
 
-				HOME_SCREEN: home-screen {
+				HOME_SCREEN: home-screen@17 {
 					compatible = "riscv,idle-state";
+					reg = <0x0 0x0>;
 					riscv,sbi-suspend-param = <0x92000000>;
 					local-timer-stop;
 					entry-latency-us = <600>;
@@ -671,8 +767,9 @@
 				};
 			};
 
-			rpmi_sysreset0: rpmi-sysreset@0 {
+			rpmi_sysreset0: rpmi-sysreset@18 {
 				compatible = "k3-os0-rpmi-sysreset";
+				reg = <0x0 0x0>;
 				status = "disabled";
 			};
 		};
@@ -700,5 +797,8 @@
 				main-device = <&eth0>;
 			};
 		};
+	};
+
+	regulators: regulators {
 	};
 };

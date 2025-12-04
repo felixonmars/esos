@@ -6,11 +6,10 @@
 
 /dts-v1/;
 
-#include "k3.dtsi"
-#include "k3-pinctrl.h"
+#include "../../k3.dtsi"
+#include "../../k3-pinctrl.dtsi"
 
 &gpio {
-	/*gpio-ranges = <&pinctrl 49  GPIO_49  2>;*/
 	status = "okay";
 };
 
@@ -19,9 +18,13 @@
 };
 
 &uart0 {
-	pinctrl-names = "default";
+	/* pinctrl-names = "default"; */
 	status = "okay";
-//	pinctrl-0 = <&ruart0_0_cfg>;
+	/* pinctrl-0 = <&ruart0_0_cfg>; */
+	/* reg = <0xc0881000 0x100>; */
+	reg = <0xd4017000 0x100>;
+	interrupts = <0 17 0>;
+	clocks = <&ccu CLK_RCPU_UART0>, <&ccu CLK_RST_RCPU_UART0>;
 };
 
 &mailbox3 {
@@ -44,14 +47,27 @@
 	status = "disabled";
 };
 
-&rproc0 {
+&rproc {
 	status = "okay";
+	shared_mem_pa_base = <0x0 0xc0876000>;
+	shared_mem_buf_offset = <0x3fe8a000>;
+	shared_mem_size	= <0x3ff86000>;
 	mboxes = <&mailbox3 1>, <&mailbox3 2>;
 };
 
 &rpmi {
 	status = "okay";
+	shmem-base = <0x1 0x800000>;
 	mboxes = <&mailbox3 0>;
+};
+
+&ri2c2 {
+	status = "okay";
+};
+
+&rwdt {
+	reg = <0xc0889000 0x100>, <0xd4050000 0x1030>;
+	clocks = <&ccu CLK_RCPU_TIMER1>, <&ccu CLK_RST_RCPU_TIMER1>;
 };
 
 &aliases {
@@ -82,7 +98,7 @@
 	regulator-dynamic16 = <&dldo_7>;
 };
 
-&rpmi_voltage0 {
+&rpmi_voltage {
 	pvin-supply = <&pvin>;
 	edcdc2-supply = <&edcdc2>;
 	edcdc1-supply = <&edcdc1>;
@@ -351,10 +367,4 @@
 			index = <1>;
 		};
 	};
-};
-
-&rcpu_comm {
-	mboxes = <&mailbox7 0>, <&mailbox7 1>;
-	mbox-names = "tx_test", "rx_test";
-	master = <1>;
 };

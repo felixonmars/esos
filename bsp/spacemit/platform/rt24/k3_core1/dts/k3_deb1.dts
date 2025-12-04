@@ -6,26 +6,10 @@
 
 /dts-v1/;
 
-#include "k3.dtsi"
-#include "k3-pinctrl.h"
-
-&pmx_core {
-	status = "disabled";
-        pinctrl-single,gpio-range = <
-		&range GPIO_49  2 (MUX_MODE0 | EDGE_NONE | PULL_UP | PAD_DS4)
-	>;
-
-	pinctrl_rcpu: pinctrl_rcpu_grp {
-		pinctrl-single,pins = <
-			K3_PADCONF(GPIO_47, (MUX_MODE1 | EDGE_NONE | PULL_UP | PAD_DS4))     /* r_uart0_tx */
-			K3_PADCONF(GPIO_48, (MUX_MODE1 | EDGE_NONE | PULL_UP | PAD_DS4))     /* r_uart0_rx */
-		>;
-	};
-};
+#include "../../k3.dtsi"
+#include "../../k3-pinctrl.dtsi"
 
 &gpio {
-	gpio-ranges = <&pmx_core 49  GPIO_49  2>;
-
 	status = "disabled";
 };
 
@@ -34,8 +18,13 @@
 };
 
 &uart0 {
-	pinctrl-names = "default";
+	/* pinctrl-names = "default"; */
 	status = "disabled";
+//	pinctrl-0 = <&ruart0_0_cfg>;
+	// reg = <0xc0881000 0x100>;
+	reg = <0xd4017000 0x100>;
+	interrupts = <0 18 0>;
+	clocks = <&ccu CLK_RCPU_UART1>, <&ccu CLK_RST_RCPU_UART1>;
 };
 
 &mailbox3 {
@@ -60,13 +49,22 @@
 	status = "disabled";
 };
 
-&rproc0 {
-	status = "okay";
+&rproc {
+	status = "disabled";
+	shared_mem_pa_base = <0x0 0xc086c000>;
+	shared_mem_buf_offset = <0x40498000>;
+	shared_mem_size	= <0x40594000>;
 	mboxes = <&mailbox4 0>, <&mailbox4 1>;
 };
 
 &rpmi {
+	shmem-base = <0x1 0xe00000>;
 	status = "disabled";
+};
+
+&rwdt {
+	reg = <0xc088c800 0x100>, <0xd4050000 0x1030>;
+	clocks = <&ccu CLK_RCPU_TIMER2>, <&ccu CLK_RST_RCPU_TIMER2>;
 };
 
 &eth0 {
@@ -95,9 +93,4 @@
 
 &ec_master {
 	status = "okay";
-};
-
-&rcpu_comm {
-	mboxes = <&mailbox7 0>, <&mailbox7 1>;
-	mbox-names = "rx_test", "tx_test";
 };
