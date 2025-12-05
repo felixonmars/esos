@@ -228,6 +228,8 @@ function build_kernel()
 		cd -
 		return 1
 	fi
+	cp ./*.dtb ../../
+	make clean
 	cd -
 
 	# build src 
@@ -280,6 +282,8 @@ function build_single_core()
 		cd -
 		return 1
 	fi
+	cp ./*.dtb ../../
+	make clean
 	cd -
 
 	# Build src
@@ -460,13 +464,6 @@ function clean_kernel()
 	touch rtconfig.h
 	scons -c
 	cd -
-
-	# clean dtb (skip for k3_all_cores virtual target)
-	if [ "${TARGET_BOARD}" != "k3_all_cores" ]; then
-		cd ${BSP_DIR}/platform/${TARGET_CHIP}/${TARGET_BOARD}/dts/
-		make clean
-		cd -
-	fi
 }
 
 # execute some command without configuration
