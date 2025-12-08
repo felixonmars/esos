@@ -197,25 +197,13 @@ static enum rpmi_error __rpmi_voltage_set_state(struct rpmi_voltage_group *volta
 		voltage->current_state = state;
 		voltage->enable_count -= 1;
 #else
-		voltage->enable_count -= 1;
 
-		if (voltage->enable_count == 0) {
-			ret = voltagegrp->ops->set_config(voltagegrp->ops_priv, voltage->id, state);
-			if (ret) {
-				rpmi_env_unlock(voltage->lock);
-				return ret;
-			}
-
-			voltage->current_state = state;
+		ret = voltagegrp->ops->set_config(voltagegrp->ops_priv, voltage->id, state);
+		if (ret) {
+			rpmi_env_unlock(voltage->lock);
+			return ret;
 		}
-
-		if (voltage->parent) {
-			ret = __rpmi_voltage_set_state(voltagegrp, voltage->parent, state);
-			if (ret && ret != RPMI_ERR_ALREADY) {
-				rpmi_env_unlock(voltage->lock);
-				return ret;
-			}
-		}
+		voltage->current_state = state;
 #endif
 		/* FIXME: We are only traversing voltage domain sub-tree of requested
 		 * voltage. Need to traverse the parents to check if the disable
@@ -234,23 +222,14 @@ static enum rpmi_error __rpmi_voltage_set_state(struct rpmi_voltage_group *volta
 			return RPMI_ERR_ALREADY;
 		}
 
-		if (!voltage->parent) {
-			ret = voltagegrp->ops->set_config(voltagegrp->ops_priv, voltage->id, state);
-			if (ret) {
-				rpmi_env_unlock(voltage->lock);
-				return ret;
-			}
-
-			voltage->current_state = state;
-			voltage->enable_count += 1;
-			goto done;
-		}
-
-		ret = __rpmi_voltage_set_state(voltagegrp, voltage->parent, state);
-		if (ret && ret != RPMI_ERR_ALREADY) {
+		ret = voltagegrp->ops->set_config(voltagegrp->ops_priv, voltage->id, state);
+		if (ret) {
 			rpmi_env_unlock(voltage->lock);
 			return ret;
 		}
+
+		voltage->current_state = state;
+		goto done;
 
 		ret = voltagegrp->ops->set_config(voltagegrp->ops_priv, voltage->id, state);
 		if (ret) {
@@ -259,7 +238,6 @@ static enum rpmi_error __rpmi_voltage_set_state(struct rpmi_voltage_group *volta
 		}
 
 		voltage->current_state = state;
-		voltage->enable_count += 1;
 	}
 
 done:
@@ -332,7 +310,6 @@ rpmi_voltage_domain_tree_init(rpmi_uint32_t domain_count,
 
 		/* all the votage domains defualt to disabled */
 		voltage->current_state = RPMI_VOLTAGE_STATE_DISABLED;
-		voltage->enable_count = 0;
 
 		voltage->lock = rpmi_env_alloc_lock();
 	}
