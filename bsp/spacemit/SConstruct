@@ -26,8 +26,11 @@ env['LINKCOM'] = '$LINK -o $TARGET $LINKFLAGS $__RPATH $SOURCES $_LIBDIRFLAGS -W
 Export('RTT_ROOT')
 Export('rtconfig')
 
+objs = env.Object('platform/buildin-dtb.o', 'platform/buildin-dtb.S')
+AlwaysBuild(objs)
+
 # prepare building environment
-objs = PrepareBuilding(env, RTT_ROOT, has_libcpu=False)
+objs += PrepareBuilding(env, RTT_ROOT, has_libcpu=False)
 
 # make a building
 DoBuilding(TARGET, objs)
