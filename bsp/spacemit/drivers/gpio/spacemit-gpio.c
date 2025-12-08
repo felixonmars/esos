@@ -201,7 +201,6 @@ static int gpio_probe_dt(struct dtb_node *np, struct spacemit_gpio_chip *chip)
 		bank->irq_rising_edge = 0;
 		bank->irq_falling_edge = 0;
 
-
 		/* Disable all interrupts initially (R-CPU only uses CPMASK) */
 		writel(0, bank->reg_bank + regs->gcpmask);
 		writel(0, bank->reg_bank + regs->grer);
@@ -217,13 +216,14 @@ static int gpio_probe_dt(struct dtb_node *np, struct spacemit_gpio_chip *chip)
 
 static int spacemit_gpio_request(struct gpio_chip *chip, unsigned offset)
 {
-	/* In RT-Thread, pinctrl is configured via DTS, no runtime request needed */
-	return 0;
+	/* Request GPIO from pinctrl subsystem to configure GPIO function mux */
+	return pinctrl_request_gpio(chip->base + offset);
 }
 
 static void spacemit_gpio_free(struct gpio_chip *chip, unsigned offset)
 {
-	/* In RT-Thread, pinctrl is configured via DTS, no runtime free needed */
+	/* Free GPIO from pinctrl subsystem */
+	pinctrl_free_gpio(chip->base + offset);
 }
 
 static int spacemit_gpio_direction_input(struct gpio_chip *chip, unsigned offset)
@@ -760,3 +760,4 @@ int spacemit_gpio_init(void)
 	return 0;
 }
 //INIT_DEVICE_EXPORT(spacemit_gpio_init);
+
