@@ -132,6 +132,10 @@ menu "On-chip Peripheral Drivers"
     endif
 
     if BSP_USING_PIN
+       config BSP_PIN_TEST
+          bool "Enable pinctrl test driver"
+          default n
+
        config BSP_PIN_WAKEUP_TEST
           bool "Enable pinctrl wakeup test driver"
           default n
