@@ -1,0 +1,11 @@
+# for module compiling
+import os
+from building import *
+
+cwd  = GetCurrentDir()
+src     = Glob('*.c')
+CPPPATH = [cwd]
+
+group = DefineGroup('rt_test', src, depend = ['BSP_TEST_RT'], CPPPATH = CPPPATH)
+
+Return('group')

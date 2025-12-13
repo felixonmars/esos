@@ -179,6 +179,9 @@ menu "On-chip Peripheral Drivers"
           default n
     endif
 
+    config BSP_TEST_RT
+        bool "Enable RT test"
+        default n
 endmenu
 
 menu "Board extended module Drivers"
