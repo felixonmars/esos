@@ -29,7 +29,7 @@
 extern "C" {
 #endif
 
-#define SOC_TIMER_FREQ	(10000000)
+#define SOC_TIMER_FREQ	(24000000)
 
 
 #ifdef __cplusplus
