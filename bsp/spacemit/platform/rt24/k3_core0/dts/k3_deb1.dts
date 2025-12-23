@@ -113,17 +113,17 @@
 	dcdc4-supply = <&dcdc_4>;
 	dcdc5-supply = <&dcdc_5>;
 	dcdc6-supply = <&dcdc_6>;
-	ldo1-supply = <&aldo_1>;
-	ldo2-supply = <&aldo_2>;
-	ldo3-supply = <&aldo_3>;
-	ldo4-supply = <&aldo_4>;
-	ldo5-supply = <&dldo_1>;
-	ldo6-supply = <&dldo_2>;
-	ldo7-supply = <&dldo_3>;
-	ldo8-supply = <&dldo_4>;
-	ldo9-supply = <&dldo_5>;
-	ldo10-supply = <&dldo_6>;
-	ldo11-supply = <&dldo_7>;
+	aldo1-supply = <&aldo_1>;
+	aldo2-supply = <&aldo_2>;
+	aldo3-supply = <&aldo_3>;
+	aldo4-supply = <&aldo_4>;
+	dldo1-supply = <&dldo_1>;
+	dldo2-supply = <&dldo_2>;
+	dldo3-supply = <&dldo_3>;
+	dldo4-supply = <&dldo_4>;
+	dldo5-supply = <&dldo_5>;
+	dldo6-supply = <&dldo_6>;
+	dldo7-supply = <&dldo_7>;
 	pwr_x100-supply = <&pwren_x100>;
 	pwr_a100-supply = <&pwren_a100>;
 	pwr_ext-supply = <&pwren_exterdc>;
@@ -155,8 +155,8 @@
 		slave_addr = <0x30>;
 		compatible = "regulator-is6608";
 		regulator-name = "edcdc1";
-		regulator-min-microvolt = <500000>;
-		regulator-max-microvolt = <3450000>;
+		regulator-min-microvolt = <600000>;
+		regulator-max-microvolt = <1000000>;
 		vin-supply = <&pwren_x100>;
 		index = <23>;
 	};
@@ -175,8 +175,8 @@
 	p1v8: p1v8 {
 		compatible = "regulator-fixed";
 		regulator-name = "p1v8";
-		regulator-min-microvolt = <3300000>;
-		regulator-max-microvolt = <3300000>;
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
 		vin-supply = <&pwren_exterdc>;
 		index = <2>;
 	};
@@ -190,8 +190,8 @@
 		dcdc1: DCDC_REG12 {
 			compatible = "regulator-dynamic";
 			regulator-name = "dcdc1";
-			regulator-min-microvolt = <500000>;
-			regulator-max-microvolt = <3450000>;
+			regulator-min-microvolt = <1050000>;
+			regulator-max-microvolt = <1050000>;
 			regulator-ramp-delay = <5000>;
 			vin-supply = <&pvin>;
 			index = <6>;
@@ -200,8 +200,8 @@
 		dcdc_3: DCDC_REG3 {
 			compatible = "regulator-dynamic";
                         regulator-name = "dcdc3";
-                        regulator-min-microvolt = <500000>;
-                        regulator-max-microvolt = <1800000>;
+                        regulator-min-microvolt = <800000>;
+                        regulator-max-microvolt = <800000>;
                         regulator-ramp-delay = <5000>;
 			vin-supply = <&pvin>;
 			index = <7>;
@@ -210,8 +210,8 @@
 		dcdc_4: DCDC_REG4 {
 			compatible = "regulator-dynamic";
                         regulator-name = "dcdc4";
-                        regulator-min-microvolt = <500000>;
-                        regulator-max-microvolt = <3300000>;
+                        regulator-min-microvolt = <2100000>;
+                        regulator-max-microvolt = <2100000>;
                         regulator-ramp-delay = <5000>;
 			vin-supply = <&pvin>;
 			index = <8>;
@@ -220,8 +220,8 @@
 		dcdc_5: DCDC_REG5 {
 			compatible = "regulator-dynamic";
                         regulator-name = "dcdc5";
-                        regulator-min-microvolt = <500000>;
-                        regulator-max-microvolt = <3450000>;
+                        regulator-min-microvolt = <1800000>;
+                        regulator-max-microvolt = <1800000>;
                         regulator-ramp-delay = <5000>;
 			vin-supply = <&pvin>;
 			index = <9>;
@@ -231,7 +231,7 @@
 			compatible = "regulator-dynamic";
                         regulator-name = "dcdc6";
                         regulator-min-microvolt = <500000>;
-                        regulator-max-microvolt = <3450000>;
+                        regulator-max-microvolt = <500000>;
                         regulator-ramp-delay = <5000>;
 			vin-supply = <&pvin>;
 			index = <10>;
@@ -241,8 +241,8 @@
 		aldo_1: LDO_REG1 {
 			compatible = "regulator-dynamic";
                         regulator-name = "aldo1";
-                        regulator-min-microvolt = <500000>;
-                        regulator-max-microvolt = <3400000>;
+                        regulator-min-microvolt = <1800000>;
+                        regulator-max-microvolt = <3300000>;
 			vin-supply = <&pvin>;
 			index = <11>;
 		};
@@ -250,8 +250,8 @@
 		aldo_2: LDO_REG2 {
 			compatible = "regulator-dynamic";
                         regulator-name = "aldo2";
-                        regulator-min-microvolt = <500000>;
-                        regulator-max-microvolt = <3400000>;
+                        regulator-min-microvolt = <1800000>;
+                        regulator-max-microvolt = <1800000>;
 			vin-supply = <&pvin>;
 			index = <12>;
 		};
@@ -268,8 +268,8 @@
 		aldo_4: LDO_REG4 {
 			compatible = "regulator-dynamic";
                         regulator-name = "aldo4";
-                        regulator-min-microvolt = <500000>;
-                        regulator-max-microvolt = <3400000>;
+                        regulator-min-microvolt = <3300000>;
+                        regulator-max-microvolt = <3300000>;
 			vin-supply = <&pvin>;
 			index = <14>;
 		};
@@ -278,8 +278,8 @@
 		dldo_1: LDO_REG5 {
 			compatible = "regulator-dynamic";
                         regulator-name = "dldo1";
-                        regulator-min-microvolt = <500000>;
-                        regulator-max-microvolt = <3400000>;
+                        regulator-min-microvolt = <1200000>;
+                        regulator-max-microvolt = <1200000>;
 			vin-supply = <&pvin>;
 			index = <15>;
 		};
@@ -287,8 +287,8 @@
 		dldo_2: LDO_REG6 {
 			compatible = "regulator-dynamic";
                         regulator-name = "dldo2";
-                        regulator-min-microvolt = <500000>;
-                        regulator-max-microvolt = <3400000>;
+                        regulator-min-microvolt = <900000>;
+                        regulator-max-microvolt = <900000>;
 			vin-supply = <&pvin>;
 			index = <16>;
 		};
@@ -296,8 +296,8 @@
 		dldo_3: LDO_REG7 {
 			compatible = "regulator-dynamic";
                         regulator-name = "dldo3";
-                        regulator-min-microvolt = <500000>;
-                        regulator-max-microvolt = <3400000>;
+                        regulator-min-microvolt = <800000>;
+                        regulator-max-microvolt = <800000>;
 			vin-supply = <&pvin>;
 			index = <17>;
 		};
@@ -305,8 +305,8 @@
 		dldo_4: LDO_REG8 {
 			compatible = "regulator-dynamic";
                         regulator-name = "dldo4";
-                        regulator-min-microvolt = <500000>;
-                        regulator-max-microvolt = <3400000>;
+                        regulator-min-microvolt = <1800000>;
+                        regulator-max-microvolt = <1800000>;
 			vin-supply = <&pvin>;
 			index = <18>;
 		};
@@ -314,8 +314,8 @@
 		dldo_5: LDO_REG9 {
 			compatible = "regulator-dynamic";
                         regulator-name = "dldo5";
-                        regulator-min-microvolt = <500000>;
-                        regulator-max-microvolt = <3400000>;
+                        regulator-min-microvolt = <1800000>;
+                        regulator-max-microvolt = <1800000>;
 			vin-supply = <&pvin>;
 			index = <19>;
 		};
@@ -323,8 +323,8 @@
 		dldo_6: LDO_REG10 {
 			compatible = "regulator-dynamic";
                         regulator-name = "dldo6";
-                        regulator-min-microvolt = <500000>;
-                        regulator-max-microvolt = <3400000>;
+                        regulator-min-microvolt = <1800000>;
+                        regulator-max-microvolt = <1800000>;
 			vin-supply = <&pvin>;
 			index = <20>;
 		};
@@ -332,8 +332,8 @@
 		dldo_7: LDO_REG11 {
 			compatible = "regulator-dynamic";
                         regulator-name = "dldo7";
-                        regulator-min-microvolt = <500000>;
-                        regulator-max-microvolt = <3400000>;
+                        regulator-min-microvolt = <1800000>;
+                        regulator-max-microvolt = <1800000>;
 			vin-supply = <&pvin>;
 			index = <21>;
 		};
