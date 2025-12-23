@@ -145,9 +145,28 @@ function show_target_config()
 	mk_info "-------------------------------------------------------------------------"
 }
 
+# create the version id with git commit id
+function create_version_id()
+{
+	mk_info "create the verion id ..."
+
+	pushd ${TOP_DIR}
+	commit_id=$(git log | head -1)
+	version_id=${commit_id: -12}
+	__version_id=".verid=\"${TARGET_BOARD}:${version_id}\""
+	echo ${__version_id}
+	version_id_cfg_file=${TOP_DIR}/bsp/spacemit/platform/version_id_gen.cc
+	rm -f ${version_id_cfg_file}
+	touch ${version_id_cfg_file}
+	echo "struct version_id __versionid spacemit_verid = {" >> ${version_id_cfg_file}
+	echo "    ${__version_id}," >> ${version_id_cfg_file}
+	echo "};" >> ${version_id_cfg_file}
+	popd
+}
+
 function config_sdk()
 {
-	mk_info "prepare to config sdk ..."
+	mk_info "prepare to config esos sdk ..."
 
 	# delete the old configuration script
 	rm -rf ${ESOS_DEFCONF}
@@ -200,21 +219,6 @@ function config_sdk()
 
 	# create the rtconfig.h, it will be updated
 	touch ${TOP_DIR}/bsp/spacemit/rtconfig.h
-
-	mk_info "create the verion id ..."
-
-	cd ${TOP_DIR}
-	commit_id=$(git log | head -1)
-	version_id=${commit_id: -12}
-	__version_id=".verid=\"${TARGET_BOARD}:${version_id}\""
-	echo ${__version_id}
-	version_id_cfg_file=${TOP_DIR}/bsp/spacemit/platform/version_id_gen.cc
-	rm -f ${version_id_cfg_file}
-	touch ${version_id_cfg_file}
-	echo "struct version_id __versionid spacemit_verid = {" >> ${version_id_cfg_file}
-	echo "    ${__version_id}," >> ${version_id_cfg_file}
-	echo "};" >> ${version_id_cfg_file}
-	cd -
 }
 
 function build_kernel()
@@ -232,7 +236,10 @@ function build_kernel()
 	make clean
 	cd -
 
-	# build src 
+	# generate version id
+	create_version_id
+
+	# build src
 	source ${ESOS_BASE_DEFCONF}
 	# Export variables for Python scripts
 	export TARGET_CHIP TARGET_BOARD TARGET_ENTRY_POINT TARGET_DEFCONFIG
@@ -285,6 +292,9 @@ function build_single_core()
 	cp ./*.dtb ../../
 	make clean
 	cd -
+
+	# generate version id
+	create_version_id
 
 	# Build src
 	source ${ESOS_BASE_DEFCONF}
