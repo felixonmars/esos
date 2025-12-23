@@ -7,6 +7,8 @@
 #include <rthw.h>
 #include <rtthread.h>
 #include <dtb_head.h>
+#include <riscv-ops.h>
+#include <register_defination.h>
 #include "spacemit-rpmi.h"
 
 extern struct spacemit_rpmi_func rpmi_hsm_func;
@@ -175,6 +177,7 @@ rt_int32_t rt_hw_rpmi_init(void)
 	struct spacemit_rpmi_priv *priv;
 	struct dtb_node *compatible_node;
 	struct dtb_node *dtb_head_node = get_dtb_node_head();
+	unsigned int hart_id = read_csr(mhartid);
 
 	for (i = 0; i < sizeof(__compatible) / sizeof(__compatible[0]); ++i) {
 		compatible_node = dtb_node_find_compatible_node(dtb_head_node,
@@ -243,6 +246,12 @@ rt_int32_t rt_hw_rpmi_init(void)
 			}
 		}
 	}
+
+	/* the rpmi must be prepared ok before booting opensbi, so we should sync the spl */
+	if (hart_id ==0) {
+		writel(1, (unsigned int *)RCPU_CORE1_BOOT_ENTRY_LO);
+	} else
+		writel(1, (unsigned int *)RCPU_CORE0_BOOT_ENTRY_LO);
 
 	return 0;
 }
