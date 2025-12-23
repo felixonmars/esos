@@ -380,10 +380,6 @@ static int spacemit_i2c_byte_xfer_body(struct spacemit_i2c_dev *spacemit_i2c)
 				/* send stop pulse for last byte of last msg */
 				if (spacemit_i2c_is_last_byte_to_send(spacemit_i2c))
 					cr_val |= CR_STOP;
-				else if (spacemit_i2c->tx_cnt == spacemit_i2c->cur_msg->len) {
-					cr_val |= CR_STOP;
-					cr_val &= ~CR_DTEIE;
-				}
 				cr_val |= CR_ALDIE | CR_TB;
 				spacemit_i2c_write_reg(spacemit_i2c, REG_CR, cr_val);
 			} else if (spacemit_i2c->msg_idx < spacemit_i2c->num - 1) {
