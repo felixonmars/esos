@@ -357,7 +357,7 @@ static int ccu_mix_set_rate(struct clk_hw *hw, rt_uint64_t rate,
 	else
 		reg = readl(common->base + common->reg_ctrl);
 
-	reg &= ~GENMASK(div->width + div->shift - 1, div->shift);
+	reg &= ~RT_GENMASK(div->width + div->shift - 1, div->shift);
 
 
 	if (common->reg_type == CLK_DIV_TYPE_2REG_NOFC_V3
@@ -436,7 +436,7 @@ static int ccu_mix_set_parent(struct clk_hw *hw, unsigned char index)
 		index = mux->table[index];
 
 	if (!rt_strcmp(common->name, tswi8_clk_name)){
-		twsi8_reg_val &= ~GENMASK(mux->width + mux->shift - 1, mux->shift);
+		twsi8_reg_val &= ~RT_GENMASK(mux->width + mux->shift - 1, mux->shift);
 		twsi8_reg_val |= (index << mux->shift);
 		reg = twsi8_reg_val;
 		if (common->reg_type == CLK_DIV_TYPE_2REG_NOFC_V3
@@ -455,7 +455,7 @@ static int ccu_mix_set_parent(struct clk_hw *hw, unsigned char index)
 	else
 		reg = readl(common->base + common->reg_ctrl);
 
-	reg &= ~GENMASK(mux->width + mux->shift - 1, mux->shift);
+	reg &= ~RT_GENMASK(mux->width + mux->shift - 1, mux->shift);
 
 	if (common->reg_type == CLK_DIV_TYPE_2REG_NOFC_V3
 		|| common->reg_type == CLK_DIV_TYPE_2REG_FC_V4)

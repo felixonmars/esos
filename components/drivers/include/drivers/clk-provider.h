@@ -2,6 +2,7 @@
 #define __RT_THREAD_CLK_PROVIDER_H__
 
 #include <rtdevice.h>
+#include <drivers/misc.h>
 
 #undef ARRAY_SIZE
 #define ARRAY_SIZE(ar)     (sizeof(ar)/sizeof(ar[0]))
@@ -218,13 +219,6 @@ struct clk_fixed_rate {
 	/* rt_uint64_t   fixed_accuracy; */
 	rt_uint64_t   flags;
 };
-
-#define BITS_PER_LONG 32
-
-#ifndef GENMASK
-#define GENMASK(h, l) \
-        (((~0UL) - (1UL << (l)) + 1) & (~0UL >> (BITS_PER_LONG - 1 - (h))))
-#endif
 
 #define __KERNEL_DIV_ROUND_UP(n, d) (((n) + (d) - 1) / (d))
 #define DIV_ROUND_UP __KERNEL_DIV_ROUND_UP

@@ -13,7 +13,7 @@
 #define PLL_MAX_FREQ		3400000000
 #define PLL_DELAYTIME		590 //(590*5)us
 
-#define PLLA_SWCR2_MASK		GENMASK(15, 8)
+#define PLLA_SWCR2_MASK		RT_GENMASK(15, 8)
 
 #define plla_readl(reg)			readl(reg)
 #define plla_readl_pll_swcr1(p)		plla_readl(p.base + p.reg_ctrl)
