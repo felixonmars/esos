@@ -12,7 +12,7 @@
 #include <drivers/dtb_node.h>
 #include "../spacemit-rpmi.h"
 
-#define DEVICE_POWER_STATE_OFFSET 0XF0
+#define DEVICE_POWER_STATE_OFFSET 0xF0
 
 struct rt_domain_data {
 	uint32_t offset;
@@ -21,6 +21,7 @@ struct rt_domain_data {
 	uint32_t bit_sleep1;
 	uint32_t bit_isolation;
 	uint32_t bit_pwr_stat;
+	uint32_t bit_hw_pwr_stat;
 	uint32_t bit_auto_pwr_on;
 	uint32_t use_hw;
 	int dummy;
@@ -70,6 +71,7 @@ static rt_int32_t  _k3_os0_domain_init(void *priv)
 		dtb_node_read_u32(node, "bit_sleep2", &ptr->bit_sleep2);
 		dtb_node_read_u32(node, "bit_hw_mode", &ptr->bit_hw_mode);
 		dtb_node_read_u32(node, "bit_pwr_stat", &ptr->bit_pwr_stat);
+		dtb_node_read_u32(node, "bit_hw_pwr_stat", &ptr->bit_hw_pwr_stat);
 		dtb_node_read_u32(node, "offset", &ptr->offset);
 		dtb_node_read_u32(node, "bit_auto_pwr_on", &ptr->bit_auto_pwr_on);
 		dtb_node_read_u32(node, "use_hw", &ptr->use_hw);
@@ -93,6 +95,7 @@ static enum rpmi_error spacemit_set_state(void *priv, rpmi_uint32_t domain_id, e
 	struct spacemit_rpmi_domain_config *config = priv;
 	struct rt_domain_data *ptr = config->priv;
 	rt_uint32_t val;
+	rt_int32_t loop;
 
 	if (state == RPMI_DEVICE_POWER_STATE_ON) {
 		if (ptr->dummy) {
@@ -107,7 +110,7 @@ static enum rpmi_error spacemit_set_state(void *priv, rpmi_uint32_t domain_id, e
 			rt_hw_us_delay(20);
 
 			val = readl((config->base + ptr[domain_id].offset));
-			val |= (1 << ptr[domain_id].bit_sleep2);
+			val |= (1 << ptr[domain_id].bit_sleep2) | (1 << ptr[domain_id].bit_sleep1);
 			writel(val, (config->base + ptr[domain_id].offset));
 			rt_hw_us_delay(20);
 
@@ -115,19 +118,32 @@ static enum rpmi_error spacemit_set_state(void *priv, rpmi_uint32_t domain_id, e
 			val |= (1 << ptr[domain_id].bit_isolation);
 			writel(val, (config->base + ptr[domain_id].offset));
 			rt_hw_us_delay(10);
+
+			for (loop = 10000; loop >= 0; --loop) {
+				val = readl((config->base + DEVICE_POWER_STATE_OFFSET));
+				if ((val & (1 << ptr[domain_id].bit_pwr_stat)) != 0)
+					break;
+				rt_hw_us_delay(4);
+			}
+
+			if (loop < 0)
+				return -RT_ETIMEOUT;
 		} else {
 			val = readl((config->base + ptr[domain_id].offset));
-			val |= (1 << ptr[domain_id].bit_auto_pwr_on) |
-				(1 << ptr[domain_id].bit_hw_mode);
+			val |= (1 << ptr[domain_id].bit_hw_mode) |
+			       (1 << ptr[domain_id].bit_auto_pwr_on);
 			writel(val, (config->base + ptr[domain_id].offset));
 			rt_hw_us_delay(290);
-		}
 
-		for (int loop = 10000; loop >= 0; --loop){
-			val = readl((config->base + DEVICE_POWER_STATE_OFFSET));
-			if ((val & (1 << ptr[domain_id].bit_pwr_stat)) == 1)
-				break;
-			rt_hw_us_delay(4);
+			for (loop = 10000; loop >= 0; --loop) {
+				val = readl((config->base + DEVICE_POWER_STATE_OFFSET));
+				if ((val & (1 << ptr[domain_id].bit_hw_pwr_stat)) != 0)
+					break;
+				rt_hw_us_delay(4);
+			}
+
+			if (loop < 0)
+				return -RT_ETIMEOUT;
 		}
 
 		ptr[domain_id].current_state = 1;
@@ -152,19 +168,32 @@ static enum rpmi_error spacemit_set_state(void *priv, rpmi_uint32_t domain_id, e
 			val &= ~(1 << ptr[domain_id].bit_isolation);
 			writel(val, (config->base + ptr[domain_id].offset));
 			rt_hw_us_delay(10);
+
+			for (loop = 10000; loop >= 0; --loop) {
+				val = readl((config->base + DEVICE_POWER_STATE_OFFSET));
+				if ((val & (1 << ptr[domain_id].bit_pwr_stat)) == 0)
+					break;
+				rt_hw_us_delay(4);
+			}
+
+			if (loop < 0)
+				return -RT_ETIMEOUT;
 		} else {
 			val = readl((config->base + ptr[domain_id].offset));
 			val &= ~(1 << ptr[domain_id].bit_auto_pwr_on);
 			val &= ~(1 << ptr[domain_id].bit_hw_mode);
 			writel(val, (config->base + ptr[domain_id].offset));
 			rt_hw_us_delay(290);
-		}
 
-		for (int loop = 10000; loop >= 0; --loop){
-			val = readl((config->base + DEVICE_POWER_STATE_OFFSET));
-			if ((val & (1 << ptr[domain_id].bit_pwr_stat)) == 0)
-				break;
-			rt_hw_us_delay(4);
+			for (loop = 10000; loop >= 0; --loop) {
+				val = readl((config->base + DEVICE_POWER_STATE_OFFSET));
+				if ((val & (1 << ptr[domain_id].bit_hw_pwr_stat)) == 0)
+					break;
+				rt_hw_us_delay(4);
+			}
+
+			if (loop < 0)
+				return -RT_ETIMEOUT;
 		}
 
 		ptr[domain_id].current_state = 0;
@@ -177,7 +206,10 @@ static enum rpmi_error spacemit_get_state(void *priv, rpmi_uint32_t domain_id, e
 {
 	struct spacemit_rpmi_domain_config *config = priv;
 	struct rt_domain_data *ptr = config->priv;
+	rt_uint32_t val;
 
+	val = readl((config->base + DEVICE_POWER_STATE_OFFSET));
+	ptr[domain_id].current_state = (val & (1 << ptr[domain_id].bit_pwr_stat)) ? 1 : 0;
 	*state = ptr[domain_id].current_state;
 
 	return 0;
