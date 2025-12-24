@@ -647,7 +647,7 @@
 
 			rpmi_domain: rpmi-domain@5 {
 				compatible = "k3-os0-rpmi-domain";
-				status = "disabled";
+				status = "okay";
 				#address-cells = <1>;
 				#size-cells = <1>;
 				num_domains = <6>;
@@ -655,52 +655,64 @@
 
 				vpu: vpu@6 {
 					reg = <0x0 0x0>;
+					bit_auto_pwr_on = <0>;
 					bit_isolation = <1>;
 					bit_sleep1 = <2>;
 					bit_sleep2 = <3>;
-					bit_pwr_stat = <1>;
+					bit_hw_mode = <4>;
+					bit_pwr_stat = <2>;
+					bit_hw_pwr_stat = <9>;
+					use_hw = <1>;
 					offset = <0xa8>;
 				};
 
 				gpu: gpu@7 {
 					reg = <0x0 0x0>;
+					bit_auto_pwr_on = <0>;
 					bit_isolation = <1>;
 					bit_sleep1 = <2>;
 					bit_sleep2 = <3>;
+					bit_hw_mode = <4>;
 					bit_pwr_stat = <0>;
+					bit_hw_pwr_stat = <8>;
+					use_hw = <1>;
 					offset = <0xd0>;
 				};
 
 				audio: audio@8 {
 					reg = <0x0 0x0>;
+					bit_auto_pwr_on = <0>;
 					bit_isolation = <1>;
 					bit_sleep1 = <2>;
 					bit_sleep2 = <3>;
 					bit_hw_mode = <4>;
 					bit_pwr_stat = <3>;
-					/* bit_auto_pwr_on = <1>; */
 					offset = <0x378>;
 				};
 
 				lcd0: lcd@9 {
 					reg = <0x0 0x0>;
+					bit_auto_pwr_on = <0>;
 					bit_isolation = <1>;
 					bit_sleep1 = <2>;
 					bit_sleep2 = <3>;
 					bit_hw_mode = <4>;
 					bit_pwr_stat = <4>;
-					/* bit_auto_pwr_on = <1>; */
+					bit_hw_pwr_stat = <12>;
+					use_hw = <1>;
 					offset = <0x380>;
 				};
 
 				lcd1: lcd@10 {
 					reg = <0x0 0x0>;
+					bit_auto_pwr_on = <0>;
 					bit_isolation = <1>;
 					bit_sleep1 = <2>;
 					bit_sleep2 = <3>;
 					bit_hw_mode = <4>;
 					bit_pwr_stat = <5>;
-					/* bit_auto_pwr_on = <1>; */
+					bit_hw_pwr_stat = <15>;
+					use_hw = <1>;
 					offset = <0x3f4>;
 				};
 
