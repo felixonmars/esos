@@ -5,7 +5,7 @@
 	#address-cells = <2>;
 
 	images {
-		esos_core0 {
+		rcpu0-fw {
 			description = "ESOS Core0";
 			type = "standalone";
 			os = "esos";
@@ -19,7 +19,7 @@
 			};
 		};
 
-		esos_core1 {
+		rcpu1-fw {
 			description = "ESOS Core1";
 			type = "standalone";
 			os = "esos";
@@ -38,7 +38,7 @@
 		default = "conf_dual";
 		conf_dual {
 			description = "ESOS Dual Core Configuration";
-			loadables = "esos_core0", "esos_core1";
+			loadables = "rcpu0-fw", "rcpu1-fw";
 		};
 	};
 };
