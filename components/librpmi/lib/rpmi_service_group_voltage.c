@@ -715,7 +715,7 @@ static struct rpmi_service rpmi_voltage_services[RPMI_VOLTAGE_SRV_MAX_COUNT] = {
 	},
 	[RPMI_VOLTAGE_SRV_SET_LEVEL] = {
 		.service_id = RPMI_VOLTAGE_SRV_SET_LEVEL,
-		.min_a2p_request_datalen = 16,
+		.min_a2p_request_datalen = 8,
 		.process_a2p_request = rpmi_voltage_sg_set_level,
 	},
 	[RPMI_VOLTAGE_SRV_GET_LEVEL] = {
