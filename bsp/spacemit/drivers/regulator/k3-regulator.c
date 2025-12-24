@@ -128,7 +128,7 @@ static struct dtb_compatible_array __compatible[] = {
 static rt_err_t regulator_dynamic_enable(struct rt_regulator_node *reg)
 {
 	int index;
-	rt_uint8_t val, cmd;
+	rt_uint8_t val, val_temp[2], cmd;
 	struct rt_i2c_msg msgs[2];
 	struct regulator_desc *desc;
 	struct regulator_dynamic *rd = (struct regulator_dynamic *)reg;
@@ -161,16 +161,12 @@ static rt_err_t regulator_dynamic_enable(struct rt_regulator_node *reg)
 	/* write value */
 	msgs[0].addr  = sr->slave_addr;
 	msgs[0].flags = RT_I2C_WR;
-	msgs[0].buf = (rt_uint8_t *)&desc[index].enable_reg;
-	msgs[0].len = 1;
+	val_temp[0] = desc[index].enable_reg;
+	val_temp[1] = val;
+	msgs[0].buf = val_temp;
+	msgs[0].len = 2;
 
-	/* read the value */
-	msgs[1].addr  = sr->slave_addr;
-	msgs[1].flags = RT_I2C_WR;
-	msgs[1].buf = &val;
-	msgs[1].len = 1;
-
-	if (rt_i2c_transfer(sr->handle_driver, msgs, 2) != 2) {
+	if (rt_i2c_transfer(sr->handle_driver, msgs, 1) != 1) {
 		rt_kprintf("%s:%d, transfer error\n", __func__, __LINE__);
 		return -RT_ERROR;
 	}
@@ -181,7 +177,7 @@ static rt_err_t regulator_dynamic_enable(struct rt_regulator_node *reg)
 static rt_err_t regulator_dynamic_disable(struct rt_regulator_node *reg)
 {
 	int index;
-	rt_uint8_t val, cmd;
+	rt_uint8_t val, val_temp[2], cmd;
 	struct rt_i2c_msg msgs[2];
 	struct regulator_desc *desc;
 	struct regulator_dynamic *rd = (struct regulator_dynamic *)reg;
@@ -214,16 +210,12 @@ static rt_err_t regulator_dynamic_disable(struct rt_regulator_node *reg)
 	/* write value */
 	msgs[0].addr  = sr->slave_addr;
 	msgs[0].flags = RT_I2C_WR;
-	msgs[0].buf = (rt_uint8_t *)&desc[index].enable_reg;
-	msgs[0].len = 1;
+	val_temp[0] = desc[index].enable_reg;
+	val_temp[1] = val;
+	msgs[0].buf = val_temp;
+	msgs[0].len = 2;
 
-	/* read the value */
-	msgs[1].addr  = sr->slave_addr;
-	msgs[1].flags = RT_I2C_WR;
-	msgs[1].buf = &val;
-	msgs[1].len = 1;
-
-	if (rt_i2c_transfer(sr->handle_driver, msgs, 2) != 2) {
+	if (rt_i2c_transfer(sr->handle_driver, msgs, 1) != 1) {
 		rt_kprintf("%s:%d, transfer error\n", __func__, __LINE__);
 		return -RT_ERROR;
 	}
@@ -378,7 +370,7 @@ static int regulator_map_voltage_linear_range(const struct regulator_desc *desc,
 static rt_err_t regulator_dynamic_set_voltage(struct rt_regulator_node *reg, int min_uvolt, int max_uvolt)
 {
 	int index, sel;
-	rt_uint8_t val, cmd;
+	rt_uint8_t val, cmd, val_temp[2];
 	struct rt_i2c_msg msgs[2];
 	struct regulator_desc *desc;
 	struct regulator_dynamic *rd = (struct regulator_dynamic *)reg;
@@ -412,19 +404,15 @@ static rt_err_t regulator_dynamic_set_voltage(struct rt_regulator_node *reg, int
 		val &= ~(desc[index].vsel_msk);
 		val |= sel;
 
-		/* set the value */
+		/* write value */
 		msgs[0].addr  = sr->slave_addr;
 		msgs[0].flags = RT_I2C_WR;
-		msgs[0].buf = (rt_uint8_t *)&desc[index].vsel_reg;
-		msgs[0].len = 1;
+		val_temp[0] = desc[index].vsel_reg;
+		val_temp[1] = val;
+		msgs[0].buf = val_temp;
+		msgs[0].len = 2;
 
-		/* read the value */
-		msgs[1].addr  = sr->slave_addr;
-		msgs[1].flags = RT_I2C_WR;
-		msgs[1].buf = &val;
-		msgs[1].len = 1;
-
-		if (rt_i2c_transfer(sr->handle_driver, msgs, 2) != 2) {
+		if (rt_i2c_transfer(sr->handle_driver, msgs, 1) != 1) {
 			rt_kprintf("%s:%d, transfer error\n", __func__, __LINE__);
 			return -RT_ERROR;
 		}
@@ -536,7 +524,7 @@ static rt_err_t regulator_independ_set_voltage(struct rt_regulator_node *reg, in
 {
 	int index, sel;
 	rt_uint16_t val_temp = 0;
-	rt_uint8_t val[2], cmd;
+	rt_uint8_t val[3], cmd;
 	struct rt_i2c_msg msgs[3];
 	struct regulator_desc *desc;
 	struct regulator_dynamic *rd = (struct regulator_dynamic *)reg;
@@ -573,18 +561,13 @@ static rt_err_t regulator_independ_set_voltage(struct rt_regulator_node *reg, in
 		/* set the value */
 		msgs[0].addr  = sr->slave_addr;
 		msgs[0].flags = RT_I2C_WR;
-		msgs[0].buf = (rt_uint8_t *)&desc[index].vsel_reg;
-		msgs[0].len = 1;
+		val[0] = desc[index].vsel_reg;
+		val[2] = (val_temp & 0xff00) >> 8;
+		val[1] = val_temp & 0xff;
+		msgs[0].buf = val;
+		msgs[0].len = 3;
 
-		/* write the value */
-		val[1] = (val_temp & 0xff00) >> 8;
-		val[0] = val_temp & 0xff;
-		msgs[1].addr  = sr->slave_addr;
-		msgs[1].flags = RT_I2C_WR;
-		msgs[1].buf = val;
-		msgs[1].len = 2;
-
-		if (rt_i2c_transfer(sr->handle_driver, msgs, 2) != 2) {
+		if (rt_i2c_transfer(sr->handle_driver, msgs, 1) != 1) {
 			rt_kprintf("%s:%d, transfer error\n", __func__, __LINE__);
 			return -RT_ERROR;
 		}
@@ -592,6 +575,8 @@ static rt_err_t regulator_independ_set_voltage(struct rt_regulator_node *reg, in
 		rt_kprintf("%s:%d, set the wrong voltage\n", __func__, __LINE__);
 		return -RT_EINVAL;
 	}
+
+	return RT_EOK;
 }
 
 static const struct rt_regulator_ops regulator_independ_ops =
