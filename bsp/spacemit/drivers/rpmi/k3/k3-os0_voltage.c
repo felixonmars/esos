@@ -16,6 +16,12 @@
 
 #define MAX_RPMI_VOTAGE_NUMBER		32
 
+#define PARENT_ID_MASK		0xffff
+#define MIN_SEL_MASK		0xffff0000
+
+#define PARENT_ID_OFFSET	(0)
+#define MIN_SEL_OFFSET		(16)
+
 struct rt_regulator
 {
 	struct rt_regulator_node *reg_np;
@@ -89,6 +95,8 @@ static rt_int32_t  _k3_os0_voltage_init(void *priv)
 					 (((struct regulator_desc *)sr->priv_data)[index]).linear_ranges[i].min;
 				rpmi_level_liner->step = (((struct regulator_desc *)sr->priv_data)[index]).linear_ranges[i].step;
 			}
+
+			rpmi_vdata[index].transition_latency_ms |= ((((struct regulator_desc *)sr->priv_data)[index]).linear_ranges[0].min_sel << MIN_SEL_OFFSET) & MIN_SEL_MASK;
 		} else {
 			rpmi_vdata[index].level_count = 1;
 			rpmi_vdata[index].voltage_level_array = rt_calloc(rpmi_vdata[index].level_count,
@@ -113,7 +121,7 @@ static rt_int32_t  _k3_os0_voltage_init(void *priv)
 		}
 
 		/* used for parent id */
-		rpmi_vdata[index].transition_latency_ms = rpmi_vdata[index].parent_id;
+		rpmi_vdata[index].transition_latency_ms |= rpmi_vdata[index].parent_id & PARENT_ID_MASK;
 	}
 
 	config->domain_count = j;
