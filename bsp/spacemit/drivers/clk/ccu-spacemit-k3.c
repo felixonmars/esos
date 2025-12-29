@@ -254,12 +254,12 @@ static SPACEMIT_CCU_DIV_FC_MUX_GATE(rcpu_clk, "rcpu_clk", rcpu_clk_parents,
 	CLK_IS_CRITICAL);
 
 //rcpu5
-static SPACEMIT_CCU_DIV_FC(rcpu_apb_clk, "rcpu_apb_clk", "rcpu_clk",
-	BASE_TYPE_RCPU5, RCPU5_RCPU_BUS_CLK_CTRL,
-	3, 3, BIT(8), 0);
 static SPACEMIT_CCU_DIV_FC(rcpu_axi_clk, "rcpu_axi_clk", "rcpu_clk",
 	BASE_TYPE_RCPU5, RCPU5_RCPU_BUS_CLK_CTRL,
 	0, 2, BIT(8), 0);
+static SPACEMIT_CCU_DIV_FC(rcpu_apb_clk, "rcpu_apb_clk", "rcpu_axi_clk",
+        BASE_TYPE_RCPU5, RCPU5_RCPU_BUS_CLK_CTRL,
+        3, 3, BIT(8), 0);
 
 static SPACEMIT_CCU_GATE(ripc2msa_clk, "ripc2msa_clk", "rcpu_clk",
 	BASE_TYPE_RCPU5, RCPU5_AON_PER_CLK_RST_CTRL,
@@ -822,8 +822,8 @@ static struct clk_hw_onecell_data spacemit_k3_hw_clks = {
 		//apmu
 		[CLK_RCPU]		= &rcpu_clk.common.hw,
 		//rcpu5
-		[CLK_RCPU_APB]		= &rcpu_apb_clk.common.hw,
 		[CLK_RCPU_AXI]		= &rcpu_axi_clk.common.hw,
+		[CLK_RCPU_APB]          = &rcpu_apb_clk.common.hw,
 		[CLK_RCPU_IPC2MSA]	= &ripc2msa_clk.common.hw,
 		[CLK_RCPU_IPC2CP]	= &ripc2cp_clk.common.hw,
 		[CLK_RCPU_IPC2AP]	= &ripc2ap_clk.common.hw,

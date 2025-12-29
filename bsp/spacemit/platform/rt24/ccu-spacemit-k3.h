@@ -60,8 +60,8 @@
 #define CLK_PLL1_1228            50
 #define CLK_SLOW_UART1           51
 #define CLK_RCPU                 52
-#define CLK_RCPU_APB             53
-#define CLK_RCPU_AXI             54
+#define CLK_RCPU_AXI             53
+#define CLK_RCPU_APB             54
 #define CLK_RCPU_IPC2MSA         55
 #define CLK_RCPU_IPC2CP          56
 #define CLK_RCPU_IPC2AP          57
