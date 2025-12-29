@@ -7,6 +7,8 @@
 #include <rthw.h>
 #include <rtthread.h>
 #include <dtb_head.h>
+#include <dtb_node.h>
+#include <rtdevice.h>
 #include <spacemit_sdk_soc.h>
 #include <register_defination.h>
 #ifdef RT_USING_ARMSCP_MODULE
@@ -68,6 +70,55 @@ void rt_hw_us_delay(rt_uint32_t us)
 		asm volatile ("nop");
 }
 
+static void rt_hw_core_frequency_set(void)
+{
+	struct clk *cpu_clk, *apb_clk, *axi_clk, *rcpu_clk;
+	unsigned int cpu_frequency;
+	unsigned int apb_frequency;
+	unsigned int axi_frequency;
+	unsigned int rcpu_frequency;
+	struct dtb_node *dtb_head_node = get_dtb_node_head();
+	struct dtb_node *cpus = dtb_node_get_dtb_node_by_path(dtb_head_node, "/cpus/cpu@0");
+
+	dtb_node_read_u32(cpus, "cpu_frequency", &cpu_frequency);
+
+	cpu_clk = of_clk_get(cpus, 0);
+	if (IS_ERR(cpu_clk))
+		return;
+
+	/* set the cpu clk */
+	clk_prepare_enable(cpu_clk);
+	clk_set_rate(cpu_clk, cpu_frequency);
+
+	/* set the bus & axi clk */
+	apb_clk = of_clk_get(cpus, 1);
+	if (IS_ERR(apb_clk))
+		return;
+
+	axi_clk = of_clk_get(cpus, 2);
+	if (IS_ERR(axi_clk))
+		return;
+
+	rcpu_clk = of_clk_get(cpus, 3);
+	if (IS_ERR(rcpu_clk))
+		return;
+
+	/* get the cpu_frequency */
+	dtb_node_read_u32(cpus, "apb_frequency", &apb_frequency);
+	dtb_node_read_u32(cpus, "axi_frequency", &axi_frequency);
+	dtb_node_read_u32(cpus, "rcpu_frequency", &rcpu_frequency);
+
+	clk_prepare_enable(cpu_clk);
+	clk_prepare_enable(apb_clk);
+	clk_prepare_enable(axi_clk);
+	clk_prepare_enable(rcpu_clk);
+
+
+	clk_set_rate(rcpu_clk, rcpu_frequency);
+	clk_set_rate(apb_clk, apb_frequency);
+	clk_set_rate(axi_clk, axi_frequency);
+}
+
 /**
  * This function will initial smart-evb board.
  */
@@ -92,7 +143,10 @@ void rt_hw_board_init(void)
 
     of_fixed_clk_setup();
     spacemit_ccu_init();
+
+    rt_hw_core_frequency_set();
 #endif
+
 
 #if defined(RT_USING_PIN) && defined(RT_USING_MUTEX)
     rt_mutex_init(&pinctrldev_list_mutex, "gpindev_mut", RT_IPC_FLAG_PRIO);
