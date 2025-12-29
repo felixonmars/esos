@@ -744,7 +744,7 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 
-				status = "disabled";
+				status = "okay";
 
 				CPU_NONRET: cpu-nonretentive@15 {
 					compatible = "riscv,idle-state";

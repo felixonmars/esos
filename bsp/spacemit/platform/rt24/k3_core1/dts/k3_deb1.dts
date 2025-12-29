@@ -10,6 +10,7 @@
 #include "../../k3-pinctrl.dtsi"
 
 &cpu_0 {
+	cpu_frequency = <614400000>;
 	clocks = <&ccu CLK_RCPU_RT24_CORE1>;
 };
 
