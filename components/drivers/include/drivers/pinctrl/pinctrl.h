@@ -108,6 +108,9 @@ struct pinctrl_dev *pinctrl_register(struct pinctrl_desc *pctldesc,
 		struct dtb_node *dev, void *driver_data);
 const char *pinctrl_dev_get_name(struct pinctrl_dev *pctldev);
 struct pinctrl *pinctrl_get(struct dtb_node *dev);
+int pinctrl_apply_state(struct dtb_node *node, const char *state);
+int pinctrl_apply_default(struct dtb_node *node);
+int pinctrl_apply_sleep(struct dtb_node *node);
 void *pinctrl_dev_get_drvdata(struct pinctrl_dev *pctldev);
 extern struct pinctrl_dev *pinctrl_find_and_add_gpio_range(const char *devname, struct pinctrl_gpio_range *range);
 

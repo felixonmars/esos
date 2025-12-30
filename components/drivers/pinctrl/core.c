@@ -463,6 +463,46 @@ struct pinctrl *pinctrl_get(struct dtb_node *dev)
 	return create_pinctrl(dev);
 }
 
+int pinctrl_apply_state(struct dtb_node *node, const char *state)
+{
+	struct pinctrl *p;
+	struct pinctrl_state *s;
+	int ret;
+
+	if (!node || !state)
+		return -RT_EINVAL;
+
+	p = pinctrl_get(node);
+	if (!p) {
+		rt_kprintf("failed to get pinctrl for node %s\n", state, node->name);
+		return -RT_EINVAL;
+	}
+
+	s = pinctrl_lookup_state(p, state);
+	if (!s) {
+		rt_kprintf("failed to find state %s for node %s\n", state, node->name);
+		return -RT_EINVAL;
+	}
+
+	ret = pinctrl_select_state(p, s);
+	if (ret) {
+		rt_kprintf("failed to select state %s for node %s\n", state, node->name);
+		return ret;
+	}
+
+	return RT_EOK;
+}
+
+int pinctrl_apply_default(struct dtb_node *node)
+{
+	pinctrl_apply_state(node, "default");
+}
+
+int pinctrl_apply_sleep(struct dtb_node *node)
+{
+	pinctrl_apply_state(node, "sleep");
+}
+
 /* Deletes a range of pin descriptors */
 static void pinctrl_free_pindescs(struct pinctrl_dev *pctldev,
                                   const struct pinctrl_pin_desc *pins,
