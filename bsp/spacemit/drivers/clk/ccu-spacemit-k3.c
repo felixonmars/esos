@@ -312,7 +312,7 @@ static SPACEMIT_CCU_DIV_FC_MUX(rt24_core1_clk, "rt24_core1_clk", rt24_core_paren
 
 static SPACEMIT_CCU_GATE(rgpio_clk, "rgpio_clk", "rcpu_apb_clk",
 	BASE_TYPE_RCPU5, RCPU5_GPIO_AND_EDGE_CLK_RST,
-	BIT(1), BIT(15), 0x0,
+	BIT(1), BIT(1), 0x0,
 	0);
 static SPACEMIT_CCU_GATE(rgpio_edge_clk, "rgpio_edge_clk", "rcpu_apb_clk",
 	BASE_TYPE_RCPU5, RCPU5_GPIO_AND_EDGE_CLK_RST,
