@@ -13,6 +13,10 @@
 	clocks = <&ccu CLK_RCPU_RT24_CORE0>;
 };
 
+&pinctrl {
+  status = "okay";
+};
+
 &gpio {
 	status = "okay";
 };
