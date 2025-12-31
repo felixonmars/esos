@@ -239,6 +239,9 @@ rt_int32_t rt_hw_uart_init(void)
                     return -RT_EINVAL;
                 }
 
+                /* use the default pinmux */
+                pinctrl_apply_default(compatible_node);
+
                 /* enable reset */
                 ret = clk_prepare_enable(rst);
                 if (ret) {

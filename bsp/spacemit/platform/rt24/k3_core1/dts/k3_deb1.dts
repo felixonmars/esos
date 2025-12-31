@@ -14,6 +14,10 @@
 	clocks = <&ccu CLK_RCPU_RT24_CORE1>;
 };
 
+&pinctrl {
+	status = "okay";
+};
+
 &gpio {
 	status = "disabled";
 };
@@ -23,13 +27,12 @@
 };
 
 &uart0 {
-	/* pinctrl-names = "default"; */
-	status = "disabled";
-//	pinctrl-0 = <&ruart0_0_cfg>;
-	// reg = <0xc0881000 0x100>;
-	reg = <0xd4017000 0x100>;
-	interrupts = <0 18 0>;
-	clocks = <&ccu CLK_RCPU_UART1>, <&ccu CLK_RST_RCPU_UART1>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&ruart0_3_cfg>;
+	status = "okay";
+	reg = <0xc0881000 0x100>;
+	interrupts = <0 17 0>;
+	clocks = <&ccu CLK_RCPU_UART0>, <&ccu CLK_RST_RCPU_UART0>;
 };
 
 &mailbox3 {
