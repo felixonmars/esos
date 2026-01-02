@@ -66,24 +66,24 @@ static rt_int32_t  _k3_os0_domain_init(void *priv)
 	attr = (struct rpmi_device_power_attrs *)config->domain_data;
 
 	for_each_node_child(node) {
-		ret = dtb_node_read_u32(node, "bit_isolation", &ptr->bit_isolation);
-		dtb_node_read_u32(node, "bit_sleep1", &ptr->bit_sleep1);
-		dtb_node_read_u32(node, "bit_sleep2", &ptr->bit_sleep2);
-		dtb_node_read_u32(node, "bit_hw_mode", &ptr->bit_hw_mode);
-		dtb_node_read_u32(node, "bit_pwr_stat", &ptr->bit_pwr_stat);
-		dtb_node_read_u32(node, "bit_hw_pwr_stat", &ptr->bit_hw_pwr_stat);
-		dtb_node_read_u32(node, "offset", &ptr->offset);
-		dtb_node_read_u32(node, "bit_auto_pwr_on", &ptr->bit_auto_pwr_on);
-		dtb_node_read_u32(node, "use_hw", &ptr->use_hw);
 		attr->name = node->name;
-
-		++ptr;
-		++attr;
+		ret = dtb_node_read_u32(node, "bit_isolation", &ptr->bit_isolation);
 		if (ret) {
 			/* dummy power domain */
 			ptr->dummy = 1;
+		} else {
+			dtb_node_read_u32(node, "bit_sleep1", &ptr->bit_sleep1);
+			dtb_node_read_u32(node, "bit_sleep2", &ptr->bit_sleep2);
+			dtb_node_read_u32(node, "bit_hw_mode", &ptr->bit_hw_mode);
+			dtb_node_read_u32(node, "bit_pwr_stat", &ptr->bit_pwr_stat);
+			dtb_node_read_u32(node, "bit_hw_pwr_stat", &ptr->bit_hw_pwr_stat);
+			dtb_node_read_u32(node, "offset", &ptr->offset);
+			dtb_node_read_u32(node, "bit_auto_pwr_on", &ptr->bit_auto_pwr_on);
+			dtb_node_read_u32(node, "use_hw", &ptr->use_hw);
 		}
 
+		++ptr;
+		++attr;
 	}
 
 	return 0;
@@ -98,7 +98,7 @@ static enum rpmi_error spacemit_set_state(void *priv, rpmi_uint32_t domain_id, e
 	rt_int32_t loop;
 
 	if (state == RPMI_DEVICE_POWER_STATE_ON) {
-		if (ptr->dummy) {
+		if (ptr[domain_id].dummy) {
 			ptr[domain_id].current_state = 1;
 			return 0;
 		}
@@ -148,7 +148,7 @@ static enum rpmi_error spacemit_set_state(void *priv, rpmi_uint32_t domain_id, e
 
 		ptr[domain_id].current_state = 1;
 	} else {
-		if (ptr->dummy) {
+		if (ptr[domain_id].dummy) {
 			ptr[domain_id].current_state = 0;
 			return 0;
 		}
@@ -208,8 +208,10 @@ static enum rpmi_error spacemit_get_state(void *priv, rpmi_uint32_t domain_id, e
 	struct rt_domain_data *ptr = config->priv;
 	rt_uint32_t val;
 
-	val = readl((config->base + DEVICE_POWER_STATE_OFFSET));
-	ptr[domain_id].current_state = (val & (1 << ptr[domain_id].bit_pwr_stat)) ? 1 : 0;
+	if (!ptr[domain_id].dummy) {
+		val = readl((config->base + DEVICE_POWER_STATE_OFFSET));
+		ptr[domain_id].current_state = (val & (1 << ptr[domain_id].bit_pwr_stat)) ? 1 : 0;
+	}
 	*state = ptr[domain_id].current_state;
 
 	return 0;
