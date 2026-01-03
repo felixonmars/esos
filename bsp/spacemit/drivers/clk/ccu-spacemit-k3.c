@@ -256,10 +256,10 @@ static SPACEMIT_CCU_DIV_FC_MUX_GATE(rcpu_clk, "rcpu_clk", rcpu_clk_parents,
 //rcpu5
 static SPACEMIT_CCU_DIV_FC(rcpu_axi_clk, "rcpu_axi_clk", "rcpu_clk",
 	BASE_TYPE_RCPU5, RCPU5_RCPU_BUS_CLK_CTRL,
-	0, 2, BIT(8), 0);
+	3, 3, BIT(8), 0);
 static SPACEMIT_CCU_DIV_FC(rcpu_apb_clk, "rcpu_apb_clk", "rcpu_axi_clk",
-        BASE_TYPE_RCPU5, RCPU5_RCPU_BUS_CLK_CTRL,
-        3, 3, BIT(8), 0);
+	BASE_TYPE_RCPU5, RCPU5_RCPU_BUS_CLK_CTRL,
+	0, 3, BIT(8), 0);
 
 static SPACEMIT_CCU_GATE(ripc2msa_clk, "ripc2msa_clk", "rcpu_clk",
 	BASE_TYPE_RCPU5, RCPU5_AON_PER_CLK_RST_CTRL,
