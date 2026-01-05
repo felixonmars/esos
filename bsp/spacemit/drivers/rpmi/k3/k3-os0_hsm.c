@@ -15,6 +15,8 @@
 
 #define CPU_TO_CLUSTER(cpu)    ((cpu) / PLATFORM_MAX_CPUS_PER_CLUSTER)
 
+#undef USING_INTERRUPT_TO_TRIGGER_STATE_TRANSITION_OF_CLUSTER
+
 struct rpmi_hsm_hart {
 	/** Lock to protect this structure and perform platform operations */
 	void *lock;
@@ -73,6 +75,9 @@ struct rpmi_hsm {
 		} nonleaf;
 	};
 };
+
+static void __m2_enter(clusterx_m2_lp_ctrl *clx_m2_lp_ctl);
+static void __m2_exit(clusterx_m2_lp_ctrl *clx_m2_lp_ctl);
 
 static enum rpmi_hart_hw_state _k3_hsm_get_hw_state(void* priv,
 	rpmi_uint32_t hart_index)
@@ -313,31 +318,86 @@ static void spacemit_cx_m2_int_enable(rt_uint32_t hartid)
 
 		clx_m2_lp_ctl->bits.rcpu_ctrl_clx_m2_lp_en = 1;
 
+#ifdef USING_INTERRUPT_TO_TRIGGER_STATE_TRANSITION_OF_CLUSTER
 		dwkup->bits.ap_c0_m2_wkup_en = 1;
 		dwkup->bits.ap_c0_m2_enter_wkup_en = 1;
+#endif
 		break;
 	case 1:
 		clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C1_M2_INT_EN_REG;
 
 		clx_m2_lp_ctl->bits.rcpu_ctrl_clx_m2_lp_en = 1;
-		
+#ifdef USING_INTERRUPT_TO_TRIGGER_STATE_TRANSITION_OF_CLUSTER
 		dwkup->bits.ap_c1_m2_wkup_en = 1;
 		dwkup->bits.ap_c1_m2_enter_wkup_en = 1;
+#endif
 		break;
 	case 2:
 		clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C2_M2_INT_EN_REG;
 
 		clx_m2_lp_ctl->bits.rcpu_ctrl_clx_m2_lp_en = 1;
 
+#ifdef USING_INTERRUPT_TO_TRIGGER_STATE_TRANSITION_OF_CLUSTER
 		dwkup->bits.ap_c2_m2_wkup_en = 1;
 		dwkup->bits.ap_c2_m2_enter_wkup_en = 1;
+#endif
 	case 3:
 		clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C3_M2_INT_EN_REG;
 
 		clx_m2_lp_ctl->bits.rcpu_ctrl_clx_m2_lp_en = 1;
-		
+#ifdef USING_INTERRUPT_TO_TRIGGER_STATE_TRANSITION_OF_CLUSTER
 		dwkup->bits.ap_c3_m2_wkup_en = 1;
 		dwkup->bits.ap_c3_m2_enter_wkup_en = 1;
+#endif
+		break;
+	default:
+		break;
+	}
+}
+
+static void spacemit_cx_m2_int_disabled(rt_uint32_t hartid)
+{
+	clusterx_m2_lp_ctrl *clx_m2_lp_ctl;
+	rpmi_uint32_t cluster_id = CPU_TO_CLUSTER(hartid);
+	audio_wakeup_en_t *dwkup = (audio_wakeup_en_t *)AUDIO_WAKEUP_EN_REG;
+
+	switch (cluster_id) {
+	case 0:
+		clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C0_M2_INT_EN_REG;
+
+		clx_m2_lp_ctl->bits.rcpu_ctrl_clx_m2_lp_en = 0;
+
+#ifdef USING_INTERRUPT_TO_TRIGGER_STATE_TRANSITION_OF_CLUSTER
+		dwkup->bits.ap_c0_m2_wkup_en = 0;
+		dwkup->bits.ap_c0_m2_enter_wkup_en = 0;
+#endif
+		break;
+	case 1:
+		clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C1_M2_INT_EN_REG;
+
+		clx_m2_lp_ctl->bits.rcpu_ctrl_clx_m2_lp_en = 0;
+#ifdef USING_INTERRUPT_TO_TRIGGER_STATE_TRANSITION_OF_CLUSTER
+		dwkup->bits.ap_c1_m2_wkup_en = 0;
+		dwkup->bits.ap_c1_m2_enter_wkup_en = 0;
+#endif
+		break;
+	case 2:
+		clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C2_M2_INT_EN_REG;
+
+		clx_m2_lp_ctl->bits.rcpu_ctrl_clx_m2_lp_en = 0;
+
+#ifdef USING_INTERRUPT_TO_TRIGGER_STATE_TRANSITION_OF_CLUSTER
+		dwkup->bits.ap_c2_m2_wkup_en = 0;
+		dwkup->bits.ap_c2_m2_enter_wkup_en = 0;
+#endif
+	case 3:
+		clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C3_M2_INT_EN_REG;
+
+		clx_m2_lp_ctl->bits.rcpu_ctrl_clx_m2_lp_en = 0;
+#ifdef USING_INTERRUPT_TO_TRIGGER_STATE_TRANSITION_OF_CLUSTER
+		dwkup->bits.ap_c3_m2_wkup_en = 0;
+		dwkup->bits.ap_c3_m2_enter_wkup_en = 0;
+#endif
 		break;
 	default:
 		break;
@@ -388,6 +448,7 @@ static void k3_hsm_hart_start_finalize(void* priv,
 	int flags = 0;
 	struct spacemit_rpmi_hsm_config *config = priv;
 	rpmi_uint32_t cluster_id = CPU_TO_CLUSTER(hart_index);
+	clusterx_m2_lp_ctrl *clx_m2_lp_ctl;
 
 	/* wakeup the core */
 	spacemit_wakeup_core(hart_index);
@@ -405,14 +466,36 @@ static void k3_hsm_hart_start_finalize(void* priv,
 		/* the first core of this cluster */
 		/* then wait */
 		if (cluster_id == 0) {
+#ifdef USING_INTERRUPT_TO_TRIGGER_STATE_TRANSITION_OF_CLUSTER
 			rt_sem_take(config->sem_exit0, RT_WAITING_FOREVER);
+#else
+			clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C0_M2_INT_EN_REG;
+			__m2_exit(clx_m2_lp_ctl);
+#endif
 		} else if (cluster_id == 1) {
+#ifdef USING_INTERRUPT_TO_TRIGGER_STATE_TRANSITION_OF_CLUSTER
 			rt_sem_take(config->sem_exit1, RT_WAITING_FOREVER);
+#else
+			clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C1_M2_INT_EN_REG;
+			__m2_exit(clx_m2_lp_ctl);
+#endif
 		} else if (cluster_id == 2) {
+#ifdef USING_INTERRUPT_TO_TRIGGER_STATE_TRANSITION_OF_CLUSTER
 			rt_sem_take(config->sem_exit2, RT_WAITING_FOREVER);
+#else
+			clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C2_M2_INT_EN_REG;
+			__m2_exit(clx_m2_lp_ctl);
+#endif
 		} else {
+#ifdef USING_INTERRUPT_TO_TRIGGER_STATE_TRANSITION_OF_CLUSTER
 			rt_sem_take(config->sem_exit3, RT_WAITING_FOREVER);
+#else
+			clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C3_M2_INT_EN_REG;
+			__m2_exit(clx_m2_lp_ctl);
+#endif
 		}
+
+		spacemit_cx_m2_int_disabled(hart_index);
 	}
 }
 
@@ -428,6 +511,7 @@ static void k3_hsm_hart_stop_finalize(void* priv, rpmi_uint32_t hart_index)
 	int flags = 0;
 	struct spacemit_rpmi_hsm_config *config = priv;
 	rpmi_uint32_t cluster_id = CPU_TO_CLUSTER(hart_index);
+	clusterx_m2_lp_ctrl *clx_m2_lp_ctl;
 
 	while (_k3_hsm_get_hw_state(priv, hart_index) == RPMI_HART_HW_STATE_STARTED);
 
@@ -444,14 +528,36 @@ static void k3_hsm_hart_stop_finalize(void* priv, rpmi_uint32_t hart_index)
 		/* the first core of this cluster */
 		/* then wait */
 		if (cluster_id == 0) {
+#ifdef USING_INTERRUPT_TO_TRIGGER_STATE_TRANSITION_OF_CLUSTER
 			rt_sem_take(config->sem_enter0, RT_WAITING_FOREVER);
+#else
+			clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C0_M2_INT_EN_REG;
+			__m2_enter(clx_m2_lp_ctl);
+#endif
 		} else if (cluster_id == 1) {
+#ifdef USING_INTERRUPT_TO_TRIGGER_STATE_TRANSITION_OF_CLUSTER
 			rt_sem_take(config->sem_enter1, RT_WAITING_FOREVER);
+#else
+			clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C1_M2_INT_EN_REG;
+			__m2_enter(clx_m2_lp_ctl);
+#endif
 		} else if (cluster_id == 2) {
+#ifdef USING_INTERRUPT_TO_TRIGGER_STATE_TRANSITION_OF_CLUSTER
 			rt_sem_take(config->sem_enter2, RT_WAITING_FOREVER);
+#else
+			clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C1_M2_INT_EN_REG;
+			__m2_enter(clx_m2_lp_ctl);
+#endif
 		} else {
+#ifdef USING_INTERRUPT_TO_TRIGGER_STATE_TRANSITION_OF_CLUSTER
 			rt_sem_take(config->sem_enter3, RT_WAITING_FOREVER);
+#else
+			clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C1_M2_INT_EN_REG;
+			__m2_enter(clx_m2_lp_ctl);
+#endif
 		}
+
+		spacemit_cx_m2_int_enable(hart_index);
 	}
 }
 
@@ -513,6 +619,7 @@ static void __m2_exit(clusterx_m2_lp_ctrl *clx_m2_lp_ctl)
 	clx_m2_lp_ctl->bits.clr_clx_m2_wkup_hw_msk = 0;
 }
 
+#ifdef USING_INTERRUPT_TO_TRIGGER_STATE_TRANSITION_OF_CLUSTER
 static void spacemit_m2_enter_exit(int irq, void *dev_id)
 {
 	struct spacemit_rpmi_hsm_config *config = (struct spacemit_rpmi_hsm_config *)dev_id;
@@ -671,11 +778,13 @@ static void spacemit_m2_poll(void *priv)
 		}
 	}
 }
+#endif
 
 static rt_int32_t _k3_os0_hsm_init(void *priv)
 {
 	int i;
 	struct spacemit_rpmi_hsm_config *config = priv;
+#ifdef USING_INTERRUPT_TO_TRIGGER_STATE_TRANSITION_OF_CLUSTER
 
 	config->sem_enter0 = rt_sem_create("c0_e_sem", 0, RT_IPC_FLAG_FIFO);
 	config->sem_enter1 = rt_sem_create("c1_e_sem", 0, RT_IPC_FLAG_FIFO);
@@ -748,6 +857,11 @@ static rt_int32_t _k3_os0_hsm_init(void *priv)
 	}
 
 	rt_thread_startup(config->tid);
+#else
+	for (i = 0; i < config->hartcnt; i += 4)
+		if (CPU_TO_CLUSTER(i))
+			spacemit_cx_m2_int_enable(i);
+#endif
 
 	return 0;
 }
@@ -781,6 +895,7 @@ static void syssusp_finalize(
 	int flags = 0;
 	struct spacemit_rpmi_hsm_config *config = priv;
 	rpmi_uint32_t cluster_id = CPU_TO_CLUSTER(hart_index);
+	clusterx_m2_lp_ctrl *clx_m2_lp_ctl;
 
 	/* here we just wait the cluster0 enter M2 */
 	for (i = (hart_index & ~(PLATFORM_MAX_CPUS_PER_CLUSTER - 1)); i <
@@ -796,7 +911,12 @@ static void syssusp_finalize(
 		/* the first core of this cluster */
 		/* then wait */
 		if (cluster_id == 0) {
+#ifdef USING_INTERRUPT_TO_TRIGGER_STATE_TRANSITION_OF_CLUSTER
 			rt_sem_take(config->sem_enter0, RT_WAITING_FOREVER);
+#else
+			clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C0_M2_INT_EN_REG;
+			__m2_enter(clx_m2_lp_ctl);
+#endif
 		} else {
 			rt_kprintf("%s:%d, the last cluster is not cluster0\n", __func__, __LINE__);
 			while (1);
@@ -825,8 +945,14 @@ static enum rpmi_error syssusp_resume(
 		rpmi_uint64_t resume_addr)
 {
 	struct spacemit_rpmi_hsm_config *config = priv;
+	clusterx_m2_lp_ctrl *clx_m2_lp_ctl;
 
+#ifdef USING_INTERRUPT_TO_TRIGGER_STATE_TRANSITION_OF_CLUSTER
 	rt_sem_take(config->sem_exit0, RT_WAITING_FOREVER);
+#else
+	clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C0_M2_INT_EN_REG;
+	__m2_exit(clx_m2_lp_ctl);
+#endif
 
 	return 0;
 }
