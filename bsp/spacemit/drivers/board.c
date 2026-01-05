@@ -115,8 +115,8 @@ static void rt_hw_core_frequency_set(void)
 
 
 	clk_set_rate(rcpu_clk, rcpu_frequency);
-	clk_set_rate(apb_clk, apb_frequency);
 	clk_set_rate(axi_clk, axi_frequency);
+	clk_set_rate(apb_clk, apb_frequency);
 }
 
 /**
