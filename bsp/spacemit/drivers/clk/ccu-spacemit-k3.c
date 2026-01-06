@@ -412,9 +412,32 @@ static SPACEMIT_CCU_DIV_MUX_GATE(ri2s1_sysclk, "ri2s1_sysclk", ri2s01_sysclk_par
 	BIT(2) | BIT(1), BIT(2) | BIT(1), 0x0,
 	0);
 
+static struct ccu_ddn_info ruart_ddn_mask_info = {
+	.factor = 2,
+	.num_mask = 0x1fff,
+	.den_mask = 0x1fff,
+	.num_shift = 0,
+	.den_shift = 16,
+};
+static struct ccu_ddn_tbl ruart_14_tbl[] = {
+	{.num = 0x6a1, .den = 0x64}, /* rate = parent_rate*0x64/0x6a1/2) */
+};
+static SPACEMIT_CCU_DDN_GATE(ruart_14, "ruart_14", "pll1_d5_491p52",
+	&ruart_ddn_mask_info, &ruart_14_tbl, ARRAY_SIZE(ruart_14_tbl),
+	BASE_TYPE_RCPU, RCPU_UART_NM_CLK_14M_CTRL, RCPU_UART_NM_CLK_14M_CTRL, BIT(31),
+	0);
+
+static struct ccu_ddn_tbl ruart_58_tbl[] = {
+	{.num = 0x1065, .den = 0x3e8}, /* rate = parent_rate*0x3e8/0x1065/2) */
+};
+static SPACEMIT_CCU_DDN_GATE(ruart_58, "ruart_58", "pll1_d5_491p52",
+	&ruart_ddn_mask_info, &ruart_58_tbl, ARRAY_SIZE(ruart_58_tbl),
+	BASE_TYPE_RCPU, RCPU_UART_NM_CLK_58M_CTRL, RCPU_UART_NM_CLK_58M_CTRL, BIT(31),
+	0);
+
 //rcpu1
 static const char * const ruart_clk_parents[] = {
-	"slow_uart1_14p74", "pll1_aud_245p7", "pll1_d96_25p6", "pll1_m3d128_57p6"
+	"ruart_14", "pll1_aud_245p7", "pll1_d96_25p6", "ruart_58"
 };
 static SPACEMIT_CCU_DIV_MUX_GATE(ruart0_clk, "ruart0_clk", ruart_clk_parents,
 	BASE_TYPE_RCPU1, RCPU1_UART0_CLK_RST,
@@ -852,6 +875,8 @@ static struct clk_hw_onecell_data spacemit_k3_hw_clks = {
 		[CLK_RCPU_EMAC_RGMII_TX]	= &remac_rgmii_tx_clk.common.hw,
 		[CLK_RCPU_I2S0_SYS]		= &ri2s0_sysclk.common.hw,
 		[CLK_RCPU_I2S1_SYS]		= &ri2s1_sysclk.common.hw,
+		[CLK_RCPU_UART_SRC_14]		= &ruart_14.common.hw,
+		[CLK_RCPU_UART_SRC_58]		= &ruart_58.common.hw,
 		//rcpu1
 		[CLK_RCPU_UART0]	= &ruart0_clk.common.hw,
 		[CLK_RCPU_UART1]	= &ruart1_clk.common.hw,
