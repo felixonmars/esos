@@ -1,0 +1,24 @@
+Source: esos
+Section: misc
+Priority: optional
+Maintainer: liweizhi <weizhi.li@spacemit.com>
+Build-Depends: debhelper-compat (= 13),
+               python3,
+               scons,
+               u-boot-tools,
+               device-tree-compiler,
+               make,
+               git,
+               gcc-riscv64-unknown-elf,
+               libnewlib-dev
+Standards-Version: 4.5.0
+Homepage: https://gitee.com/spacemit-buildroot/esos
+XBS-Commit-Id:
+
+Package: esos
+Architecture: any
+Multi-Arch: foreign
+Depends: ${misc:Depends}
+Description: ESOS(Energy Service OS) for SpacemiT platforms
+ ESOS is a real-time operating system designed for SpacemiT platforms.
+

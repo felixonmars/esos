@@ -3,7 +3,7 @@ from building import *
 # The set of source files associated with this SConscript file.
 cwd = GetCurrentDir()
 src     = Glob('*.c')
-CPPPATH = [cwd]
+CPPPATH = [cwd, '/usr/include/newlib']
 
 group = DefineGroup('SpacemitPlatformDef', src, depend = [''], CPPPATH = CPPPATH)
 

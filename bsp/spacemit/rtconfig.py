@@ -25,7 +25,8 @@ BUILD = 'debug'
 # BUILD = 'release'
 
 if CPU == 'n308':
-    EXEC_PATH   = os.getcwd() + '/../../tools/toolchain/gcc/bin'
+    if os.getenv('RTT_EXEC_PATH') is None:
+        EXEC_PATH   = os.getcwd() + '/../../tools/toolchain/gcc/bin'
     if PLATFORM == 'gcc':
         # toolchains
         PREFIX  = 'riscv-nuclei-elf-'
@@ -60,7 +61,8 @@ if CPU == 'n308':
         POST_ACTION = OBJCPY + ' -O binary $TARGET rtthread.bin\n' + SIZE + ' $TARGET \n' + STRIP + ' $TARGET\n'
 
 else:
-    EXEC_PATH   = os.getcwd() + '/../../tools/toolchain/spacemit-toolchain-elf-newlib-x86_64-v1.0.9/bin'
+    if os.getenv('RTT_EXEC_PATH') is None:
+        EXEC_PATH   = os.getcwd() + '/../../tools/toolchain/spacemit-toolchain-elf-newlib-x86_64-v1.0.9/bin'
     if PLATFORM == 'gcc':
         # toolchains
         PREFIX  = 'riscv64-unknown-elf-'

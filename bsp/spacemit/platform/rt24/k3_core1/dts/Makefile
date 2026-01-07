@@ -1,4 +1,4 @@
-dtc_script=./dtc
+dtc_script=$(shell command -v dtc || echo ./dtc)
 
 SRCS = $(wildcard *.dts)
 OBJS = $(patsubst %.dts, %.dtb, $(SRCS))

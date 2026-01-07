@@ -1,0 +1,41 @@
+#!/usr/bin/make -f
+# Debian rules file for ESOS
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE = 1
+
+# Set environment variables for the build
+export TOP_DIR = $(CURDIR)
+export BSP_DIR = $(TOP_DIR)/bsp/spacemit
+export ESOS_BASE_DEFCONF = $(BSP_DIR)/.esos.config
+export CROSS_COMPILE=riscv64-unknown-elf-
+
+# get the commit ID
+GIT_INSIDE := $(shell git rev-parse --is-inside-work-tree 2>/dev/null)
+ifeq ($(GIT_INSIDE),true)
+	COMMIT_ID := $(shell git rev-parse --short HEAD)
+endif
+
+%:
+	dh $@
+
+override_dh_auto_configure:
+	sed -i "s/XBS-Commit-Id:.*/XBS-Commit-Id: $(COMMIT_ID)/" debian/control
+	# Create base configuration for k3_all_cores
+	echo "export TARGET_CHIP=rt24" > $(ESOS_BASE_DEFCONF)
+	echo "export TARGET_BOARD=k3_all_cores" >> $(ESOS_BASE_DEFCONF)
+	echo "export TARGET_DEFCONFIG=rt24_k3_all_cores_defconfig" >> $(ESOS_BASE_DEFCONF)
+
+override_dh_auto_build:
+	# Use the build.sh script to build the project
+	cp $(TOP_DIR)/debian/lib/* /usr/lib/gcc/riscv64-unknown-elf/14.2.0/
+	RTT_EXEC_PATH=/usr/bin $(TOP_DIR)/build.sh
+
+override_dh_auto_clean:
+	# Clean build artifacts
+	if [ -f $(TOP_DIR)/$(ESOS_BASE_DEFCONF) ]; then \
+		$(TOP_DIR)/build.sh clean || true; \
+	fi
+	rm -f $(ESOS_BASE_DEFCONF)
+	rm -f $(BSP_DIR)/*.itb $(BSP_DIR)/*.elf $(BSP_DIR)/*.bin
+	rm -f $(BSP_DIR)/platform/rt24/*.dtb

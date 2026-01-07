@@ -1,0 +1,110 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+configure)
+    target=""
+    if grep -q 'Spacemit(R) X100' /proc/cpuinfo; then
+        target="spacemit"
+    else
+        echo "no 'Spacemit(R) X100' found in /proc/cpuinfo."
+        echo "This may indicate that you are installing this package in a chroot environment."
+        exit 0
+    fi
+
+    for x in $(cat /proc/cmdline); do
+        case $x in
+        root=UUID=*)
+            ROOT=${x#root=UUID=}
+            DEVICES=$(blkid -s UUID | grep "$ROOT" | awk '{print $1}')
+            DEVICE_COUNT=$(echo "$DEVICES" | wc -l)
+            if [ "$DEVICE_COUNT" -gt 1 ]; then
+                echo "Warning: Multiple devices found with the same UUID $ROOT:"
+                echo "$DEVICES"
+                echo "This may cause installation issues. Please ensure unique UUIDs."
+                exit 0
+            fi
+            ROOT=$(echo "$DEVICES" | head -n1)
+            ;;
+        root=*)
+            ROOT=${x#root=}
+            ;;
+        esac
+    done
+
+    if [ -n $ROOT ]; then
+        case $ROOT in
+        "/dev/mmcblk0"*)
+            ESOS_MOUNT="/dev/mmcblk0p1"
+            ESOS_COPY_MODE=1
+            ;;
+        "/dev/mmcblk2"*)
+            ESOS_MOUNT="/dev/mmcblk2p1"
+            ESOS_COPY_MODE=1
+            ;;
+        "/dev/sda"*)
+            ESOS_MOUNT="/dev/sda1"
+            ESOS_COPY_MODE=1
+            ;;
+        "/dev/nvme0n1"*)
+            if [ -e "/dev/mtdblock4" ]; then
+                # nor + ssd
+                ESOS=/dev/mtdblock4
+                # 以KB为单位
+                ESOS_SEEK=0
+            elif [ -e "/dev/mtdblock0" ]; then
+                # nor + ssd
+                ESOS=/dev/mtdblock0
+                # 以KB为单位
+                ESOS_SEEK=704
+            else
+                # emmc + ssd
+                ESOS=/dev/mmcblk2
+                # 以KB为单位
+                ESOS_SEEK=704
+            fi
+            ;;
+        *)
+            echo "Unsupported root=$ROOT"
+            exit 1
+            ;;
+        esac
+    else
+        echo "Missing root= in cmdline"
+        exit 1
+    fi
+
+    # 待检查文件列表
+    files="/usr/lib/riscv64-linux-gnu/esos/esos.itb"
+    if [ -n "$ESOS_COPY_MODE" ]; then
+        files="$files $ESOS_MOUNT"
+    else
+        files="$files $ESOS"
+    fi
+    for file in $files; do
+        if [ ! -e "$file" ]; then
+            # 任意不存在则退出
+            echo "Missing $file"
+            exit 1
+        fi
+    done
+
+    # 此前已经做了所有检查
+    set -x
+    if [ -n "$ESOS_COPY_MODE" ]; then
+        # 文件复制模式：挂载分区并复制文件
+        mkdir -p /mnt/esos-install
+        mount $ESOS_MOUNT /mnt/esos-install
+        cp /usr/lib/riscv64-linux-gnu/esos/esos.itb /mnt/esos-install/esos.itb
+        sync
+        umount /mnt/esos-install
+        rmdir /mnt/esos-install
+    else
+        # 直接写入模式
+        dd if=/usr/lib/riscv64-linux-gnu/esos/esos.itb of=$ESOS seek=$ESOS_SEEK bs=1K && sync
+    fi
+    set +x
+    ;;
+esac
+
+exit 0
