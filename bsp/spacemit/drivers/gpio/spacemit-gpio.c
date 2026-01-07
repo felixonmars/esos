@@ -217,13 +217,12 @@ static int gpio_probe_dt(struct dtb_node *np, struct spacemit_gpio_chip *chip)
 static int spacemit_gpio_request(struct gpio_chip *chip, unsigned offset)
 {
 	/* Request GPIO from pinctrl subsystem to configure GPIO function mux */
-	return pinctrl_request_gpio(chip->base + offset);
+	return 0;
 }
 
 static void spacemit_gpio_free(struct gpio_chip *chip, unsigned offset)
 {
 	/* Free GPIO from pinctrl subsystem */
-	pinctrl_free_gpio(chip->base + offset);
 }
 
 static int spacemit_gpio_direction_input(struct gpio_chip *chip, unsigned offset)
