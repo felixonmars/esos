@@ -692,7 +692,7 @@ int spacemit_gpio_init(void)
 
 		/* Get interrupt number from device tree */
 		ret = dtb_node_read_u32_index(compatible_node, "interrupts", 1, (uint32_t *)&chip->irq);
-		if (ret) {
+		if (ret || !strcmp(__compatible[i].compatible, "spacemit,k3-gpio")) {
 			rt_kprintf("%s: no interrupt specified, IRQ support disabled\n",
 				   __func__);
 			chip->irq = 0;
