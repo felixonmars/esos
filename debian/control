@@ -15,7 +15,7 @@ Standards-Version: 4.5.0
 Homepage: https://gitee.com/spacemit-buildroot/esos
 XBS-Commit-Id:
 
-Package: esos
+Package: bianbu-esos
 Architecture: any
 Multi-Arch: foreign
 Depends: ${misc:Depends}

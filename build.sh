@@ -123,6 +123,8 @@ function build_usage()
 	mk_info "usage of build script is as follows:
 	'$CMD_PROMPT config'                 set the SDK configuration
 	'$CMD_PROMPT'                        build component
+        '$CMD_PROMPT'menuconfig              config the SDK
+        '$CMD_PROMPT'itb                     Generate ITB file
 	'$CMD_PROMPT clean'                  clean the kernel\n"
 }
 
