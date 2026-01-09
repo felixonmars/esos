@@ -13,7 +13,7 @@
 			compression = "none";
 			load = <0x1 0x200000>;
 			entry = <0x1 0x200000>;
-			data = /incbin/("./bsp/spacemit/k3_os0_rcpu.elf");
+			data = /incbin/("../output/esos/rt24_os0_rcpu.elf");
 			hash {
 				algo = "crc32";
 			};
@@ -27,7 +27,7 @@
 			compression = "none";
 			load = <0x1 0x804000>;
 			entry = <0x1 0x804000>;
-			data = /incbin/("./bsp/spacemit/k3_os1_rcpu.elf");
+			data = /incbin/("../output/esos/rt24_os1_rcpu.elf");
 			hash {
 				algo = "crc32";
 			};

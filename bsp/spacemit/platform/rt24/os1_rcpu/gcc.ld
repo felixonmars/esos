@@ -8,7 +8,7 @@
  * 2020/12/12     bernard      The first version
  */
 
-INCLUDE "./platform/rt24/k3_core0/link_stacksize.lds"
+INCLUDE "./platform/rt24/os1_rcpu/link_stacksize.lds"
 
 OUTPUT_ARCH( "riscv" )
 
@@ -17,8 +17,8 @@ ENTRY(_start)
 MEMORY
 {
    RAM : ORIGIN = ENTRY_POINT, LENGTH = 3M
-   RESOURCE_TABLE (rwx) : ORIGIN = 0x1007fc000, LENGTH = 16K
-   DTB_TABLE (rwx) : ORIGIN = 0xc087c000, LENGTH = 16k
+   RESOURCE_TABLE (rwx) : ORIGIN = 0x100e00000, LENGTH = 16K
+   DTB_TABLE (rwx) : ORIGIN = 0xc0872000, LENGTH = 16k
 }
 
 SECTIONS
