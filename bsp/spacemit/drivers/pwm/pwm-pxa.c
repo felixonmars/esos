@@ -189,6 +189,9 @@ int pwm_probe(void)
 				rt_kprintf("get pwm mmio_base failed\n");
 				return -RT_ERROR;
 			}
+
+			pinctrl_apply_default(compatible_node);
+
 			pc->clk = of_clk_get(compatible_node, 0);
 			if (IS_ERR(pc->clk)) {
 				rt_kprintf("get pwm clk failed\n");
