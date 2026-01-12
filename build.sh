@@ -242,18 +242,22 @@ function create_esos_itb()
 	mk_info "ITB created: ${BSP_DIR}/${itb_file}"
 
 	# Copy ITB to output directory
-	OUTPUT_DIR="${TOP_DIR}/../output/esos"
-	mkdir -p "${OUTPUT_DIR}"
-	cp ${BSP_DIR}/${itb_file} "${OUTPUT_DIR}/"
-	cp ${BSP_DIR}/${itb_file} "${TOP_DIR}/../output/"
-	mk_info "ITB copied to: ${OUTPUT_DIR}/${itb_file}"
+	if [ -d "${TOP_DIR}/../humbird" ]; then
+		OUTPUT_DIR="${TOP_DIR}/../output/esos"
+		mkdir -p "${OUTPUT_DIR}"
+		cp ${BSP_DIR}/${itb_file} "${OUTPUT_DIR}/"
+		cp ${BSP_DIR}/${itb_file} "${TOP_DIR}/../output/"
+		mk_info "ITB copied to: ${OUTPUT_DIR}/${itb_file}"
+	fi
 
 	cd -
 }
 
 function build_kernel()
 {
-	mkdir -p ${TOP_OUTPUT_DIR}
+	if [ -d "${TOP_DIR}/../humbird" ]; then
+		mkdir -p ${TOP_OUTPUT_DIR}
+	fi
 
 	# build dtb
 	source ${ESOS_BASE_DEFCONF}
@@ -288,7 +292,10 @@ function build_kernel()
 		cd -
 		return 1
 	fi
-	cp ${TARGET_CHIP}_${TARGET_BOARD}.elf ${TOP_OUTPUT_DIR}
+
+	if [ -d "${TOP_DIR}/../humbird" ]; then
+		cp ${TARGET_CHIP}_${TARGET_BOARD}.elf ${TOP_OUTPUT_DIR}
+	fi
 
 	cd -
 	return 0
