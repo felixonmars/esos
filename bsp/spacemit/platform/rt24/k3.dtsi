@@ -258,90 +258,90 @@
 			status = "disabled";
 		};
 
-		rpwm0: pwm@c0888100 {
+		rpwm0: pwm@c088d100 {
 			compatible = "spacemit,k1x-rpwm0";
-			reg = <0xc0888100 0x10>;
+			reg = <0xc088d100 0x10>;
 			clocks = <&ccu CLK_RCPU_PWM0>, <&ccu CLK_RST_RCPU_PWM0>;
 			clock-rate = <24576000>;
 			k1x,pwm-disable-fd;
 			status = "disabled";
 		};
 
-		rpwm1: pwm@c0888200 {
+		rpwm1: pwm@c088d200 {
 			compatible = "spacemit,k1x-rpwm1";
-			reg = <0xc0888200 0x10>;
+			reg = <0xc088d200 0x10>;
 			clocks = <&ccu CLK_RCPU_PWM1>, <&ccu CLK_RST_RCPU_PWM1>;
 			clock-rate = <24576000>;
 			k1x,pwm-disable-fd;
 			status = "disabled";
 		};
 
-		rpwm2: pwm@c0888300 {
+		rpwm2: pwm@c088d300 {
 			compatible = "spacemit,k1x-rpwm2";
-			reg = <0xc0888300 0x10>;
+			reg = <0xc088d300 0x10>;
 			clocks = <&ccu CLK_RCPU_PWM2>, <&ccu CLK_RST_RCPU_PWM2>;
 			clock-rate = <24576000>;
 			k1x,pwm-disable-fd;
 			status = "disabled";
 		};
 
-		rpwm3: pwm@c0888400 {
+		rpwm3: pwm@c088d400 {
 			compatible = "spacemit,k1x-rpwm3";
-			reg = <0xc0888400 0x10>;
+			reg = <0xc088d400 0x10>;
 			clocks = <&ccu CLK_RCPU_PWM3>, <&ccu CLK_RST_RCPU_PWM3>;
 			clock-rate = <24576000>;
 			k1x,pwm-disable-fd;
 			status = "disabled";
 		};
 
-		rpwm4: pwm@c0888500 {
+		rpwm4: pwm@c088d500 {
 			compatible = "spacemit,k1x-rpwm4";
-			reg = <0xc0888500 0x10>;
+			reg = <0xc088d500 0x10>;
 			clocks = <&ccu CLK_RCPU_PWM4>, <&ccu CLK_RST_RCPU_PWM4>;
 			clock-rate = <24576000>;
 			k1x,pwm-disable-fd;
 			status = "disabled";
 		};
 
-		rpwm5: pwm@c0888600 {
+		rpwm5: pwm@c088d600 {
 			compatible = "spacemit,k1x-rpwm5";
-			reg = <0xc0888600 0x10>;
+			reg = <0xc088d600 0x10>;
 			clocks = <&ccu CLK_RCPU_PWM5>, <&ccu CLK_RST_RCPU_PWM5>;
 			clock-rate = <24576000>;
 			k1x,pwm-disable-fd;
 			status = "disabled";
 		};
 
-		rpwm6: pwm@c0888700 {
+		rpwm6: pwm@c088d700 {
 			compatible = "spacemit,k1x-rpwm6";
-			reg = <0xc0888700 0x10>;
+			reg = <0xc088d700 0x10>;
 			clocks = <&ccu CLK_RCPU_PWM6>, <&ccu CLK_RST_RCPU_PWM6>;
 			clock-rate = <24576000>;
 			k1x,pwm-disable-fd;
 			status = "disabled";
 		};
 
-		rpwm7: pwm@c0888800 {
+		rpwm7: pwm@c088d800 {
 			compatible = "spacemit,k1x-rpwm7";
-			reg = <0xc0888800 0x10>;
+			reg = <0xc088d800 0x10>;
 			clocks = <&ccu CLK_RCPU_PWM7>, <&ccu CLK_RST_RCPU_PWM7>;
 			clock-rate = <24576000>;
 			k1x,pwm-disable-fd;
 			status = "disabled";
 		};
 
-		rpwm8: pwm@c0888900 {
+		rpwm8: pwm@c088d900 {
 			compatible = "spacemit,k1x-rpwm8";
-			reg = <0xc0888900 0x10>;
+			reg = <0xc088d900 0x10>;
 			clocks = <&ccu CLK_RCPU_PWM8>, <&ccu CLK_RST_RCPU_PWM8>;
 			clock-rate = <24576000>;
 			k1x,pwm-disable-fd;
 			status = "disabled";
 		};
 
-		rpwm9: pwm@c0888a00 {
+		rpwm9: pwm@c088da00 {
 			compatible = "spacemit,k1x-rpwm9";
-			reg = <0xc0888a00 0x10>;
+			reg = <0xc088da00 0x10>;
 			clocks = <&ccu CLK_RCPU_PWM9>, <&ccu CLK_RST_RCPU_PWM9>;
 			clock-rate = <24576000>;
 			k1x,pwm-disable-fd;
