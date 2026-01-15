@@ -11,9 +11,8 @@
 #include <stdlib.h>
 #include "pxa_uart.h"
 
-/* UART handle (global) */
-static uart_handle_t g_uart_handle = RT_NULL;
-static int g_uart_port = 0; /* Current UART port number */
+#define DEV_NAME_MAX 32
+static char g_uart_dev_name[DEV_NAME_MAX] = {0};
 
 /* UART event callback (implement as needed) */
 static void uart_callback(int port, volatile uart_event_e event)
@@ -23,55 +22,18 @@ static void uart_callback(int port, volatile uart_event_e event)
     (void)event;
 }
 
-/**
- * Internal UART initialization function
- */
-static void uart_init_internal(int port)
+void uart_init(const char *port_name)
 {
-    pxa_uart_priv_t *priv;
-
-    /* Store the port number */
-    g_uart_port = port;
-
-    rt_kprintf("[DEBUG] Requesting UART port: %d\n", port);
-
-    /* Get the already initialized UART handle */
-    g_uart_handle = pxa_uart_initialize(port, uart_callback);
-    if (g_uart_handle == RT_NULL) {
-        rt_kprintf("UART%d initialization failed (check if enabled in device tree)\n", port);
+    rt_device_t dev = rt_device_find(port_name);
+    if (dev == RT_NULL) {
+        rt_kprintf("Error: Device %s not found!\n", port_name);
         return;
     }
 
-    /* Get the private data to check actual port info */
-    priv = (pxa_uart_priv_t *)g_uart_handle;
-    rt_kprintf("[DEBUG] Handle idx: %d, base: 0x%08x, irq: %d\n",
-               priv->idx, priv->base, priv->irq);
+    rt_memset(g_uart_dev_name, 0, sizeof(g_uart_dev_name));
+    rt_strncpy(g_uart_dev_name, port_name, sizeof(g_uart_dev_name) - 1);
 
-    /* Configure UART: 115200 8N1 */
-    pxa_uart_config(g_uart_handle, 115200,
-                   UART_MODE_ASYNCHRONOUS,
-                   UART_PARITY_NONE,
-                   UART_STOP_BITS_1,
-                   UART_DATA_BITS_8);
-
-    rt_kprintf("UART%d initialized successfully (115200 8N1)\n", port);
-}
-
-/**
- * Initialize UART with specified port (MSH command)
- * Note: Do not allocate memory here as it's already done during system init
- */
-void uart_init_port(int argc, char **argv)
-{
-    int port;
-
-    if (argc < 2) {
-        rt_kprintf("Usage: uart_init_port <port>\n");
-        return;
-    }
-
-    port = atoi(argv[1]);
-    uart_init_internal(port);
+    rt_kprintf("Success: UART target set to %s\n", g_uart_dev_name);
 }
 
 /**
@@ -79,233 +41,220 @@ void uart_init_port(int argc, char **argv)
  */
 void uart_send(void)
 {
-    char *msg = "Hello PXA UART!\n";
-
-    if (g_uart_handle == RT_NULL) {
-        rt_kprintf("Please run uart_init_port first\n");
+	if (g_uart_dev_name[0] == '\0') {
+        rt_kprintf("Error: Please run 'uart init <port>' first.\n");
         return;
     }
 
-    rt_kprintf("Sending: %s", msg);
-
-    for (int i = 0; msg[i] != '\0'; i++) {
-        if (pxa_uart_putchar(g_uart_handle, msg[i]) != 0) {
-            rt_kprintf("Send failed\n");
-            return;
-        }
+    rt_device_t dev = rt_device_find(g_uart_dev_name);
+    if (!dev) {
+        rt_kprintf("Device uart2 not found\n");
+        return;
     }
 
-    rt_kprintf("Send completed\n");
+    if (rt_device_open(dev, RT_DEVICE_FLAG_RDWR) != RT_EOK) {
+        rt_kprintf("Device open failed\n");
+        return;
+    }
+
+    char *msg = "Hello RT-Thread Standard Framework!\r\n";
+    rt_size_t len = rt_strlen(msg);
+
+    rt_kprintf("Sending %d bytes...\n", len);
+
+    rt_size_t written = rt_device_write(dev, 0, msg, len);
+
+    if (written == len) {
+        rt_kprintf("Send success\n");
+    } else {
+        rt_kprintf("Send incomplete. Written: %d/%d\n", written, len);
+    }
+
+    rt_device_close(dev);
 }
 
-/**
- * Receive test
- */
 void uart_recv(int timeout_ms)
 {
-    int recv_count = 0;
-
-    if (g_uart_handle == RT_NULL) {
-        rt_kprintf("Please run uart_init_port first\n");
+	if (g_uart_dev_name[0] == '\0') {
+        rt_kprintf("Error: Please run 'uart init <port>' first.\n");
         return;
     }
 
-    rt_kprintf("Waiting for data (timeout %d ms)...\n", timeout_ms);
-    rt_kprintf("Tip: Please send data or connect TX-RX\n");
+    rt_device_t dev = rt_device_find(g_uart_dev_name);
+    if (!dev) {
+        rt_kprintf("Device uart2 not found\n");
+        return;
+    }
 
-    for (int i = 0; i < timeout_ms; i++) {
-        int ch = pxa_uart_getchar(g_uart_handle);
-        if (ch >= 0) {
-            rt_kprintf("%c", (char)ch);
-            recv_count++;
+    if (rt_device_open(dev, RT_DEVICE_FLAG_INT_RX) != RT_EOK) {
+        rt_kprintf("Device open failed\n");
+        return;
+    }
 
-            /* Exit if newline or max count reached */
-            if (ch == '\n' || recv_count >= 128) {
+    rt_kprintf("Start receiving for %d ms...\n", timeout_ms);
+
+    char ch;
+
+    rt_tick_t start_tick = rt_tick_get();
+
+    rt_tick_t timeout_tick = rt_tick_from_millisecond(timeout_ms);
+
+    while ((rt_tick_get() - start_tick) < timeout_tick) {
+        if (rt_device_read(dev, 0, &ch, 1) == 1)
+            rt_kprintf("Recv: %02x\n", ch);
+        else
+            rt_thread_mdelay(10);
+    }
+
+    rt_kprintf("Timeout! Finish.\n");
+
+    rt_device_close(dev);
+}
+
+void uart_baud(int baudrate)
+{
+    if (g_uart_dev_name[0] == '\0') {
+        rt_kprintf("Error: Please run 'uart init <port>' first.\n");
+        return;
+    }
+
+    rt_device_t dev = rt_device_find(g_uart_dev_name);
+    if (!dev) {
+        rt_kprintf("Error: Device %s not found\n", g_uart_dev_name);
+        return;
+    }
+
+    struct serial_configure config = RT_SERIAL_CONFIG_DEFAULT;
+    config.baud_rate = baudrate;
+
+    rt_err_t result = rt_device_control(dev, RT_DEVICE_CTRL_CONFIG, &config);
+
+    if (result == RT_EOK)
+        rt_kprintf("Success: %s baudrate set to %d\n", g_uart_dev_name, baudrate);
+    else if (result == -RT_EBUSY)
+        rt_kprintf("Failed: Device is busy (opened by other thread?)\n");
+    else
+        rt_kprintf("Failed: rt_device_control returned %d\n", result);
+}
+
+static int uart_verify_byte_by_byte(rt_device_t dev, const char *tag)
+{
+    char send_buf[64];
+    char rx_char = 0;
+    int len;
+    int error_cnt = 0;
+    rt_size_t r_size;
+
+    rt_snprintf(send_buf, sizeof(send_buf), "[%s]TEST-0123456789", tag);
+    len = rt_strlen(send_buf);
+
+    while (rt_device_read(dev, 0, &rx_char, 1) > 0);
+
+    rt_kprintf("    [Sync-Check] Tag: %s (Len: %d)\n", tag, len);
+
+    for (int i = 0; i < len; i++) {
+        char tx_char = send_buf[i];
+
+        if (rt_device_write(dev, 0, &tx_char, 1) != 1) {
+            rt_kprintf("      Error: TX failed at index %d\n", i);
+            return -1;
+        }
+
+        int wait_tick = 50;
+        int received = 0;
+
+        while (wait_tick--) {
+            r_size = rt_device_read(dev, 0, &rx_char, 1);
+            if (r_size > 0) {
+                received = 1;
                 break;
             }
+            rt_thread_mdelay(1);
         }
-        rt_thread_mdelay(1);
+
+        if (!received) {
+            rt_kprintf("      Error: RX Timeout at index %d (Sent: '%c')\n", i, tx_char);
+            return -1;
+        }
+
+        if (rx_char != tx_char) {
+            rt_kprintf("      Error at index %d:\n", i);
+            rt_kprintf("      send: %c\n", tx_char);
+            rt_kprintf("      recv: %c (Hex: %02X)\n", rx_char, rx_char);
+            error_cnt++;
+        }
     }
 
-    if (recv_count > 0) {
-        rt_kprintf("\nReceived %d characters\n", recv_count);
-    } else {
-        rt_kprintf("No data received\n");
+    if (error_cnt == 0) {
+        rt_kprintf("      Pass.\n");
+        return 0;
     }
+    return -1;
 }
 
-/**
- * Baudrate switching test
- */
-void uart_baud(rt_uint32_t baudrate)
+static int uart_test_baud_verify(rt_device_t dev, rt_uint32_t baud)
 {
-    if (g_uart_handle == RT_NULL) {
-        rt_kprintf("Please run uart_init_port first\n");
+    char tag_buf[16];
+    struct serial_configure config = RT_SERIAL_CONFIG_DEFAULT;
+    int ret;
+
+    rt_snprintf(tag_buf, sizeof(tag_buf), "%d", baud);
+    rt_kprintf("  -> Switching to %d bps... ", baud);
+
+	/* the device must be closed if comes here */
+    config.baud_rate = baud;
+    rt_err_t err = rt_device_control(dev, RT_DEVICE_CTRL_CONFIG, &config);
+    if (err != RT_EOK) {
+        rt_kprintf("Config Failed! Err: %d\n", err);
+        return -1;
+    }
+
+    if (rt_device_open(dev, RT_DEVICE_FLAG_RDWR | RT_DEVICE_FLAG_INT_RX) != RT_EOK) {
+        rt_kprintf("Open Failed!\n");
+        return -1;
+    }
+
+    rt_kprintf("Done.\n");
+
+    ret = uart_verify_byte_by_byte(dev, tag_buf);
+
+    rt_device_close(dev);
+
+    return ret;
+}
+
+void pxa_uart_basic_test_port(void)
+{
+    int errors = 0;
+    char dev_name[16];
+    rt_device_t dev;
+	rt_uint32_t bauds[] = {9600, 19200, 38400, 57600, 115200, 230400, 460800, 921600, 1843200, 3686400};
+	
+	if (g_uart_dev_name[0] == '\0') {
+        rt_kprintf("Error: Please run 'uart init <port>' first.\n");
         return;
     }
 
-    rt_kprintf("UART%d switching to baudrate %d...\n", g_uart_port, baudrate);
-
-    if (pxa_uart_config_baudrate(g_uart_handle, baudrate) != 0) {
-        rt_kprintf("Baudrate switch failed\n");
+    dev = rt_device_find(g_uart_dev_name);
+    if (dev == RT_NULL) {
+        rt_kprintf("Error: Device %s not found\n", dev_name);
         return;
     }
 
-    rt_kprintf("Baudrate switched successfully\n");
+    for (int i = 0; i < sizeof(bauds) / sizeof(bauds[0]); i++) {
+        rt_uint32_t baud = bauds[i];
 
-    /* Send test message for verification */
-    char test_msg[64];
-    rt_snprintf(test_msg, sizeof(test_msg), "Test@%d\n", baudrate);
-
-    for (int i = 0; test_msg[i] != '\0'; i++) {
-        pxa_uart_putchar(g_uart_handle, test_msg[i]);
-    }
-}
-
-/**
- * Baudrate loop switching test
- */
-void uart_baud_loop(int iterations)
-{
-    rt_uint32_t bauds[] = {9600, 19200, 38400, 57600, 115200, 230400, 460800, 921600, 1843200, 3686400};
-    int num_bauds = sizeof(bauds) / sizeof(bauds[0]);
-    int success = 0;
-
-    if (g_uart_handle == RT_NULL) {
-        rt_kprintf("Please run uart_init_port first\n");
-        return;
-    }
-
-    rt_kprintf("UART%d starting baudrate loop test (%d iterations)...\n", g_uart_port, iterations);
-
-    for (int i = 0; i < iterations; i++) {
-        for (int j = 0; j < num_bauds; j++) {
-            rt_uint32_t baud = bauds[j];
-
-            /* Switch baudrate */
-            if (pxa_uart_config_baudrate(g_uart_handle, baud) != 0) {
-                rt_kprintf("Switch #%d failed (baudrate %d)\n", i * num_bauds + j + 1, baud);
-                continue;
-            }
-
-            /* Send test data */
-            char msg[32];
-            rt_snprintf(msg, sizeof(msg), "T%d@%d\n", i, baud);
-            for (int k = 0; msg[k] != '\0'; k++) {
-                pxa_uart_putchar(g_uart_handle, msg[k]);
-            }
-
-            success++;
-            rt_thread_mdelay(50);
+        if (uart_test_baud_verify(dev, baud) != 0) {
+            errors++;
+            rt_kprintf("  [X] Error at baudrate %d\n", baud);
         }
 
-        rt_kprintf("Completed round %d/%d\n", i + 1, iterations);
+        rt_thread_mdelay(50);
     }
-
-    /* Restore to 115200 */
-    pxa_uart_config_baudrate(g_uart_handle, 115200);
-
-    rt_kprintf("Test completed: %d/%d switches successful\n", success, iterations * num_bauds);
-}
-
-/**
- * Loopback test
- */
-void uart_loopback(void)
-{
-    char send_msg[] = "Loopback-Test-123";
-    char recv_buf[64] = {0};
-    int recv_cnt = 0;
-
-    if (g_uart_handle == RT_NULL) {
-        rt_kprintf("Please run uart_init_port first\n");
-        return;
-    }
-
-    rt_kprintf("UART%d loopback test (TX-RX connection required)\n", g_uart_port);
-    rt_kprintf("Sending: %s\n", send_msg);
-
-    /* Send data */
-    for (int i = 0; send_msg[i] != '\0'; i++) {
-        pxa_uart_putchar(g_uart_handle, send_msg[i]);
-    }
-
-    /* Wait for data to return */
-    rt_thread_mdelay(100);
-
-    /* Receive data */
-    rt_kprintf("Receiving: ");
-    for (int i = 0; i < 2000; i++) {
-        int ch = pxa_uart_getchar(g_uart_handle);
-        if (ch >= 0 && recv_cnt < sizeof(recv_buf) - 1) {
-            recv_buf[recv_cnt++] = (char)ch;
-            rt_kprintf("%c", (char)ch);
-        }
-
-        if (recv_cnt >= rt_strlen(send_msg)) {
-            break;
-        }
-
-        rt_thread_mdelay(1);
-    }
-    rt_kprintf("\n");
-
-    recv_buf[recv_cnt] = '\0';
-
-    /* Compare results */
-    if (recv_cnt > 0) {
-        if (rt_strcmp(send_msg, recv_buf) == 0) {
-            rt_kprintf("Loopback test PASSED! (matched)\n");
-        } else {
-            rt_kprintf("Loopback test partially passed (received %d bytes)\n", recv_cnt);
-        }
-    } else {
-        rt_kprintf("No loopback data received (check if TX-RX connected)\n");
-    }
-}
-
-/**
- * Complete automatic test with specified port
- */
-void pxa_uart_basic_test_port(int port)
-{
-    rt_kprintf("\n========================================\n");
-    rt_kprintf("  PXA UART%d Basic Test\n", port);
-    rt_kprintf("========================================\n\n");
-
-    /* 1. Initialization */
-    rt_kprintf("[1/4] UART%d initialization test...\n", port);
-    uart_init_internal(port);
-    rt_thread_mdelay(500);
-
-    /* 2. Send test */
-    rt_kprintf("\n[2/4] UART%d send test...\n", port);
-    uart_send();
-    rt_thread_mdelay(500);
-
-    /* 3. Baudrate switching test */
-    rt_kprintf("\n[3/4] UART%d baudrate switching test...\n", port);
-    rt_uint32_t test_bauds[] = {9600, 115200, 460800, 115200};
-    for (int i = 0; i < sizeof(test_bauds) / sizeof(test_bauds[0]); i++) {
-        uart_baud(test_bauds[i]);
-        rt_thread_mdelay(300);
-    }
-
-    /* 4. Loopback test */
-    rt_kprintf("\n[4/4] UART%d loopback test...\n", port);
-    uart_loopback();
 
     rt_kprintf("\n========================================\n");
-    rt_kprintf("  UART%d Test Completed\n", port);
+    rt_kprintf("  RESULT: %s (Total errors: %d)\n", errors == 0 ? "PASS" : "FAIL", errors);
     rt_kprintf("========================================\n\n");
-}
-
-/**
- * Complete automatic test - main entry point (default to UART0)
- */
-void pxa_uart_basic_test(void)
-{
-    pxa_uart_basic_test_port(0);
 }
 
 #ifdef RT_USING_FINSH
@@ -342,7 +291,7 @@ static void uart(int argc, char **argv)
             rt_kprintf("Usage: uart init <port>\n");
             return;
         }
-        uart_init_internal(atoi(argv[2]));
+        uart_init(argv[2]);
     }
     else if (rt_strcmp(cmd, "send") == 0) {
         uart_send();
@@ -351,27 +300,16 @@ static void uart(int argc, char **argv)
         int timeout = (argc >= 3) ? atoi(argv[2]) : 5000;
         uart_recv(timeout);
     }
-    else if (rt_strcmp(cmd, "baud") == 0) {
-        if (argc < 3) {
-            rt_kprintf("Usage: uart baud <baudrate>\n");
-            return;
-        }
-        uart_baud(atoi(argv[2]));
-    }
-    else if (rt_strcmp(cmd, "baudloop") == 0) {
-        if (argc < 3) {
-            rt_kprintf("Usage: uart baudloop <n>\n");
-            return;
-        }
-        uart_baud_loop(atoi(argv[2]));
-    }
-    else if (rt_strcmp(cmd, "loopback") == 0) {
-        uart_loopback();
-    }
-    else if (rt_strcmp(cmd, "test") == 0) {
-        int port = (argc >= 3) ? atoi(argv[2]) : 0;
-        pxa_uart_basic_test_port(port);
-    }
+	else if (rt_strcmp(cmd, "baud") == 0) {
+		if (argc < 3) {
+			rt_kprintf("Usage: uart baud <baudrate>\n");
+			return;
+		}
+		uart_baud(atoi(argv[2]));
+	}
+	else if (rt_strcmp(cmd, "test") == 0) {
+		pxa_uart_basic_test_port();
+	}
     else {
         rt_kprintf("Unknown command: %s\n", cmd);
         rt_kprintf("Use 'uart' without arguments for help\n");
