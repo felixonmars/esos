@@ -18,6 +18,9 @@ typedef enum {
 
 #define PMUX_AF_SEL_MASK		(0x07)
 
+#define ERR(fmt, ...) \
+	rt_kprintf("[%s:%d %s] " fmt"\n", __FILE__, __LINE__, __func__, ##__VA_ARGS__)
+
 #ifdef RT_USING_FINSH
 
 static inline uint32_t read_reg(uintptr_t addr)
@@ -28,29 +31,47 @@ static inline uint32_t read_reg(uintptr_t addr)
 static int check_pull_type(uint32_t val, pull_type_t pull_type)
 {
 	uint32_t mask;
-	if (!(val & PMUX_PULL_SEL))
+	if (!(val & PMUX_PULL_SEL)) {
+		ERR("PMUX_PULL_SEL unmask: %x", val);
 		return 0;
+	}
 
 	mask = PMUX_PULLDWN << (pull_type - PMUX_PULL_DOWN);
 	if (val & mask)
 		return 1;
 
+	ERR("%s unmask: %x", pull_type == PMUX_PULL_DOWN ? \
+	    "PMUX_PULL_DOWN" : "PMUX_PULL_UP", val);
 	return 0;
 }
 
 static int check_mode(uint32_t val, uint32_t mode)
 {
+	int ret;
+
 	val &= PMUX_AF_SEL_MASK;
 
-	return val == mode;
+	ret = val == mode;
+
+	if (!ret)
+		ERR("actual mode: %d, expected: %d", val, mode);
+
+	return ret;
 }
 
 static int check_drive_strength(uint32_t val, uint32_t strength)
 {
+	int ret;
+
 	val &= PMUX_DRIVE_MASK;
 	val >>= PMUX_DRIVE_SHIFT;
 
-	return val == strength;
+	ret = val == strength;
+
+	if (!ret)
+		ERR("actual strength: %d, expected: %d", val, strength);
+
+	return ret;
 }
 
 static inline int check_all(uint32_t val, pull_type_t pull_type,
