@@ -96,11 +96,11 @@ static int pmux_check_uart0(void)
 {
 	uint32_t tx_val, rx_val;
 
-	tx_val = read_reg(0xd401e0bc);
-	rx_val = read_reg(0xd401e0c0);
+	tx_val = read_reg(0xd401e1e8);
+	rx_val = read_reg(0xd401e1ec);
 
-	return check_all(tx_val, PMUX_PULL_UP, 1, 4) &&
-	       check_all(rx_val, PMUX_PULL_UP, 1, 4);
+	return check_all(tx_val, PMUX_PULL_UP, 4, 8) &&
+	       check_all(rx_val, PMUX_PULL_UP, 4, 8);
 }
 
 static int pmux_test(void)
