@@ -66,30 +66,39 @@ static int pwm_dev_enum(int argc, char *argv[])
     return 0;
 }
 
-/* 获取PWM设备 - 支持参数指定或自动查找 */
+/* 获取PWM设备 - 支持参数指定或全量自动查找 */
 static struct rt_device_pwm *get_pwm_device(const char *device_name)
 {
     struct rt_device_pwm *pwm_dev = RT_NULL;
+    int i;
 
+    /* 定义完整的搜索列表，与枚举函数保持一致 */
+    const char *pwm_names[] = {
+        "rpwm0", "rpwm1", "rpwm2", "rpwm3", "rpwm4",
+        "rpwm5", "rpwm6", "rpwm7", "rpwm8", "rpwm9",
+        "pwm0", "pwm1", "pwm2", "pwm3", "pwm4",
+        "pwm5", "pwm6", "pwm7", "pwm8", "pwm9"
+    };
+
+    /* 1. 如果用户指定了设备名，优先尝试查找指定的 */
     if (device_name != RT_NULL && rt_strlen(device_name) > 0) {
-        /* 使用指定的设备名称 */
         pwm_dev = (struct rt_device_pwm *)rt_device_find(device_name);
         if (pwm_dev != RT_NULL) {
             rt_kprintf("Using specified PWM device: %s\n", device_name);
+            return pwm_dev; /* 找到了就直接返回 */
         } else {
             rt_kprintf("Specified PWM device '%s' not found, trying auto-detection...\n", device_name);
         }
     }
 
+    /* 2. 如果未指定或指定的不存在，则遍历列表自动查找第一个可用的 */
     if (pwm_dev == RT_NULL) {
-        /* 自动查找第一个可用的PWM设备 */
-        pwm_dev = (struct rt_device_pwm *)rt_device_find("rpwm0");
-        if (pwm_dev == RT_NULL) {
-            pwm_dev = (struct rt_device_pwm *)rt_device_find("pwm0");
-        }
-
-        if (pwm_dev != RT_NULL) {
-            rt_kprintf("Auto-detected PWM device found\n");
+        for (i = 0; i < sizeof(pwm_names) / sizeof(pwm_names[0]); i++) {
+            pwm_dev = (struct rt_device_pwm *)rt_device_find(pwm_names[i]);
+            if (pwm_dev != RT_NULL) {
+                rt_kprintf("Auto-detected PWM device found: %s\n", pwm_names[i]);
+                break; /* 找到第一个可用的，跳出循环 */
+            }
         }
     }
 
