@@ -31,6 +31,16 @@ static inline uint32_t read_reg(uintptr_t addr)
 static int check_pull_type(uint32_t val, pull_type_t pull_type)
 {
 	uint32_t mask;
+
+	if (pull_type == PMUX_PULL_DIS) {
+		if (!(val & PMUX_PULLUP) && !(val & PMUX_PULLDWN))
+			return 1;
+
+		ERR("check PMUX_PULL_DIS but pull-up/down is set");
+
+		return 0;
+	}
+
 	if (!(val & PMUX_PULL_SEL)) {
 		ERR("PMUX_PULL_SEL unmask: %x", val);
 		return 0;
