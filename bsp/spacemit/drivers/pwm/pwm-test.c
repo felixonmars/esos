@@ -111,61 +111,74 @@ static int pwm_test_0001(int argc, char *argv[])
     struct rt_device_pwm *pwm_dev;
     struct rt_pwm_configuration config;
     int pass = 1;
-    rt_uint32_t test_periods[] = {50000, 100000, 150000, 200000}; /* 50us, 100us, 150us, 200us */
+    rt_uint32_t test_periods[] = {50000, 100000, 150000, 200000}; 
     int i, ret;
+
+    /* 参数解析 */
     const char *device_name = (argc > 1) ? argv[1] : RT_NULL;
+    rt_uint32_t delay_ms = 100; /* 默认 100ms */
+
+    if (device_name && rt_strcmp(device_name, "watch")) {
+	/* 检查 argv[2] 是否为 "watch" */
+	if (argc > 2 && rt_strcmp(argv[2], "watch") == 0) {
+		delay_ms = 1000;
+	}
+    } else {
+	delay_ms = device_name ? 1000 : delay_ms;
+    }
 
     rt_kprintf("\n");
     rt_kprintf("==========================================\n");
     rt_kprintf("  BSP_ESOS_PWM_0001: Period Setting Test\n");
+    rt_kprintf("  Delay Mode: %d ms\n", delay_ms);
     rt_kprintf("==========================================\n\n");
 
     /* 获取PWM设备 */
     pwm_dev = get_pwm_device(device_name);
     if (pwm_dev == RT_NULL) {
         rt_kprintf("[FAIL] No PWM device available for testing\n");
-        rt_kprintf("==========================================\n\n");
         return -1;
     }
 
     rt_kprintf("Testing PWM period settings...\n\n");
 
     config.channel = PWM_CHANNEL;
-    config.pulse = 25000;  /* 固定占空比为25us */
+    config.pulse = 25000;  /* 固定脉宽 25us */
+
+    /* 初始确保关闭 */
+    rt_pwm_disable(pwm_dev, config.channel);
 
     for (i = 0; i < sizeof(test_periods) / sizeof(test_periods[0]); i++) {
         config.period = test_periods[i];
+        int duty_percent = (config.pulse * 100) / config.period;
 
-        rt_kprintf("[%d] Set period to %d ns (%.2f Hz) ... ",
-                   i + 1, config.period, 1000000000.0 / config.period);
+        rt_kprintf("[%d] Period: %d ns, Pulse: %d ns (Duty: %d%%) ... ",
+                   i + 1, config.period, config.pulse, duty_percent);
 
         ret = rt_pwm_set(pwm_dev, config.channel, config.period, config.pulse);
+
         if (ret == RT_EOK) {
-            rt_kprintf("[OK]\n");
+            ret = rt_pwm_enable(pwm_dev, config.channel);
+            if (ret == RT_EOK) {
+                if (delay_ms >= 1000) {
+                    rt_kprintf("[ON] -> Wait %dms\n", delay_ms);
+                } else {
+                    rt_kprintf("[OK]\n");
+                }
+                rt_thread_mdelay(delay_ms);
+            } else {
+                rt_kprintf("[Enable FAIL] (err=%d)\n", ret);
+                pass = 0;
+            }
         } else {
-            rt_kprintf("[FAIL] (err=%d)\n", ret);
+            rt_kprintf("[Set FAIL] (err=%d)\n", ret);
             pass = 0;
         }
     }
 
-    /* 启用PWM测试实际输出 */
-    rt_kprintf("\n[Test] Enable PWM with 200us period ... ");
-    config.period = TEST_PERIOD_200US;
-    config.pulse = TEST_DUTY_50;
-
-    ret = rt_pwm_set(pwm_dev, config.channel, config.period, config.pulse);
-    if (ret == RT_EOK) {
-        ret = rt_pwm_enable(pwm_dev, config.channel);
-    }
-
-    if (ret == RT_EOK) {
-        rt_kprintf("[OK]\n");
-        rt_thread_mdelay(100);  /* 让PWM运行一小段时间 */
-        rt_pwm_disable(pwm_dev, config.channel);
-    } else {
-        rt_kprintf("[FAIL] (err=%d)\n", ret);
-        pass = 0;
-    }
+    /* 结束操作：归零并关闭 */
+    rt_pwm_set(pwm_dev, config.channel, config.period, 0);
+    rt_pwm_disable(pwm_dev, config.channel);
 
     rt_kprintf("\n[Result] Period Setting Test: %s\n", pass ? "[PASS]" : "[FAIL]");
     rt_kprintf("==========================================\n\n");
@@ -178,60 +191,78 @@ static int pwm_test_0002(int argc, char *argv[])
     struct rt_device_pwm *pwm_dev;
     struct rt_pwm_configuration config;
     int pass = 1;
-    rt_uint32_t test_duties[] = {0, 25000, 50000, 75000, 100000}; /* 0%, 25%, 50%, 75%, 100% of 100us */
+    rt_uint32_t test_duties[] = {0, 25000, 50000, 75000, 100000}; 
     int i, ret;
+
+    /* 参数解析 */
     const char *device_name = (argc > 1) ? argv[1] : RT_NULL;
+    rt_uint32_t delay_ms = 100; /* 默认 100ms */
+
+    if (device_name && rt_strcmp(device_name, "watch")) {
+	/* 检查 argv[2] 是否为 "watch" */
+	if (argc > 2 && rt_strcmp(argv[2], "watch") == 0) {
+		delay_ms = 1000;
+	}
+    } else {
+	delay_ms = device_name ? 1000 : delay_ms;
+    }
 
     rt_kprintf("\n");
     rt_kprintf("==========================================\n");
     rt_kprintf("  BSP_ESOS_PWM_0002: Duty Cycle Setting Test\n");
+    rt_kprintf("  Delay Mode: %d ms\n", delay_ms);
     rt_kprintf("==========================================\n\n");
 
     /* 获取PWM设备 */
     pwm_dev = get_pwm_device(device_name);
     if (pwm_dev == RT_NULL) {
         rt_kprintf("[FAIL] No PWM device available for testing\n");
-        rt_kprintf("==========================================\n\n");
         return -1;
     }
 
-    rt_kprintf("Testing PWM duty cycle settings (Period = 100us)...\n\n");
+    rt_kprintf("Testing PWM duty cycle settings (Period = 100us)...\n");
+    if (delay_ms > 100) {
+        rt_kprintf("Please watch the LED brightness change.\n\n");
+    } else {
+        rt_kprintf("\n");
+    }
 
     config.channel = PWM_CHANNEL;
-    config.period = TEST_PERIOD_100US;
+    config.period = TEST_PERIOD_100US; 
+
+    /* 初始确保关闭 */
+    rt_pwm_disable(pwm_dev, config.channel);
 
     for (i = 0; i < sizeof(test_duties) / sizeof(test_duties[0]); i++) {
         config.pulse = test_duties[i];
 
-        rt_kprintf("[%d] Set duty to %d ns (%.1f%%) ... ",
-                   i + 1, config.pulse, (config.pulse * 100.0) / config.period);
+        rt_kprintf("[%d] Set duty to %d ns (%d%%) ... ",
+                   i + 1, config.pulse, (config.pulse * 100) / config.period);
 
         ret = rt_pwm_set(pwm_dev, config.channel, config.period, config.pulse);
+
         if (ret == RT_EOK) {
-            rt_kprintf("[OK]\n");
+            ret = rt_pwm_enable(pwm_dev, config.channel);
+            if (ret == RT_EOK) {
+                if (delay_ms >= 1000) {
+                    rt_kprintf("[ON] -> Wait %dms\n", delay_ms);
+                } else {
+                    rt_kprintf("[OK]\n");
+                }
+                rt_thread_mdelay(delay_ms);
+            } else {
+                rt_kprintf("[Enable FAIL] (err=%d)\n", ret);
+                pass = 0;
+            }
         } else {
-            rt_kprintf("[FAIL] (err=%d)\n", ret);
+            rt_kprintf("[Set FAIL] (err=%d)\n", ret);
             pass = 0;
         }
     }
 
-    /* 启用PWM测试实际输出 - 50% 占空比 */
-    rt_kprintf("\n[Test] Enable PWM with 50%% duty cycle ... ");
-    config.pulse = TEST_DUTY_50;
-
-    ret = rt_pwm_set(pwm_dev, config.channel, config.period, config.pulse);
-    if (ret == RT_EOK) {
-        ret = rt_pwm_enable(pwm_dev, config.channel);
-    }
-
-    if (ret == RT_EOK) {
-        rt_kprintf("[OK]\n");
-        rt_thread_mdelay(100);  /* 让PWM运行一小段时间 */
-        rt_pwm_disable(pwm_dev, config.channel);
-    } else {
-        rt_kprintf("[FAIL] (err=%d)\n", ret);
-        pass = 0;
-    }
+    /* 结束操作：归零并关闭 */
+    rt_pwm_set(pwm_dev, config.channel, config.period, 0);
+    rt_pwm_disable(pwm_dev, config.channel);
 
     rt_kprintf("\n[Result] Duty Cycle Setting Test: %s\n", pass ? "[PASS]" : "[FAIL]");
     rt_kprintf("==========================================\n\n");
@@ -310,7 +341,7 @@ static int pwm_test_all(int argc, char *argv[])
     rt_kprintf("========================================\n");
 
     /* 依次运行所有测试 */
-    char *test_argv[] = {"pwm_test_0001", (char*)device_name};
+    char *test_argv[] = {"pwm_test_0001", (char*)device_name, argv[2]};
     int test_argc = device_name ? 2 : 1;
 
     pwm_test_0001(test_argc, test_argv);
