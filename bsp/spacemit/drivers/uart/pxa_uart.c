@@ -9,12 +9,40 @@
 #include "drv_uart.h"
 #include "pxa_uart.h"
 
+#define UART_LOW_SPEED_CLK_RATE  14480000  /* 14.48 MHz */
+
 /*
  * setting config may be accessed when the UART is not
  * busy(USR[0]=0) and the DLAB bit(LCR[7]) is set.
  */
 
 static pxa_uart_priv_t *uart_instance;
+
+
+static rt_uint32_t pxa_uart_match_target_clk_rate(rt_uint32_t baud)
+{
+    switch (baud) {
+    case 9600:
+    case 19200:
+    case 38400:
+    case 57600:
+    case 115200:
+    case 230400:
+    case 460800:
+        return UART_LOW_SPEED_CLK_RATE;
+
+    case 921600:
+    case 1843200:
+    case 3686400:
+        return baud * 16;
+    default:
+        if (baud <= 460800) {
+            return UART_LOW_SPEED_CLK_RATE;
+        } else {
+            return baud * 16;
+        }
+    }
+}
 
 /**
   \brief       set the bautrate of uart.
@@ -26,6 +54,13 @@ rt_int32_t pxa_uart_config_baudrate(uart_handle_t handle, rt_uint32_t baud)
 {
     pxa_uart_priv_t *uart_priv = handle;
     pxa_uart_reg_t *addr = (pxa_uart_reg_t *)(uart_priv->base);
+    long rate;
+    int ret;
+
+    rate = pxa_uart_match_target_clk_rate(baud);
+    ret = clk_set_rate(uart_priv->clk, rate);
+    if (ret)
+        return -RT_EINVAL;
 
     /* baudrate=(seriak clock freq)/(16*divisor); algorithm :rounding*/
     rt_uint32_t divisor = ((clk_get_rate(uart_priv->clk) * 10) / baud) >> 4;
