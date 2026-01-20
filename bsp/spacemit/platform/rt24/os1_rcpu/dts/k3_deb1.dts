@@ -76,15 +76,15 @@
 };
 
 &eth0 {
-	phy-reset-pin = <80>;
-	max-speed = <100>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&rgmac0_cfg>;
+	phy-reset-pin = <75>;
+	max-speed = <1000>;
 	clk-tuning-enable = <1>;
-	clk-tuning-by-reg = <1>;
-	tx-phase = <2>;
-	rx-phase = <0>;
-
+	clk-tuning-by-delayline = <1>;
+	tx-phase = <51>;
+	rx-phase = <54>;
 	phy-mode = "rgmii";
-	phy-addr = <0>;
 	phy-handle = <&rgmii>;
 
 	status = "okay";
@@ -94,7 +94,7 @@
 		#size-cells = <0>;
 
 		rgmii: phy@0 {
-			reg = <0x0>;
+			reg = <0x1>;
 		};
 	};
 };
