@@ -420,7 +420,6 @@
           K3_PADCONF(GPIO_72, (MUX_MODE1 | EDGE_NONE | PULL_DIS | PAD_DS8))    /* rgmac0 mdio */
           K3_PADCONF(GPIO_73, (MUX_MODE1 | EDGE_NONE | PULL_DIS | PAD_DS8))    /* rgmac0 int */
           K3_PADCONF(GPIO_74, (MUX_MODE1 | EDGE_NONE | PULL_DIS | PAD_DS8))    /* rgmac0 clk ref */
-          K3_PADCONF(GPIO_75, (MUX_MODE1 | EDGE_NONE | PULL_DIS | PAD_DS8))    /* rgmac0 pps */
       >;
   };
 
