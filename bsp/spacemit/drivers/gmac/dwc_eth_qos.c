@@ -13,6 +13,8 @@
 #include <rtdevice.h>
 #include <dtb_node.h>
 #include <rthw.h>
+#include <clint.h>
+
 #include "dwc_eth_qos.h"
 
 void print_packet(const char *title, const rt_uint8_t *packet, int length)
@@ -279,7 +281,6 @@ static rt_err_t eqos_adjust_link(void *netdev)
 #ifdef RT_USING_ETHERCAT
 		ecdev_set_link(eqos->ecdev, 0);
 #endif
-		rt_kprintf("No link\n");
 		return RT_EOK;
 	}
 
@@ -1381,19 +1382,30 @@ rt_err_t parse_mac_address(struct eqos_device *eqos)
 	struct eth_pdata *plat = eqos->plat_data;
 	int mac_len;
 	const void *mac;
+	rt_uint64_t seed;
 
 	mac = dtb_node_get_property(eqos->node, "mac-address", &mac_len);
-	if (!mac) {
-		rt_kprintf("Mac address not found for node\n");
+	if (!mac)
 		return -RT_EINVAL;
+
+	if (mac_len == ETH_ALEN && is_valid_ethaddr((const rt_uint8_t *)mac)) {
+		rt_memcpy(plat->enetaddr, mac, ETH_ALEN);
+		return RT_EOK;
 	}
 
-	if (mac_len != ETH_ALEN || mac_is_zero(mac) || mac_is_broadcast(mac)) {
-		rt_kprintf("Invalid mac address for node\n");
-		return -RT_EINVAL;
-	}
+	seed = SysTimer_GetLoadValue();
 
-	rt_memcpy(plat->enetaddr, mac, ETH_ALEN);
+	plat->enetaddr[0] = 0xFE;
+	plat->enetaddr[1] = 0xFE;
+	plat->enetaddr[2] = 0xFE;
+	plat->enetaddr[3] = (rt_uint8_t)((seed >> 16) & 0xFF);
+	plat->enetaddr[4] = (rt_uint8_t)((seed >> 8) & 0xFF);
+	plat->enetaddr[5] = (rt_uint8_t)(seed & 0xFF);
+
+	rt_kprintf("%s: invalid mac address in dts. ", eqos->node_name);
+	rt_kprintf("Use random mac %02X:%02X:%02X:%02X:%02X:%02X\n",
+		plat->enetaddr[0], plat->enetaddr[1], plat->enetaddr[2],
+		plat->enetaddr[3], plat->enetaddr[4], plat->enetaddr[5]);
 
 	return RT_EOK;
 }
@@ -1449,6 +1461,8 @@ static int eqos_probe(void)
 
 		rt_snprintf(eqos->name, RT_NAME_MAX - 1, "eqos%d", eqos_index);
 		eqos_index++;
+
+		pinctrl_apply_default(node);
 
 		ret = parse_mac_address(eqos);
 		if (ret < 0) {

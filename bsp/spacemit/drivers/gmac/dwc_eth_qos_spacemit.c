@@ -67,9 +67,6 @@ static inline void *dev_get_plat_priv(struct eqos_device *eqos)
 /**
  * K3 SoC-specific macros/ops
  */
-#define EMAC_AXI_CLK_ENABLE		BIT(0)
-#define EMAC_AXI_CLK_RESET		BIT(1)
-
 #define PHY_INTF_RGMII			BIT(3)
 #define PHY_INTF_MII			BIT(4)
 
@@ -78,10 +75,6 @@ static inline void *dev_get_plat_priv(struct eqos_device *eqos)
 
 /* only valid for rmii, invert rx clk */
 #define RMII_RX_CLK_SEL			BIT(7)
-
-
-#define PHY_IRQ_EN			BIT(12)
-#define AXI_SINGLE_ID			BIT(13)
 
 #define RMII_TX_PHASE_OFFSET		(16)
 #define RMII_TX_PHASE_MASK		RT_GENMASK(18, 16)
@@ -94,14 +87,10 @@ static inline void *dev_get_plat_priv(struct eqos_device *eqos)
 #define RGMII_RX_PHASE_MASK		RT_GENMASK(22, 20)
 
 #define EMAC_RX_DLINE_EN		BIT(0)
-#define EMAC_RX_DLINE_STEP_OFFSET	(4)
-#define EMAC_RX_DLINE_STEP_MASK		RT_GENMASK(5, 4)
 #define EMAC_RX_DLINE_CODE_OFFSET	(8)
 #define EMAC_RX_DLINE_CODE_MASK		RT_GENMASK(15, 8)
 
 #define EMAC_TX_DLINE_EN		BIT(16)
-#define EMAC_TX_DLINE_STEP_OFFSET	(20)
-#define EMAC_TX_DLINE_STEP_MASK		RT_GENMASK(21, 20)
 #define EMAC_TX_DLINE_CODE_OFFSET	(24)
 #define EMAC_TX_DLINE_CODE_MASK		RT_GENMASK(31, 24)
 
@@ -319,8 +308,6 @@ static rt_err_t k3_eqos_plat_probe(struct eqos_device *eqos)
 	struct dtb_node *node = eqos->node;
 	struct spacemit_plat_data *priv;
 	rt_uint32_t ctrl_reg, dline_reg;
-	/* Use default MAC; overridden if DTS provides a valid address */
-	unsigned char default_mac[6] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55};
 	rt_err_t ret;
 
 	priv = rt_calloc(1, sizeof(*priv));
@@ -350,8 +337,6 @@ static rt_err_t k3_eqos_plat_probe(struct eqos_device *eqos)
 			   priv->tx_clk_from_soc ? "soc" : "phy");
 		goto err_free_pdata;
 	}
-
-	rt_memcpy(plat->enetaddr, default_mac, ETH_ALEN);
 
 	/* PHY reset pin (GPIO ID or abstracted integer) */
 	ret = dtb_node_read_u32(node, "phy-reset-pin", &priv->phy_reset_gpio);
@@ -434,12 +419,6 @@ static rt_err_t k3_eqos_plat_probe(struct eqos_device *eqos)
 			rt_kprintf("%s: clk_prepare_enable(phy_clk) failed\n", eqos->node_name);
 			goto err_free_phy_clk;
 		}
-	}
-
-	ret = k3_eqos_phy_reset(priv);
-	if (ret) {
-		rt_kprintf("%s: k3_eqos_phy_reset() failed\n", eqos->node_name);
-		goto err_disable_phy_clk;
 	}
 
 	k3_eqos_iface_config(priv);
@@ -615,7 +594,7 @@ static struct eqos_priv_ops k3_eqos_ops = {
 struct eqos_config k3_eqos_config = {
 	.reg_access_always_ok	= RT_FALSE,
 	.mdio_wait		= 10,
-	.swr_wait		= 50,
+	.swr_wait		= 200,
 	.config_mac		= EQOS_MAC_RXQ_CTRL0_RXQ0EN_ENABLED_DCB,
 	.config_mac_mdio	= EQOS_MAC_MDIO_ADDRESS_CR_250_300,
 	.axi_bus_width		= EQOS_AXI_WIDTH_64,
