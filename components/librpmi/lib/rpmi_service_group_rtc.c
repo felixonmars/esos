@@ -291,7 +291,7 @@ static struct rpmi_service rpmi_rtc_services[RPMI_RTC_SRV_MAX_COUNT] = {
 	},
 	[RPMI_RTC_SRV_GET_TIME] = {
 		.service_id = RPMI_RTC_SRV_GET_TIME,
-		.min_a2p_request_datalen = 28,
+		.min_a2p_request_datalen = 4,
 		.process_a2p_request = rpmi_rtc_sg_get_time,
 	},
 	[RPMI_RTC_SRV_SET_ALARM] = {
@@ -301,7 +301,7 @@ static struct rpmi_service rpmi_rtc_services[RPMI_RTC_SRV_MAX_COUNT] = {
 	},
 	[RPMI_RTC_SRV_GET_ALARM] = {
 		.service_id = RPMI_RTC_SRV_GET_ALARM,
-		.min_a2p_request_datalen = 28,
+		.min_a2p_request_datalen = 4,
 		.process_a2p_request = rpmi_rtc_sg_get_alarm,
 	},
 	[RPMI_RTC_SRV_ALARM_GET_EN] = {
