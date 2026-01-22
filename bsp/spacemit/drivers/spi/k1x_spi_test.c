@@ -38,7 +38,7 @@ static int test_routine(struct rt_spi_device *dev)
 	tmp = (rt_uint8_t *)rt_malloc(sizeof(rt_uint8_t) * 1024);
 
 	// get jedec id
-	if (rt_spi_send_then_recv(dev, send, 1, recv, 3) == RT_EOK)
+	if (rt_spi_send_then_recv(dev, send, 1, recv, 6) == RT_EOK)
 	{
 		rt_kprintf("jedec id: %02x %02x %02x\n", recv[0], recv[1], recv[2]);
 	}
@@ -49,12 +49,24 @@ static int test_routine(struct rt_spi_device *dev)
 		return result;
 	}
 
+	// write enable
+	send[0] = 0x06;
+	if (rt_spi_send_then_recv(dev, send, 1, recv, 0) == RT_EOK)
+	{
+		result = RT_EOK;
+	}
+	else
+	{
+		rt_kprintf("write enable error\n");
+		result = -RT_ERROR;
+	}
+
 	// erase
 	send[0] = 0x20;
 	send[1] = 0x00;
 	send[2] = 0x00;
 	send[3] = 0x00;
-	if (rt_spi_transfer(dev, send, RT_NULL, 4) == RT_EOK)
+	if (rt_spi_send_then_recv(dev, send, 4, recv, 0) == RT_EOK)
 	{
 		result = RT_EOK;
 	}
@@ -63,11 +75,46 @@ static int test_routine(struct rt_spi_device *dev)
 		rt_kprintf("erase error\n");
 		result = -RT_ERROR;
 	}
-	rt_thread_mdelay(200);
+	rt_thread_mdelay(1000);
+
+	// write disable
+	send[0] = 0x04;
+	if (rt_spi_send_then_recv(dev, send, 1, recv, 0) == RT_EOK)
+	{
+		result = RT_EOK;
+	}
+	else
+	{
+		rt_kprintf("write disable error\n");
+		result = -RT_ERROR;
+	}
+	//read
+	rt_memset(tmp, 0, sizeof(rt_uint8_t) * 1024);
+	send[0] = 0x03;
+	send[1] = 0x00;
+	send[2] = 0x00;
+	send[3] = 0x00;
+	if (rt_spi_send_then_recv(dev, send, 4, tmp, 256) == RT_EOK)
+	{
+		result = RT_EOK;
+	}
+	else
+	{
+		rt_kprintf("read data error\n");
+		result = -RT_ERROR;
+	}
+
+	rt_kprintf("erase result:\n");
+	for (int i = 0; i < 256; i++) {
+		if (i > 0 && i % 24 == 0)
+			rt_kprintf("\n");
+		rt_kprintf("%0x", tmp[i]);
+	}
+	rt_kprintf("\n");
 
 	//write enable
 	send[0] = 0x06;
-	if (rt_spi_transfer(dev, send, RT_NULL, 1))
+	if (rt_spi_send_then_recv(dev, send, 1, tmp, 0) == RT_EOK)
 	{
 		result = RT_EOK;
 	}
@@ -85,7 +132,7 @@ static int test_routine(struct rt_spi_device *dev)
 	tmp[2] = 0x00;
 	tmp[3] = 0x00;
 
-	if (rt_spi_transfer(dev, tmp, RT_NULL, 200))
+	if (rt_spi_send_then_recv(dev, tmp, 200, recv, 0) == RT_EOK)
 	{
 		result = RT_EOK;
 	}
@@ -94,10 +141,11 @@ static int test_routine(struct rt_spi_device *dev)
 		rt_kprintf("write data error\n");
 		result = -RT_ERROR;
 	}
+	rt_thread_mdelay(1000);
 
 	// write disable
 	tmp[0] = 0x04;
-	rt_spi_transfer(dev, tmp, RT_NULL, 1);
+	rt_spi_send_then_recv(dev, tmp, 1, recv, 0);
 
 	//read
 	rt_memset(tmp, 0, sizeof(rt_uint8_t) * 1024);
