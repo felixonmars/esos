@@ -11,6 +11,7 @@
 #include <drivers/dma.h>
 #include <ipc/workqueue.h>
 #include "k1x_spi.h"
+#include <drivers/pinctrl/pinctrl.h>
 
 #define TIMEOUT 		100000
 
@@ -532,6 +533,8 @@ static rt_int32_t spacemit_spi_probe(void)
 			/* check the status */
 			if (!dtb_node_device_is_available(compatible_node))
 				continue;
+
+			pinctrl_apply_default(compatible_node);
 
 			spacemit_spi = (struct k1x_spi *)rt_calloc(1, sizeof(struct k1x_spi));
 			if (!spacemit_spi) {
