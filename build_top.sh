@@ -6,7 +6,9 @@ export TOP_BSP_DIR="${TOP_DIR}/bsp/spacemit"
 export TOP_BOARD_DIR="${TOP_BSP_DIR}/platform"
 export TOP_ESOS_BASE_DEFCONF="${TOP_BSP_DIR}/.esos_top.config"
 export TOP_ESOS_DEFCONF="${TOP_BSP_DIR}/.config"
-export TOP_OUTPUT_DIR="${TOP_DIR}/../output/esos"
+if [ -z "${TOP_OUTPUT_DIR}" ]; then
+	export TOP_OUTPUT_DIR="${TOP_DIR}/../output/esos"
+fi
 
 TARGET_CHIP=
 TARGET_BOARD=
@@ -192,10 +194,9 @@ function create_esos_itb()
 	mk_info "ITB created: ${TOP_BSP_DIR}/${itb_file}"
 
 	# Copy ITB to output directory
-	OUTPUT_DIR="${TOP_DIR}/../output/esos"
+	OUTPUT_DIR="${TOP_OUTPUT_DIR}"
 	mkdir -p "${OUTPUT_DIR}"
 	cp ${TOP_BSP_DIR}/${itb_file} "${OUTPUT_DIR}/"
-	cp ${TOP_BSP_DIR}/${itb_file} "${TOP_DIR}/../output/"
 	mk_info "ITB copied to: ${OUTPUT_DIR}/${itb_file}"
 
 	cd -

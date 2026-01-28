@@ -28,7 +28,7 @@ override_dh_auto_configure:
 override_dh_auto_build:
 	# Use the build.sh script to build the project
 	cp $(TOP_DIR)/debian/lib/* /usr/lib/gcc/riscv64-unknown-elf/14.2.0/
-	RTT_EXEC_PATH=/usr/bin $(TOP_DIR)/build_top.sh
+	TOP_OUTPUT_DIR=$(TOP_DIR)/output/esos RTT_EXEC_PATH=/usr/bin $(TOP_DIR)/build_top.sh
 
 override_dh_auto_clean:
 	# Clean build artifacts
@@ -38,3 +38,4 @@ override_dh_auto_clean:
 	rm -f $(TOP_ESOS_BASE_DEFCONF)
 	rm -f $(TOP_BSP_DIR)/*.itb $(TOP_BSP_DIR)/*.elf $(TOP_BSP_DIR)/*.bin
 	rm -f $(TOP_BSP_DIR)/platform/rt24/*.dtb
+	rm -rf $(TOP_DIR)/output/esos
