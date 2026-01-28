@@ -59,16 +59,19 @@ configure)
     if [ -n $ROOT ]; then
         case $ROOT in
         "/dev/mmcblk0"*)
-            ESOS_MOUNT="/dev/mmcblk0p1"
-            ESOS_COPY_MODE=1
+            ESOS=/dev/mmcblk0
+            # 以KB为单位
+            ESOS_SEEK=4096
             ;;
         "/dev/mmcblk2"*)
-            ESOS_MOUNT="/dev/mmcblk2p1"
-            ESOS_COPY_MODE=1
+            ESOS=/dev/mmcblk2
+            # 以KB为单位
+            ESOS_SEEK=4096
             ;;
         "/dev/sda"*)
-            ESOS_MOUNT="/dev/sda1"
-            ESOS_COPY_MODE=1
+            ESOS=/dev/sda
+            # 以KB为单位
+            ESOS_SEEK=4096
             ;;
         "/dev/nvme0n1"*)
             if [ -e "/dev/mtdblock4" ]; then
@@ -99,12 +102,7 @@ configure)
     fi
 
     # 待检查文件列表
-    files="/usr/lib/riscv64-linux-gnu/esos/esos.itb"
-    if [ -n "$ESOS_COPY_MODE" ]; then
-        files="$files $ESOS_MOUNT"
-    else
-        files="$files $ESOS"
-    fi
+    files="/usr/lib/riscv64-linux-gnu/esos/esos.itb $ESOS"
     for file in $files; do
         if [ ! -e "$file" ]; then
             # 任意不存在则退出
@@ -115,18 +113,7 @@ configure)
 
     # 此前已经做了所有检查
     set -x
-    if [ -n "$ESOS_COPY_MODE" ]; then
-        # 文件复制模式：挂载分区并复制文件
-        mkdir -p /mnt/esos-install
-        mount $ESOS_MOUNT /mnt/esos-install
-        cp /usr/lib/riscv64-linux-gnu/esos/esos.itb /mnt/esos-install/esos.itb
-        sync
-        umount /mnt/esos-install
-        rmdir /mnt/esos-install
-    else
-        # 直接写入模式
-        dd if=/usr/lib/riscv64-linux-gnu/esos/esos.itb of=$ESOS seek=$ESOS_SEEK bs=1K && sync
-    fi
+    dd if=/usr/lib/riscv64-linux-gnu/esos/esos.itb of=$ESOS seek=$ESOS_SEEK bs=1K && sync
     set +x
     ;;
 esac
