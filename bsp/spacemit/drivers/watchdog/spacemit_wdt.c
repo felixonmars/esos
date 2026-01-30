@@ -26,7 +26,7 @@
 #define MPMU_APRR		(0x1020)
 #define MPMU_APRR_WDTR		(1 << 4)
 #define MPMU_ARSR		(0x1028)
-#define MPMU_ARSR_SWR_MASK	(0x3f << 8)
+#define MPMU_ARSR_SWR_MASK	(0xf << 14)
 
 struct spacemit_wdt {
 	rt_watchdog_t dev;
@@ -151,7 +151,7 @@ static void spacemit_wdt_start(struct spacemit_wdt *chip)
 static rt_uint32_t spacemit_wdt_get_timeleft(struct spacemit_wdt *chip)
 {
 	rt_uint32_t ret = spacemit_wdt_read(chip, WDT_WVR);
-	ret = (chip->timeout << DEFAULT_SHIFT - ret) >> 8;
+	ret = ((chip->timeout << DEFAULT_SHIFT) - ret) >> 8;
 	return ret;
 }
 
