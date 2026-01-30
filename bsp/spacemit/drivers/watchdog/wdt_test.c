@@ -10,7 +10,7 @@
 #include <rtdevice.h>
 #include <drivers/watchdog.h>
 
-#define TEST_WDT	"k1x-wdt"
+#define TEST_WDT	"k3-wdt"
 
 static void watchdog_ping_test(void)
 {
