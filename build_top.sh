@@ -190,7 +190,11 @@ function create_esos_itb()
 	# Generate ITB using mkimage (run from TOP_DIR for correct relative paths in ITS)
 	cd ${TOP_DIR}
 
-	mkimage -f ${its_path} ${TOP_BSP_DIR}/${itb_file}
+	local its_work="${TOP_DIR}/.esos_${TOP_TARGET_CHIP}.its"
+	sed "s#../output/esos#${TOP_OUTPUT_DIR}#g" "${its_path}" > "${its_work}"
+
+	mkimage -f "${its_work}" ${TOP_BSP_DIR}/${itb_file}
+	rm -f "${its_work}"
 	mk_info "ITB created: ${TOP_BSP_DIR}/${itb_file}"
 
 	# Copy ITB to output directory
