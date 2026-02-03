@@ -29,6 +29,10 @@
 	status = "okay";
 };
 
+&pwr_gpio {
+    status = "okay";
+};
+
 &uart0 {
 	status = "disabled";
 };
