@@ -42,6 +42,22 @@
 	status = "okay";
 };
 
+&rdma {
+	status = "disabled";
+};
+
+&ri2c0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&ri2c0_3_cfg>;
+	status = "disabled";
+};
+
+&ri2c1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&ri2c1_1_cfg>;
+	status = "disabled";
+};
+
 &mailbox3 {
 	status = "disabled";
 };
