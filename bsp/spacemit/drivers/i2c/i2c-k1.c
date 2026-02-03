@@ -939,6 +939,7 @@ static int spacemit_i2c_probe(void)
 			/* check the status */
 			if (!dtb_node_device_is_available(compatible_node))
 				continue;
+			pinctrl_apply_default(compatible_node);
 			spacemit_i2c = (struct spacemit_i2c_dev *)rt_calloc(1, sizeof(struct spacemit_i2c_dev));
 			if (!spacemit_i2c) {
 				rt_kprintf("%s:%d, calloc failed\n", __func__, __LINE__);
