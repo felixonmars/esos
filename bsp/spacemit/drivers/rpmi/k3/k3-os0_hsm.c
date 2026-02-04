@@ -484,7 +484,7 @@ static void k3_hsm_hart_start_finalize(void* priv,
 			rt_sem_take(config->sem_exit2, RT_WAITING_FOREVER);
 #else
 			clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C2_M2_INT_EN_REG;
-			__m2_exit(clx_m2_lp_ctl);
+			/* __m2_exit(clx_m2_lp_ctl); */
 #endif
 		} else {
 #ifdef USING_INTERRUPT_TO_TRIGGER_STATE_TRANSITION_OF_CLUSTER
@@ -546,7 +546,7 @@ static void k3_hsm_hart_stop_finalize(void* priv, rpmi_uint32_t hart_index)
 			rt_sem_take(config->sem_enter2, RT_WAITING_FOREVER);
 #else
 			clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C1_M2_INT_EN_REG;
-			__m2_enter(clx_m2_lp_ctl);
+			/* __m2_enter(clx_m2_lp_ctl); */
 #endif
 		} else {
 #ifdef USING_INTERRUPT_TO_TRIGGER_STATE_TRANSITION_OF_CLUSTER
