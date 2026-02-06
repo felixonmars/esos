@@ -144,6 +144,13 @@
       >;
   };
 
+  ri2c2_cfg: ri2c2-0-cfg {
+      pinctrl-single,pins = <
+          K3_PADCONF(PWR_SCL, (MUX_MODE1 | EDGE_NONE | PULL_UP | PAD_DS8))   /* ri2c2 scl */
+          K3_PADCONF(PWR_SDA, (MUX_MODE1 | EDGE_NONE | PULL_UP | PAD_DS8))   /* ri2c2 sda */
+      >;
+  };
+
   rpwm0_0_cfg: rpwm0-0-cfg {
       pinctrl-single,pins = <
           K3_PADCONF(GPIO_15, (MUX_MODE3 | EDGE_NONE | PULL_UP | PAD_DS8))    /* rpwm0 */
