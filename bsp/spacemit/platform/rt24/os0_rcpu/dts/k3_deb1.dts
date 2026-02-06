@@ -68,6 +68,8 @@
 };
 
 &ri2c2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&ri2c2_cfg>;
 	status = "okay";
 };
 
