@@ -598,11 +598,9 @@ static rt_int32_t spacemit_spi_probe(void)
 					spacemit_spi->support_dma = 0;
 			}
 
-			if (!spacemit_spi->support_dma) {
-				rt_hw_interrupt_install(spacemit_spi->irq, spacemit_spi_int_handler,
-					(void *)spacemit_spi, "rspi0-irq");
-				rt_hw_interrupt_umask(spacemit_spi->irq);
-			}
+			rt_hw_interrupt_install(spacemit_spi->irq, spacemit_spi_int_handler,
+						(void *)spacemit_spi, "rspi0-irq");
+			rt_hw_interrupt_umask(spacemit_spi->irq);
 
 			/* current default settings */
 			writel(0, spacemit_spi->base + REG_SSP_TOP_CTRL);
