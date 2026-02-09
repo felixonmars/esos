@@ -11,6 +11,12 @@
 
 static int rt_hw_spi_flash_init(void)
 {
+	if (rt_device_find("rspi00") != RT_NULL)
+	{
+		rt_kprintf("SPI device rspi00 already exists.\n");
+		return RT_EOK;
+	}
+
 	struct rt_spi_device *spi_device = RT_NULL;
 
 	spi_device = (struct rt_spi_device *)rt_malloc(sizeof(struct rt_spi_device));
