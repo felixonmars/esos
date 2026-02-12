@@ -26,8 +26,8 @@ static struct dtb_compatible_array __k1_compatible_sub[] = {
 	{ .compatible = "k3-os0-rpmi-domain", .data = (void *)&rpmi_domain_func },
 	{ .compatible = "k3-os0-rpmi-hsm", .data = (void *)&rpmi_hsm_func },
 	{ .compatible = "k3-os0-rpmi-rtc", .data = (void *)&rpmi_rtc_func },
-	{ .compatible = "k3-os0-rpmi-pwrkey", .data = (void *)&rpmi_pwrkey_func },
 	{ .compatible = "k3-os0-rpmi-sysreset", .data = (void *)&rpmi_sysreset_func },
+	{ .compatible = "k3-os0-rpmi-pwrkey", .data = (void *)&rpmi_pwrkey_func },
 	{ .compatible = "k3-os0-rpmi-msi", .data = (void *)&rpmi_msi_func },
 	{},
 };
