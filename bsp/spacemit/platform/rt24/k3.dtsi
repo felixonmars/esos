@@ -782,7 +782,7 @@
 			rpmi_sysreset0: rpmi-sysreset@18 {
 				compatible = "k3-os0-rpmi-sysreset";
 				reg = <0x0 0x0>;
-				status = "disabled";
+				status = "okay";
 			};
 		};
 
