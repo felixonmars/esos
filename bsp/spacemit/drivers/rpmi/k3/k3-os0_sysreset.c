@@ -64,7 +64,7 @@ static rt_int32_t _k3_os0_sysreset_init(void *priv)
 	return 0;
 }
 
-static void k3_os0_sysreset_soft_reset(void)
+static void k3_os0_sysreset_soft_rst_sd(rpmi_uint32_t sysreset_type)
 {
 	struct rt_i2c_msg msgs[2];
 	rt_uint8_t send_buf[2];
@@ -93,7 +93,8 @@ static void k3_os0_sysreset_soft_reset(void)
 	}
 
 	send_buf[0] = P1_REG_PWR_CTRL2_ADDR;
-	send_buf[1] |= P1_REG_PWR_CTRL2_RST;
+	send_buf[1] |= (sysreset_type == RPMI_SYSRST_TYPE_SHUTDOWN) ?
+		       P1_REG_PWR_CTRL2_SD : P1_REG_PWR_CTRL2_RST;
 	msgs[0].addr = (rt_uint8_t)i2c_addr;
 	msgs[0].flags = RT_I2C_WR;
 	msgs[0].buf = send_buf;
@@ -111,6 +112,10 @@ static inline bool k3_sysreset_is_reboot(rpmi_uint32_t sysreset_type)
 		sysreset_type == RPMI_SYSRST_TYPE_WARM_REBOOT);
 }
 
+static inline bool k3_sys_reset_is_shutdown(rpmi_uint32_t sysreset_type)
+{
+	return (sysreset_type == RPMI_SYSRST_TYPE_SHUTDOWN);
+}
 static void k3_os0_system_reset(void *priv, rpmi_uint32_t sysreset_type)
 {
 	volatile rt_uint8_t val = 0;
@@ -118,6 +123,8 @@ static void k3_os0_system_reset(void *priv, rpmi_uint32_t sysreset_type)
 	rt_uint8_t send_buf[2];
 
 	if (k3_sysreset_is_reboot(sysreset_type)) {
+		/* read from share memory */
+		/* to decide perform fastboot reboot or normal reboot */
 		asm volatile("fence rw, rw");
 		val = *((volatile rt_uint8_t*)LISTEN_ADDR);
 		if (val == FLAG_FASTBOOT) {
@@ -137,7 +144,12 @@ static void k3_os0_system_reset(void *priv, rpmi_uint32_t sysreset_type)
 		} else {
 			rt_kprintf("k3 sysreset: normal reboot\n");
 		}
-		k3_os0_sysreset_soft_reset();
+		k3_os0_sysreset_soft_rst_sd(sysreset_type);
+	} else if (k3_sys_reset_is_shutdown(sysreset_type)) {
+		rt_kprintf("k3 sysreset: shutdown\n");
+		k3_os0_sysreset_soft_rst_sd(sysreset_type);
+	} else {
+		rt_kprintf("k3 sysreset: unknown sysreset type\n");
 	}
 }
 
