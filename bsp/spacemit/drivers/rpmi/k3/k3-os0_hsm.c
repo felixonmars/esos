@@ -782,9 +782,9 @@ static void spacemit_m2_poll(void *priv)
 
 static rt_int32_t _k3_os0_hsm_init(void *priv)
 {
+#ifdef USING_INTERRUPT_TO_TRIGGER_STATE_TRANSITION_OF_CLUSTER
 	int i;
 	struct spacemit_rpmi_hsm_config *config = priv;
-#ifdef USING_INTERRUPT_TO_TRIGGER_STATE_TRANSITION_OF_CLUSTER
 
 	config->sem_enter0 = rt_sem_create("c0_e_sem", 0, RT_IPC_FLAG_FIFO);
 	config->sem_enter1 = rt_sem_create("c1_e_sem", 0, RT_IPC_FLAG_FIFO);
@@ -857,10 +857,6 @@ static rt_int32_t _k3_os0_hsm_init(void *priv)
 	}
 
 	rt_thread_startup(config->tid);
-#else
-	for (i = 0; i < config->hartcnt; i += 4)
-		if (CPU_TO_CLUSTER(i))
-			spacemit_cx_m2_int_enable(i);
 #endif
 
 	return 0;
