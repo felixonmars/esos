@@ -13,6 +13,8 @@
 static rt_list_t rpmi_hsm_list = RT_LIST_OBJECT_INIT(rpmi_hsm_list);
 extern struct rt_mutex rpmi_hsm_mtx;
 
+struct spacemit_multiple_os *multiple_os_array;
+
 /* hsm releated */
 static enum rpmi_hart_hw_state hsm_get_hw_state(void* priv,
 	rpmi_uint32_t hart_index)
@@ -103,6 +105,19 @@ static rt_int32_t spacemit_rpmi_get_hsm_config(struct dtb_node *node, void *con,
 	struct spacemit_rpmi_hsm_ops *pos = RT_NULL;
 
 	config->node = node;
+	config->event = multiple_os_array->multiple_event;
+	config->mulos = multiple_os_array;
+
+	multiple_os_array->hsm[multiple_os_array->os_count++] = config;
+
+	/* get the os index */
+	prop_data = dtb_node_get_property(node, "bootcore_index", &u32_value);
+	if (!prop_data) {
+		rt_kprintf("%s:%d, get os index failed\n", __func__, __LINE__);
+		return -RT_EINVAL;
+	}
+
+	config->bootcore_index = fdt32_to_cpu(*(uint32_t*)prop_data);
 
 	/* get the start hardid */
 	for_each_property_cell(node, "hartids", u32_value, u32_ptr, property_size) {
@@ -295,3 +310,80 @@ rt_int32_t spacemit_rpmi_hsm_register(rt_list_t *node)
 
 	return 0;
 }
+
+static void spacemit_multiple_os_poll(void *priv)
+{
+	int ret, i;
+	rt_uint32_t e, msk = 0;;
+	struct spacemit_multiple_os *config = (struct spacemit_multiple_os *)priv;
+
+	for (i = 0; i < config->os_count; ++i)
+		msk |= (1 << config->hsm[i]->bootcore_index);
+
+	while(1) {
+		ret = rt_event_recv(config->multiple_event,
+				/**
+				 * bit0: os0 power event
+				 * bit4: os1 power event
+				 * bit8: os2 power event
+				 * ....
+				 */
+				/* one os only by now */
+				msk,
+				RT_EVENT_FLAG_AND | RT_EVENT_FLAG_CLEAR,
+				RT_WAITING_FOREVER, &e);
+
+		/* TODO: let rcpu1 enter low power mode */
+
+		/* trigger the system suspend */
+		// rt_pm_release(RT_PM_DEFAULT_SLEEP_MODE);
+
+		/* will enter idle thread */
+		rt_schedule();
+
+		/* exit from low power mode */
+		/* TODO: wakeup rcpu1 */
+
+		/* wakeup AP */
+		for (i = 0; i < config->os_count; ++i) {
+			/* send the wakeup event to other os */
+			rt_sem_release(config->hsm[i]->cmwk_sem);
+		}
+
+	}
+}
+
+/* initialize an event to dealing with the multiple os's syspend */
+static int k3_multiple_os_power_init(void)
+{
+	multiple_os_array = (struct spacemit_multiple_os *)rt_calloc(1, sizeof(struct spacemit_multiple_os));
+	if (multiple_os_array == RT_NULL) {
+		rt_kprintf("%s:%d, No memory\n", __func__, __LINE__);
+		return -RT_ENOMEM;
+	}
+
+	/* create a event */
+	multiple_os_array->multiple_event = rt_event_create("multiple_event", RT_IPC_FLAG_FIFO);
+
+	return 0;
+}
+INIT_PREV_EXPORT(k3_multiple_os_power_init);
+
+static int k3_multiple_os_power_lunch(void)
+{
+	multiple_os_array->multiple_tid = rt_thread_create("multiple_thread",
+			spacemit_multiple_os_poll,
+			(void *)multiple_os_array,
+			2048,
+			RT_THREAD_PRIORITY_MAX / 3,
+			20);
+	if (!multiple_os_array->multiple_tid) {
+		rt_kprintf("Failed to create multiple os dealing thread\n");
+		return -RT_EINVAL;
+	}
+
+	rt_thread_startup(multiple_os_array->multiple_tid);
+
+	return 0;
+}
+INIT_COMPONENT_EXPORT(k3_multiple_os_power_lunch);

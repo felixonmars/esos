@@ -81,11 +81,32 @@
 #define APCR_CORE13_VETE_REG		(0xd4050000 + 0x10f4)
 #define APCR_CORE14_VETE_REG		(0xd4050000 + 0x10f8)
 #define APCR_CORE15_VETE_REG		(0xd4050000 + 0x10fc)
+#define APCR_PER_VETE_REG		(0xd4050000 + 0x1098)
 
 #define APCR_COREX_DEFAULT_VATE_VALUE	((1 << 3) | (1 << 13) | (1 << 14) | /* (1 << 19) | */ (1 << 25) | (1 << 26) | /* (1 << 27) | */ (1 << 29) | (1 << 31))
 
 #define PMU_CORE_STATUS0		(0xd4282800 + 0x90)
 #define PMU_CORE_STATUS1		(0xd4282800 + 0x80)
+
+#define PMU_CC2_AP			(0xd4282900)
+#define PMU_CC3_AP			(0xd4282b38)
+
+#define CORE0_POP_RST_BIT		(0)
+#define CORE1_POP_RST_BIT		(3)
+#define CORE2_POP_RST_BIT		(6)
+#define CORE3_POP_RST_BIT		(9)
+#define CORE4_POP_RST_BIT		(16)
+#define CORE5_POP_RST_BIT		(19)
+#define CORE6_POP_RST_BIT		(22)
+#define CORE7_POP_RST_BIT		(25)
+#define CORE8_POP_RST_BIT		(6)
+#define CORE9_POP_RST_BIT		(9)
+#define CORE10_POP_RST_BIT		(12)
+#define CORE11_POP_RST_BIT		(15)
+#define CORE12_POP_RST_BIT		(16)
+#define CORE13_POP_RST_BIT		(19)
+#define CORE14_POP_RST_BIT		(22)
+#define CORE15_POP_RST_BIT		(25)
 
 #define AP_C0_M2_ENTER_INT_NUM		(83)
 #define AP_C0_M2_EXIT_INT_NUM		(84)

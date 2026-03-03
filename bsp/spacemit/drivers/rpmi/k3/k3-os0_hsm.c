@@ -13,10 +13,6 @@
 #include <register_defination.h>
 #include "../spacemit-rpmi.h"
 
-#define CPU_TO_CLUSTER(cpu)    ((cpu) / PLATFORM_MAX_CPUS_PER_CLUSTER)
-
-#undef USING_INTERRUPT_TO_TRIGGER_STATE_TRANSITION_OF_CLUSTER
-
 struct rpmi_hsm_hart {
 	/** Lock to protect this structure and perform platform operations */
 	void *lock;
@@ -76,137 +72,6 @@ struct rpmi_hsm {
 	};
 };
 
-static void __m2_enter(clusterx_m2_lp_ctrl *clx_m2_lp_ctl);
-static void __m2_exit(clusterx_m2_lp_ctrl *clx_m2_lp_ctl);
-
-static enum rpmi_hart_hw_state _k3_hsm_get_hw_state(void* priv,
-	rpmi_uint32_t hart_index)
-{
-	rt_uint32_t val;
-	rt_uint32_t index = hart_index;
-
-	if (hart_index >= 8) {
-		val = readl((unsigned int *)PMU_CORE_STATUS1);
-		index -= 8;
-	} else {
-		val = readl((unsigned int *)PMU_CORE_STATUS0);	
-	}
-
-	switch (index) {
-	case 0:
-		val = val & (1 << 6);
-		break;
-	case 1:
-		val = val & (1 << 9);
-		break;
-	case 2:
-		val = val & (1 << 12);
-		break;
-	case 3:
-		val = val & (1 << 15);
-		break;
-	case 4:
-		val = val & (1 << 22);
-		break;
-	case 5:
-		val = val & (1 << 25);
-		break;
-	case 6:
-		val = val & (1 << 28);
-		break;
-	case 7:
-		val = val & (1 << 31);
-		break;
-	}
-
-	return (val) ? RPMI_HART_HW_STATE_STOPPED : RPMI_HART_HW_STATE_STARTED;
-}
-
-static int _k3_hsm_wait_enter_wfi(void* priv,
-	rpmi_uint32_t hart_index)
-{
-	rt_uint32_t val;
-	rt_uint32_t index = hart_index;
-
-	if (hart_index >= 8) {
-		val = readl((unsigned int *)PMU_CORE_STATUS1);
-		index -= 8;
-	} else {
-		val = readl((unsigned int *)PMU_CORE_STATUS0);	
-	}
-
-	switch (index) {
-	case 0:
-		val = val & (1 << 4);
-		break;
-	case 1:
-		val = val & (1 << 7);
-		break;
-	case 2:
-		val = val & (1 << 10);
-		break;
-	case 3:
-		val = val & (1 << 13);
-		break;
-	case 4:
-		val = val & (1 << 20);
-		break;
-	case 5:
-		val = val & (1 << 23);
-		break;
-	case 6:
-		val = val & (1 << 26);
-		break;
-	case 7:
-		val = val & (1 << 29);
-		break;
-	}
-
-	return (val) ? 1 : 0;
-}
-
-static int _k3_hsm_wait_enter_m2(void* priv,
-	rpmi_uint32_t hart_index)
-{
-	rt_uint32_t val;
-	rt_uint32_t index = hart_index;
-
-	if (hart_index >= 8) {
-		val = readl((unsigned int *)PMU_CORE_STATUS1);
-		index -= 8;
-	} else {
-		val = readl((unsigned int *)PMU_CORE_STATUS0);	
-	}
-
-	switch (index) {
-	case 0:
-		val = val & (1 << 3);
-		break;
-	case 1:
-		val = val & (1 << 3);
-		break;
-	case 2:
-		val = val & (1 << 3);
-		break;
-	case 3:
-		val = val & (1 << 3);
-		break;
-	case 4:
-		val = val & (1 << 19);
-		break;
-	case 5:
-		val = val & (1 << 19);
-		break;
-	case 6:
-		val = val & (1 << 19);
-		break;
-	case 7:
-		val = val & (1 << 19);
-		break;
-	}
-
-	return (val) ? 1 : 0;
-}
 static enum rpmi_hart_hw_state k3_hsm_get_hw_state(void* priv,
 	rpmi_uint32_t hart_index)
 {
@@ -220,223 +85,14 @@ static enum rpmi_hart_hw_state k3_hsm_get_hw_state(void* priv,
 		}
 	}
 
-	if (config->hsm->leaf.harts[hart_index].state == RPMI_HSM_HART_STATE_STOP_PENDING) {
-		++config->stop_flag[hart_index];
-		if (config->stop_flag[hart_index] == 1)
-			return _k3_hsm_get_hw_state(priv, hart_index);
-		else if (config->stop_flag[hart_index] == 2) {
-			config->stop_flag[hart_index] = 0;
-			return RPMI_HART_HW_STATE_SUSPENDED;
-		}
-	}
-
-	if (config->hsm->leaf.harts[hart_index].state == RPMI_HSM_HART_STATE_START_PENDING) {
-		return RPMI_HART_HW_STATE_STARTED;
-	}
-
-
-	if (config->hsm->leaf.harts[hart_index].state == RPMI_HSM_HART_STATE_SUSPEND_PENDING) {
-		++config->suspend_flag[hart_index];
-		if (config->suspend_flag[hart_index] == 1)
-			return _k3_hsm_get_hw_state(priv, hart_index);
-		else if (config->suspend_flag[hart_index] == 2) {
-			config->suspend_flag[hart_index] = 0;
-			return RPMI_HART_HW_STATE_SUSPENDED;
-		}
-	}
-
 	/* this is a fake value */
 	return RPMI_HART_HW_STATE_STARTED;
-}
-
-static int spacemit_wakeup_core(uint32_t hartid)
-{
-	switch (hartid) {
-	case 0:
-		writel((1 << hartid), (unsigned int *)PMU_CAP_CORE0_WAKEUP);
-		break;
-	case 1:
-	        writel((1 << hartid), (unsigned int *)PMU_CAP_CORE1_WAKEUP);
-		break;
-	case 2:
-		writel((1 << hartid), (unsigned int *)PMU_CAP_CORE2_WAKEUP);
-		break;
-	case 3:
-		writel((1 << hartid), (unsigned int *)PMU_CAP_CORE3_WAKEUP);
-		break;
-	case 4:
-		writel((1 << hartid), (unsigned int *)PMU_CAP_CORE4_WAKEUP);
-		break;
-	case 5:
-		writel((1 << hartid), (unsigned int *)PMU_CAP_CORE5_WAKEUP);
-		break;
-	case 6:
-		writel((1 << hartid), (unsigned int *)PMU_CAP_CORE6_WAKEUP);
-		break;
-	case 7:
-		writel((1 << hartid), (unsigned int *)PMU_CAP_CORE7_WAKEUP);
-		break;
-	case 8:
-		writel((1 << hartid), (unsigned int *)PMU_CAP_CORE8_WAKEUP);
-		break;
-	case 9:
-		writel((1 << hartid), (unsigned int *)PMU_CAP_CORE9_WAKEUP);
-		break;
-	case 10:
-		writel((1 << hartid), (unsigned int *)PMU_CAP_CORE10_WAKEUP);
-		break;
-	case 11:
-		writel((1 << hartid), (unsigned int *)PMU_CAP_CORE11_WAKEUP);
-		break;
-	case 12:
-		writel((1 << hartid), (unsigned int *)PMU_CAP_CORE12_WAKEUP);
-		break;
-	case 13:
-		writel((1 << hartid), (unsigned int *)PMU_CAP_CORE13_WAKEUP);
-		break;
-	case 14:
-		writel((1 << hartid), (unsigned int *)PMU_CAP_CORE14_WAKEUP);
-		break;
-	case 15:
-		writel((1 << hartid), (unsigned int *)PMU_CAP_CORE15_WAKEUP);
-		break;
-	default:
-		break;
-	}
-
-	return 0;
-}
-static void spacemit_cx_m2_int_enable(rt_uint32_t hartid)
-{
-	clusterx_m2_lp_ctrl *clx_m2_lp_ctl;
-	rpmi_uint32_t cluster_id = CPU_TO_CLUSTER(hartid);
-	audio_wakeup_en_t *dwkup = (audio_wakeup_en_t *)AUDIO_WAKEUP_EN_REG;
-
-	switch (cluster_id) {
-	case 0:
-		clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C0_M2_INT_EN_REG;
-
-		clx_m2_lp_ctl->bits.rcpu_ctrl_clx_m2_lp_en = 1;
-
-#ifdef USING_INTERRUPT_TO_TRIGGER_STATE_TRANSITION_OF_CLUSTER
-		dwkup->bits.ap_c0_m2_wkup_en = 1;
-		dwkup->bits.ap_c0_m2_enter_wkup_en = 1;
-#endif
-		break;
-	case 1:
-		clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C1_M2_INT_EN_REG;
-
-		clx_m2_lp_ctl->bits.rcpu_ctrl_clx_m2_lp_en = 1;
-#ifdef USING_INTERRUPT_TO_TRIGGER_STATE_TRANSITION_OF_CLUSTER
-		dwkup->bits.ap_c1_m2_wkup_en = 1;
-		dwkup->bits.ap_c1_m2_enter_wkup_en = 1;
-#endif
-		break;
-	case 2:
-		clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C2_M2_INT_EN_REG;
-
-		clx_m2_lp_ctl->bits.rcpu_ctrl_clx_m2_lp_en = 1;
-
-#ifdef USING_INTERRUPT_TO_TRIGGER_STATE_TRANSITION_OF_CLUSTER
-		dwkup->bits.ap_c2_m2_wkup_en = 1;
-		dwkup->bits.ap_c2_m2_enter_wkup_en = 1;
-#endif
-	case 3:
-		clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C3_M2_INT_EN_REG;
-
-		clx_m2_lp_ctl->bits.rcpu_ctrl_clx_m2_lp_en = 1;
-#ifdef USING_INTERRUPT_TO_TRIGGER_STATE_TRANSITION_OF_CLUSTER
-		dwkup->bits.ap_c3_m2_wkup_en = 1;
-		dwkup->bits.ap_c3_m2_enter_wkup_en = 1;
-#endif
-		break;
-	default:
-		break;
-	}
-}
-
-static void spacemit_cx_m2_int_disabled(rt_uint32_t hartid)
-{
-	clusterx_m2_lp_ctrl *clx_m2_lp_ctl;
-	rpmi_uint32_t cluster_id = CPU_TO_CLUSTER(hartid);
-	audio_wakeup_en_t *dwkup = (audio_wakeup_en_t *)AUDIO_WAKEUP_EN_REG;
-
-	switch (cluster_id) {
-	case 0:
-		clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C0_M2_INT_EN_REG;
-
-		clx_m2_lp_ctl->bits.rcpu_ctrl_clx_m2_lp_en = 0;
-
-#ifdef USING_INTERRUPT_TO_TRIGGER_STATE_TRANSITION_OF_CLUSTER
-		dwkup->bits.ap_c0_m2_wkup_en = 0;
-		dwkup->bits.ap_c0_m2_enter_wkup_en = 0;
-#endif
-		break;
-	case 1:
-		clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C1_M2_INT_EN_REG;
-
-		clx_m2_lp_ctl->bits.rcpu_ctrl_clx_m2_lp_en = 0;
-#ifdef USING_INTERRUPT_TO_TRIGGER_STATE_TRANSITION_OF_CLUSTER
-		dwkup->bits.ap_c1_m2_wkup_en = 0;
-		dwkup->bits.ap_c1_m2_enter_wkup_en = 0;
-#endif
-		break;
-	case 2:
-		clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C2_M2_INT_EN_REG;
-
-		clx_m2_lp_ctl->bits.rcpu_ctrl_clx_m2_lp_en = 0;
-
-#ifdef USING_INTERRUPT_TO_TRIGGER_STATE_TRANSITION_OF_CLUSTER
-		dwkup->bits.ap_c2_m2_wkup_en = 0;
-		dwkup->bits.ap_c2_m2_enter_wkup_en = 0;
-#endif
-	case 3:
-		clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C3_M2_INT_EN_REG;
-
-		clx_m2_lp_ctl->bits.rcpu_ctrl_clx_m2_lp_en = 0;
-#ifdef USING_INTERRUPT_TO_TRIGGER_STATE_TRANSITION_OF_CLUSTER
-		dwkup->bits.ap_c3_m2_wkup_en = 0;
-		dwkup->bits.ap_c3_m2_enter_wkup_en = 0;
-#endif
-		break;
-	default:
-		break;
-	}
-}
-
-static void spacemit_set_entry_point(rpmi_uint32_t hart_index, rpmi_uint64_t start_addr, void *priv)
-{
-	rpmi_uint32_t cluster_id = CPU_TO_CLUSTER(hart_index);
-
-	switch (cluster_id) {
-	case 0:
-		writel(start_addr & 0xffffffff, (unsigned int *)(C0_RVBADDR_LO_ADDR));
-		writel((start_addr >> 32) & 0xffffffff, (unsigned int*)(C0_RVBADDR_HI_ADDR));
-		break;
-	case 1:
-		writel(start_addr & 0xffffffff, (unsigned int *)(C1_RVBADDR_LO_ADDR));
-		writel((start_addr >> 32) & 0xffffffff, (unsigned int*)(C1_RVBADDR_HI_ADDR));
-		break;
-	case 2:
-		writel(start_addr & 0xffffffff, (unsigned int *)(C2_RVBADDR_LO_ADDR));
-		writel((start_addr >> 32) & 0xffffffff, (unsigned int*)(C2_RVBADDR_HI_ADDR));
-		break;
-	case 3:
-		writel(start_addr & 0xffffffff, (unsigned int *)(C3_RVBADDR_LO_ADDR));
-		writel((start_addr >> 32) & 0xffffffff, (unsigned int*)(C3_RVBADDR_HI_ADDR));
-		break;
-	default:
-		break;
-	}
 }
 
 static enum rpmi_error k3_hsm_hart_start_prepare(void* priv,
 	rpmi_uint32_t hart_index,
 	rpmi_uint64_t start_addr)
 {
-	/* set the entry point */
-	spacemit_set_entry_point(hart_index, start_addr, priv);
-
 	return 0;
 }
 
@@ -444,59 +100,7 @@ static void k3_hsm_hart_start_finalize(void* priv,
 	rpmi_uint32_t hart_index,
 	rpmi_uint64_t start_addr)
 {
-	int i;
-	int flags = 0;
-	struct spacemit_rpmi_hsm_config *config = priv;
-	rpmi_uint32_t cluster_id = CPU_TO_CLUSTER(hart_index);
-	clusterx_m2_lp_ctrl *clx_m2_lp_ctl;
-
-	/* wakeup the core */
-	spacemit_wakeup_core(hart_index);
-
-	for (i = (hart_index & ~(PLATFORM_MAX_CPUS_PER_CLUSTER - 1)); i <
-				((hart_index & ~(PLATFORM_MAX_CPUS_PER_CLUSTER - 1)) + PLATFORM_MAX_CPUS_PER_CLUSTER); ++i) {
-		if (i == hart_index)
-			continue;
-
-		if (config->hsm->leaf.harts[i].state == RPMI_HSM_HART_STATE_STOPPED)
-			++flags;
-	}
-
-	if (flags == (PLATFORM_MAX_CPUS_PER_CLUSTER - 1)) {
-		/* the first core of this cluster */
-		/* then wait */
-		if (cluster_id == 0) {
-#ifdef USING_INTERRUPT_TO_TRIGGER_STATE_TRANSITION_OF_CLUSTER
-			rt_sem_take(config->sem_exit0, RT_WAITING_FOREVER);
-#else
-			clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C0_M2_INT_EN_REG;
-			__m2_exit(clx_m2_lp_ctl);
-#endif
-		} else if (cluster_id == 1) {
-#ifdef USING_INTERRUPT_TO_TRIGGER_STATE_TRANSITION_OF_CLUSTER
-			rt_sem_take(config->sem_exit1, RT_WAITING_FOREVER);
-#else
-			clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C1_M2_INT_EN_REG;
-			__m2_exit(clx_m2_lp_ctl);
-#endif
-		} else if (cluster_id == 2) {
-#ifdef USING_INTERRUPT_TO_TRIGGER_STATE_TRANSITION_OF_CLUSTER
-			rt_sem_take(config->sem_exit2, RT_WAITING_FOREVER);
-#else
-			clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C2_M2_INT_EN_REG;
-			/* __m2_exit(clx_m2_lp_ctl); */
-#endif
-		} else {
-#ifdef USING_INTERRUPT_TO_TRIGGER_STATE_TRANSITION_OF_CLUSTER
-			rt_sem_take(config->sem_exit3, RT_WAITING_FOREVER);
-#else
-			clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C3_M2_INT_EN_REG;
-			__m2_exit(clx_m2_lp_ctl);
-#endif
-		}
-
-		spacemit_cx_m2_int_disabled(hart_index);
-	}
+	return;
 }
 
 static enum rpmi_error k3_hsm_hart_stop_prepare(void* priv,
@@ -507,58 +111,7 @@ static enum rpmi_error k3_hsm_hart_stop_prepare(void* priv,
 
 static void k3_hsm_hart_stop_finalize(void* priv, rpmi_uint32_t hart_index)
 {
-	int i;
-	int flags = 0;
-	struct spacemit_rpmi_hsm_config *config = priv;
-	rpmi_uint32_t cluster_id = CPU_TO_CLUSTER(hart_index);
-	clusterx_m2_lp_ctrl *clx_m2_lp_ctl;
-
-	while (_k3_hsm_get_hw_state(priv, hart_index) == RPMI_HART_HW_STATE_STARTED);
-
-	for (i = (hart_index & ~(PLATFORM_MAX_CPUS_PER_CLUSTER - 1)); i <
-				((hart_index & ~(PLATFORM_MAX_CPUS_PER_CLUSTER - 1)) + PLATFORM_MAX_CPUS_PER_CLUSTER); ++i) {
-		if (i == hart_index)
-			continue;
-
-		if (config->hsm->leaf.harts[i].state == RPMI_HSM_HART_STATE_STOPPED)
-			++flags;
-	}
-
-	if (flags == (PLATFORM_MAX_CPUS_PER_CLUSTER - 1)) {
-		/* the first core of this cluster */
-		/* then wait */
-		if (cluster_id == 0) {
-#ifdef USING_INTERRUPT_TO_TRIGGER_STATE_TRANSITION_OF_CLUSTER
-			rt_sem_take(config->sem_enter0, RT_WAITING_FOREVER);
-#else
-			clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C0_M2_INT_EN_REG;
-			__m2_enter(clx_m2_lp_ctl);
-#endif
-		} else if (cluster_id == 1) {
-#ifdef USING_INTERRUPT_TO_TRIGGER_STATE_TRANSITION_OF_CLUSTER
-			rt_sem_take(config->sem_enter1, RT_WAITING_FOREVER);
-#else
-			clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C1_M2_INT_EN_REG;
-			__m2_enter(clx_m2_lp_ctl);
-#endif
-		} else if (cluster_id == 2) {
-#ifdef USING_INTERRUPT_TO_TRIGGER_STATE_TRANSITION_OF_CLUSTER
-			rt_sem_take(config->sem_enter2, RT_WAITING_FOREVER);
-#else
-			clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C1_M2_INT_EN_REG;
-			/* __m2_enter(clx_m2_lp_ctl); */
-#endif
-		} else {
-#ifdef USING_INTERRUPT_TO_TRIGGER_STATE_TRANSITION_OF_CLUSTER
-			rt_sem_take(config->sem_enter3, RT_WAITING_FOREVER);
-#else
-			clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C1_M2_INT_EN_REG;
-			__m2_enter(clx_m2_lp_ctl);
-#endif
-		}
-
-		spacemit_cx_m2_int_enable(hart_index);
-	}
+	return;
 }
 
 static enum rpmi_error k3_hsm_hart_suspend_prepare(
@@ -589,275 +142,600 @@ struct rpmi_hsm_platform_ops k3_os0_hsm_pops = {
 	.hart_suspend_finalize = k3_hsm_hart_suspend_finalize
 };
 
-static void __m2_enter(clusterx_m2_lp_ctrl *clx_m2_lp_ctl)
+#define CPU_TO_CLUSTER(cpu)    ((cpu) / PLATFORM_MAX_CPUS_PER_CLUSTER)
+
+static void spacemit_cx_m2_int_enable(rt_uint32_t hartid)
 {
 	rt_uint32_t val;
-
-	/* clear the pending */
-	val = clx_m2_lp_ctl->bits.clx_mp_state;
-	if ((val & 0x3f) == 0x13) {
-		clx_m2_lp_ctl->bits.clx_m2_enter_int_clk = 1;
-
-		while (clx_m2_lp_ctl->bits.clx_m2_enter_int);
-
-		clx_m2_lp_ctl->bits.clx_m2_enter_int_clk = 0;
-	}
-}
-
-static void __m2_exit(clusterx_m2_lp_ctrl *clx_m2_lp_ctl)
-{
-	rt_uint32_t val;
-
-	clx_m2_lp_ctl->bits.clr_clx_m2_wkup_hw_msk = 1;
-
-	while (1) {
-		val = clx_m2_lp_ctl->bits.clx_mp_state;
-		if ((val & 0x3f) == 0x1)
-			break;
-	}
-
-	clx_m2_lp_ctl->bits.clr_clx_m2_wkup_hw_msk = 0;
-}
-
-#ifdef USING_INTERRUPT_TO_TRIGGER_STATE_TRANSITION_OF_CLUSTER
-static void spacemit_m2_enter_exit(int irq, void *dev_id)
-{
-	struct spacemit_rpmi_hsm_config *config = (struct spacemit_rpmi_hsm_config *)dev_id;
-
-	switch (irq) {
-	case AP_C0_M2_ENTER_INT_NUM:
-		rt_hw_interrupt_mask(AP_C0_M2_ENTER_INT_NUM);
-		rt_event_send(config->event, (1 << 0));
-		break;
-	case AP_C1_M2_ENTER_INT_NUM:
-		rt_hw_interrupt_mask(AP_C1_M2_ENTER_INT_NUM);
-		rt_event_send(config->event, (1 << 2));
-		break;
-	case AP_C2_M2_ENTER_INT_NUM:
-		rt_hw_interrupt_mask(AP_C2_M2_ENTER_INT_NUM);
-		rt_event_send(config->event, (1 << 4));
-		break;
-	case AP_C3_M2_ENTER_INT_NUM:
-		rt_hw_interrupt_mask(AP_C3_M2_ENTER_INT_NUM);
-		rt_event_send(config->event, (1 << 6));
-		break;
-	};
-
-	switch (irq) {
-	case AP_C0_M2_EXIT_INT_NUM:
-		rt_hw_interrupt_mask(AP_C0_M2_EXIT_INT_NUM);
-		rt_event_send(config->event, (1 << 1));
-		break;
-	case AP_C1_M2_EXIT_INT_NUM:
-		rt_hw_interrupt_mask(AP_C1_M2_EXIT_INT_NUM);
-		rt_event_send(config->event, (1 << 3));
-		break;
-	case AP_C2_M2_EXIT_INT_NUM:
-		rt_hw_interrupt_mask(AP_C2_M2_EXIT_INT_NUM);
-		rt_event_send(config->event, (1 << 5));
-		break;
-	case AP_C3_M2_EXIT_INT_NUM:
-		rt_hw_interrupt_mask(AP_C3_M2_EXIT_INT_NUM);
-		rt_event_send(config->event, (1 << 7));
-		break;
-	}
-}
-
-static void spacemit_m2_poll(void *priv)
-{
-	int ret;
-	rt_uint32_t e;
-	struct spacemit_rpmi_hsm_config *config = (struct spacemit_rpmi_hsm_config *)priv;
 	clusterx_m2_lp_ctrl *clx_m2_lp_ctl;
+	rpmi_uint32_t cluster_id = CPU_TO_CLUSTER(hartid);
 
-	while(1) {
-		/* wait the tick or 20ms polling */
-		ret = rt_event_recv(config->event,
-				/**
-				 * bit0: c0 enter
-				 * bit1: c0 exit
-				 * bit2: c1 enter
-				 * bit3: c1 exit
-				 * bit4: c2 enter
-				 * bit5: c2 exit
-				 * bit6: c3 enter
-				 * bit7: c3 exit
-				 */
-				(1 << 0) | (1 << 1) |
-				(1 << 2) | (1 << 3) |
-				(1 << 4) | (1 << 5) |
-				(1 << 6) | (1 << 7),
-				RT_EVENT_FLAG_OR | RT_EVENT_FLAG_CLEAR,
-				RT_WAITING_FOREVER, &e);
+	switch (cluster_id) {
+	case 0:
+		clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C0_M2_INT_EN_REG;
+		val = readl((unsigned int *)AUDIO_WAKEUP_EN_REG);
+		val |= (3 << 10);
+		writel(val, (unsigned int *)AUDIO_WAKEUP_EN_REG);
+		break;
+	case 1:
+		clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C1_M2_INT_EN_REG;
+		val = readl((unsigned int *)AUDIO_WAKEUP_EN_REG);
+		val |= (3 << 12);
+		writel(val, (unsigned int *)AUDIO_WAKEUP_EN_REG);
+		break;
+	case 2:
+		clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C2_M2_INT_EN_REG;
+		val = readl((unsigned int *)AUDIO_WAKEUP_EN_REG);
+		val |= (3 << 14);
+		writel(val, (unsigned int *)AUDIO_WAKEUP_EN_REG);
+		break;
+	case 3:
+		clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C3_M2_INT_EN_REG;
+		val = readl((unsigned int *)AUDIO_WAKEUP_EN_REG);
+		val |= (3 << 16);
+		writel(val, (unsigned int *)AUDIO_WAKEUP_EN_REG);
+		break;
+	default:
+		break;
+	}
 
-		if (e & (1 << 0)) {
-			/* c0 enter */
-			clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C0_M2_INT_EN_REG;
-			__m2_enter(clx_m2_lp_ctl);
+	val = readl((unsigned int *)clx_m2_lp_ctl);
+	val |= (1 << 0);
+	writel(val, (unsigned int *)clx_m2_lp_ctl);
+}
 
-			/* do the regulator */
+static void spacemit_cx_m2_enter_wait(rt_uint32_t hartid)
+{
+	rt_uint32_t val;
+	clusterx_m2_lp_ctrl *clx_m2_lp_ctl;
+	rpmi_uint32_t cluster_id = CPU_TO_CLUSTER(hartid);
 
-			rt_hw_interrupt_umask(AP_C0_M2_ENTER_INT_NUM);
-			rt_sem_release(config->sem_enter0);
-		}
+	switch (cluster_id) {
+	case 0:
+		clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C0_M2_INT_EN_REG;
+		break;
+	case 1:
+		clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C1_M2_INT_EN_REG;
+		break;
+	case 2:
+		clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C2_M2_INT_EN_REG;
+		break;
+	case 3:
+		clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C3_M2_INT_EN_REG;
+		break;
+	default:
+		break;
+	}
 
-		if (e & (1 << 2)) {
-			/* c1 enter */
-			clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C1_M2_INT_EN_REG;
-			__m2_enter(clx_m2_lp_ctl);
+	val = readl((unsigned int *)clx_m2_lp_ctl);
+	if (((val >> 6) & 0x3f) == 0x13) {
+		rt_kprintf("Cluster:%d, enter M2 OK\n", cluster_id);
+	} else {
+		rt_kprintf("Cluster:%d, enter M2 Failed\n", cluster_id);
+	}
 
-			/* do the regulator */
+	val = readl((unsigned int *)clx_m2_lp_ctl);
+	val |= (1 << 2);
+	writel(val, (unsigned int *)clx_m2_lp_ctl);
 
-			rt_hw_interrupt_umask(AP_C1_M2_ENTER_INT_NUM);
-			rt_sem_release(config->sem_enter1);
-		}
+	val = readl((unsigned int *)clx_m2_lp_ctl);
+	while ((val >> 4) & 0x1) {
+		val = readl((unsigned int *)clx_m2_lp_ctl);	
+	}
 
-		if (e & (1 << 4)) {
-			/* c2 enter */
-			clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C2_M2_INT_EN_REG;
-			__m2_enter(clx_m2_lp_ctl);
+	val = readl((unsigned int *)clx_m2_lp_ctl);
+	val &= ~(1 << 2);
+	writel(val, (unsigned int *)clx_m2_lp_ctl);
+}
 
-			/* do the regulator */
+static void spacemit_cx_m2_int_disabled(rt_uint32_t hartid)
+{
+	rt_uint32_t val;
+	clusterx_m2_lp_ctrl *clx_m2_lp_ctl;
+	rpmi_uint32_t cluster_id = CPU_TO_CLUSTER(hartid);
 
-			rt_hw_interrupt_umask(AP_C2_M2_ENTER_INT_NUM);
-			rt_sem_release(config->sem_enter2);
-		}
+	switch (cluster_id) {
+	case 0:
+		clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C0_M2_INT_EN_REG;
+		val = readl((unsigned int *)AUDIO_WAKEUP_EN_REG);
+		val &= ~(3 << 10);
+		writel(val, (unsigned int *)AUDIO_WAKEUP_EN_REG);
+		break;
+	case 1:
+		clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C1_M2_INT_EN_REG;
+		val = readl((unsigned int *)AUDIO_WAKEUP_EN_REG);
+		val &= ~(3 << 12);
+		writel(val, (unsigned int *)AUDIO_WAKEUP_EN_REG);
+		break;
+	case 2:
+		clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C2_M2_INT_EN_REG;
+		val = readl((unsigned int *)AUDIO_WAKEUP_EN_REG);
+		val &= ~(3 << 14);
+		writel(val, (unsigned int *)AUDIO_WAKEUP_EN_REG);
+		break;
+	case 3:
+		clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C3_M2_INT_EN_REG;
+		val = readl((unsigned int *)AUDIO_WAKEUP_EN_REG);
+		val &= ~(3 << 16);
+		writel(val, (unsigned int *)AUDIO_WAKEUP_EN_REG);
+		break;
+	default:
+		break;
+	}
 
-		if (e & (1 << 6)) {
-			/* c3 enter */
-			clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C3_M2_INT_EN_REG;
-			__m2_enter(clx_m2_lp_ctl);
+	val = readl((unsigned int *)clx_m2_lp_ctl);
+	val |= (0x1 << 1);
+	writel(val, (unsigned int *)clx_m2_lp_ctl);
 
-			/* do the regulator */
+	val = readl((unsigned int *)clx_m2_lp_ctl);
+	while (((val >> 6) & 0x3f) != 1) {
+		val = readl((unsigned int *)clx_m2_lp_ctl);
+	}
 
-			rt_hw_interrupt_umask(AP_C3_M2_ENTER_INT_NUM);
-			rt_sem_release(config->sem_enter3);
-		}
+	val = readl((unsigned int *)clx_m2_lp_ctl);
+	val &= ~(0x1 << 1);
+	writel(val, (unsigned int *)clx_m2_lp_ctl);
 
-		if (e & (1 << 1)) {
+	val = readl((unsigned int *)clx_m2_lp_ctl);
+	val &= ~(0x1 << 0);
+	writel(val, (unsigned int *)clx_m2_lp_ctl);
+}
 
-			/* do the regulator */
-			/* c0 exit */
-			clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C0_M2_INT_EN_REG;
-			__m2_exit(clx_m2_lp_ctl);
-			rt_hw_interrupt_umask(AP_C0_M2_EXIT_INT_NUM);
-			rt_sem_release(config->sem_exit0);
-		}
+void spacemit_core_assert(uint32_t hartid)
+{
+	unsigned int value;
 
-		if (e & (1 << 3)) {
-
-			/* do the regulator */
-
-			/* c1 exit */
-			clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C1_M2_INT_EN_REG;
-			__m2_exit(clx_m2_lp_ctl);
-			rt_hw_interrupt_umask(AP_C1_M2_EXIT_INT_NUM);
-			rt_sem_release(config->sem_exit1);
-		}
-
-		if (e & (1 << 5)) {
-
-			/* do the regulator */
-
-			/* c2 exit */
-			clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C2_M2_INT_EN_REG;
-			__m2_exit(clx_m2_lp_ctl);
-			rt_hw_interrupt_umask(AP_C2_M2_EXIT_INT_NUM);
-			rt_sem_release(config->sem_exit2);
-		}
-
-		if (e & (1 << 7)) {
-
-			/* do the regulator */
-
-			/* c3 exit */
-			clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C3_M2_INT_EN_REG;
-			__m2_exit(clx_m2_lp_ctl);
-			rt_hw_interrupt_umask(AP_C3_M2_EXIT_INT_NUM);
-			rt_sem_release(config->sem_exit3);
-		}
+	/* vote core power-down & cluster power-down */
+	switch (hartid) {
+	case 0:
+		value = readl((unsigned int *)PMU_CC2_AP);
+		value |= (1 << CORE0_POP_RST_BIT);
+		writel(value, (unsigned int *)PMU_CC2_AP);
+		break;
+	case 1:
+		value = readl((unsigned int *)PMU_CC2_AP);
+		value |= (1 << CORE1_POP_RST_BIT);
+		writel(value, (unsigned int *)PMU_CC2_AP);
+		break;
+	case 2:
+		value = readl((unsigned int *)PMU_CC2_AP);
+		value |= (1 << CORE2_POP_RST_BIT);
+		writel(value, (unsigned int *)PMU_CC2_AP);
+		break;
+	case 3:
+		value = readl((unsigned int *)PMU_CC2_AP);
+		value |= (1 << CORE3_POP_RST_BIT);
+		writel(value, (unsigned int *)PMU_CC2_AP);
+		break;
+	case 4:
+		value = readl((unsigned int *)PMU_CC2_AP);
+		value |= (1 << CORE4_POP_RST_BIT);
+		writel(value, (unsigned int *)PMU_CC2_AP);
+		break;
+	case 5:
+		value = readl((unsigned int *)PMU_CC2_AP);
+		value |= (1 << CORE5_POP_RST_BIT);
+		writel(value, (unsigned int *)PMU_CC2_AP);
+		break;
+	case 6:
+		value = readl((unsigned int *)PMU_CC2_AP);
+		value |= (1 << CORE6_POP_RST_BIT);
+		writel(value, (unsigned int *)PMU_CC2_AP);
+		break;
+	case 7:
+		value = readl((unsigned int *)PMU_CC2_AP);
+		value |= (1 << CORE7_POP_RST_BIT);
+		writel(value, (unsigned int *)PMU_CC2_AP);
+		break;
+	case 8:
+		value = readl((unsigned int *)PMU_CC3_AP);
+		value |= (1 << CORE8_POP_RST_BIT);
+		writel(value, (unsigned int *)PMU_CC3_AP);
+		break;
+	case 9:
+		value = readl((unsigned int *)PMU_CC3_AP);
+		value |= (1 << CORE9_POP_RST_BIT);
+		writel(value, (unsigned int *)PMU_CC3_AP);
+		break;
+	case 10:
+		value = readl((unsigned int *)PMU_CC3_AP);
+		value |= (1 << CORE10_POP_RST_BIT);
+		writel(value, (unsigned int *)PMU_CC3_AP);
+		break;
+	case 11:
+		value = readl((unsigned int *)PMU_CC3_AP);
+		value |= (1 << CORE11_POP_RST_BIT);
+		writel(value, (unsigned int *)PMU_CC3_AP);
+		break;
+	case 12:
+		value = readl((unsigned int *)PMU_CC3_AP);
+		value |= (1 << CORE12_POP_RST_BIT);
+		writel(value, (unsigned int *)PMU_CC3_AP);
+		break;
+	case 13:
+		value = readl((unsigned int *)PMU_CC3_AP);
+		value |= (1 << CORE13_POP_RST_BIT);
+		writel(value, (unsigned int *)PMU_CC3_AP);
+		break;
+	case 14:
+		value = readl((unsigned int *)PMU_CC3_AP);
+		value |= (1 << CORE14_POP_RST_BIT);
+		writel(value, (unsigned int *)PMU_CC3_AP);
+		break;
+	case 15:
+		value = readl((unsigned int *)PMU_CC3_AP);
+		value |= (1 << CORE15_POP_RST_BIT);
+		writel(value, (unsigned int *)PMU_CC3_AP);
+		break;
+	default:
+		break;
 	}
 }
-#endif
 
-static rt_int32_t _k3_os0_hsm_init(void *priv)
+void spacemit_core_de_assert(uint32_t hartid)
 {
-#ifdef USING_INTERRUPT_TO_TRIGGER_STATE_TRANSITION_OF_CLUSTER
+	unsigned int value;
+
+	/* vote core power-down & cluster power-down */
+	switch (hartid) {
+	case 0:
+		value = readl((unsigned int *)PMU_CC2_AP);
+		value &= ~(1 << CORE0_POP_RST_BIT);
+		writel(value, (unsigned int *)PMU_CC2_AP);
+		break;
+	case 1:
+		value = readl((unsigned int *)PMU_CC2_AP);
+		value &= ~(1 << CORE1_POP_RST_BIT);
+		writel(value, (unsigned int *)PMU_CC2_AP);
+		break;
+	case 2:
+		value = readl((unsigned int *)PMU_CC2_AP);
+		value &= ~(1 << CORE2_POP_RST_BIT);
+		writel(value, (unsigned int *)PMU_CC2_AP);
+		break;
+	case 3:
+		value = readl((unsigned int *)PMU_CC2_AP);
+		value &= ~(1 << CORE3_POP_RST_BIT);
+		writel(value, (unsigned int *)PMU_CC2_AP);
+		break;
+	case 4:
+		value = readl((unsigned int *)PMU_CC2_AP);
+		value &= ~(1 << CORE4_POP_RST_BIT);
+		writel(value, (unsigned int *)PMU_CC2_AP);
+		break;
+	case 5:
+		value = readl((unsigned int *)PMU_CC2_AP);
+		value &= ~(1 << CORE5_POP_RST_BIT);
+		writel(value, (unsigned int *)PMU_CC2_AP);
+		break;
+	case 6:
+		value = readl((unsigned int *)PMU_CC2_AP);
+		value &= ~(1 << CORE6_POP_RST_BIT);
+		writel(value, (unsigned int *)PMU_CC2_AP);
+		break;
+	case 7:
+		value = readl((unsigned int *)PMU_CC2_AP);
+		value &= ~(1 << CORE7_POP_RST_BIT);
+		writel(value, (unsigned int *)PMU_CC2_AP);
+		break;
+	case 8:
+		value = readl((unsigned int *)PMU_CC3_AP);
+		value &= ~(1 << CORE8_POP_RST_BIT);
+		writel(value, (unsigned int *)PMU_CC3_AP);
+		break;
+	case 9:
+		value = readl((unsigned int *)PMU_CC3_AP);
+		value &= ~(1 << CORE9_POP_RST_BIT);
+		writel(value, (unsigned int *)PMU_CC3_AP);
+		break;
+	case 10:
+		value = readl((unsigned int *)PMU_CC3_AP);
+		value &= ~(1 << CORE10_POP_RST_BIT);
+		writel(value, (unsigned int *)PMU_CC3_AP);
+		break;
+	case 11:
+		value = readl((unsigned int *)PMU_CC3_AP);
+		value &= ~(1 << CORE11_POP_RST_BIT);
+		writel(value, (unsigned int *)PMU_CC3_AP);
+		break;
+	case 12:
+		value = readl((unsigned int *)PMU_CC3_AP);
+		value &= ~(1 << CORE12_POP_RST_BIT);
+		writel(value, (unsigned int *)PMU_CC3_AP);
+		break;
+	case 13:
+		value = readl((unsigned int *)PMU_CC3_AP);
+		value &= ~(1 << CORE13_POP_RST_BIT);
+		writel(value, (unsigned int *)PMU_CC3_AP);
+		break;
+	case 14:
+		value = readl((unsigned int *)PMU_CC3_AP);
+		value &= ~(1 << CORE14_POP_RST_BIT);
+		writel(value, (unsigned int *)PMU_CC3_AP);
+		break;
+	case 15:
+		value = readl((unsigned int *)PMU_CC3_AP);
+		value &= ~(1 << CORE15_POP_RST_BIT);
+		writel(value, (unsigned int *)PMU_CC3_AP);
+		break;
+	default:
+		break;
+	}
+}
+
+static void spacemit_vote_core_apcr(void *priv)
+{
 	int i;
+	unsigned int val;
+	int hartid;
 	struct spacemit_rpmi_hsm_config *config = priv;
 
-	config->sem_enter0 = rt_sem_create("c0_e_sem", 0, RT_IPC_FLAG_FIFO);
-	config->sem_enter1 = rt_sem_create("c1_e_sem", 0, RT_IPC_FLAG_FIFO);
-	config->sem_enter2 = rt_sem_create("c2_e_sem", 0, RT_IPC_FLAG_FIFO);
-	config->sem_enter3 = rt_sem_create("c3_e_sem", 0, RT_IPC_FLAG_FIFO);
+	for (i = 0; i < config->hartcnt; ++i) {
+		hartid = config->hartids[i];
 
-	config->sem_exit0 = rt_sem_create("c0_ei_sem", 0, RT_IPC_FLAG_FIFO);
-	config->sem_exit1 = rt_sem_create("c1_ei_sem", 0, RT_IPC_FLAG_FIFO);
-	config->sem_exit2 = rt_sem_create("c2_ei_sem", 0, RT_IPC_FLAG_FIFO);
-	config->sem_exit3 = rt_sem_create("c3_ei_sem", 0, RT_IPC_FLAG_FIFO);
-
-	/* register the interrupt */
-	for (i = 0; i < config->hartcnt; i += 4) {
-		struct rt_thread *thread;
-		rpmi_uint32_t cluster_id = CPU_TO_CLUSTER(i);
-
-		switch (cluster_id) {
+		switch (hartid) {
 		case 0:
-			/* register the m2 enter & wakeup interruput handler */
-			rt_hw_interrupt_install(AP_C0_M2_ENTER_INT_NUM, spacemit_m2_enter_exit, priv, "c0_m2_enter");
-			rt_hw_interrupt_umask(AP_C0_M2_ENTER_INT_NUM);
-
-			rt_hw_interrupt_install(AP_C0_M2_EXIT_INT_NUM, spacemit_m2_enter_exit, priv, "c0_m2_exit");
-			rt_hw_interrupt_umask(AP_C0_M2_EXIT_INT_NUM);
+			val = readl((unsigned int *)APCR_CORE0_VETE_REG);
+			val |= APCR_COREX_DEFAULT_VATE_VALUE;
+			writel(val, (unsigned int *)APCR_CORE0_VETE_REG);
 			break;
 		case 1:
-			/* register the m2 enter & wakeup interruput handler */
-			rt_hw_interrupt_install(AP_C1_M2_ENTER_INT_NUM, spacemit_m2_enter_exit, priv, "c1_m2_enter");
-			rt_hw_interrupt_umask(AP_C1_M2_ENTER_INT_NUM);
-
-			rt_hw_interrupt_install(AP_C1_M2_EXIT_INT_NUM, spacemit_m2_enter_exit, priv, "c1_m2_exit");
-			rt_hw_interrupt_umask(AP_C1_M2_EXIT_INT_NUM);
+			val = readl((unsigned int *)APCR_CORE1_VETE_REG);
+			val |= APCR_COREX_DEFAULT_VATE_VALUE;
+			writel(val, (unsigned int *)APCR_CORE1_VETE_REG);
 			break;
 		case 2:
-			/* register the m2 enter & wakeup interruput handler */
-			rt_hw_interrupt_install(AP_C2_M2_ENTER_INT_NUM, spacemit_m2_enter_exit, priv, "c2_m2_enter");
-			rt_hw_interrupt_umask(AP_C2_M2_ENTER_INT_NUM);
-
-			rt_hw_interrupt_install(AP_C2_M2_EXIT_INT_NUM, spacemit_m2_enter_exit, priv, "c2_m2_exit");
-			rt_hw_interrupt_umask(AP_C2_M2_EXIT_INT_NUM);
+			val = readl((unsigned int *)APCR_CORE2_VETE_REG);
+			val |= APCR_COREX_DEFAULT_VATE_VALUE;
+			writel(val, (unsigned int *)APCR_CORE2_VETE_REG);
 			break;
 		case 3:
-			/* register the m2 enter & wakeup interruput handler */
-			rt_hw_interrupt_install(AP_C3_M2_ENTER_INT_NUM, spacemit_m2_enter_exit, priv, "c3_m2_enter");
-			rt_hw_interrupt_umask(AP_C3_M2_ENTER_INT_NUM);
-
-			rt_hw_interrupt_install(AP_C3_M2_EXIT_INT_NUM, spacemit_m2_enter_exit, priv, "c3_m2_exit");
-			rt_hw_interrupt_umask(AP_C3_M2_EXIT_INT_NUM);
+			val = readl((unsigned int *)APCR_CORE3_VETE_REG);
+			val |= APCR_COREX_DEFAULT_VATE_VALUE;
+			writel(val, (unsigned int *)APCR_CORE3_VETE_REG);
+			break;
+		case 4:
+			val = readl((unsigned int *)APCR_CORE4_VETE_REG);
+			val |= APCR_COREX_DEFAULT_VATE_VALUE;
+			writel(val, (unsigned int *)APCR_CORE4_VETE_REG);
+			break;
+		case 5:
+			val = readl((unsigned int *)APCR_CORE5_VETE_REG);
+			val |= APCR_COREX_DEFAULT_VATE_VALUE;
+			writel(val, (unsigned int *)APCR_CORE5_VETE_REG);
+			break;
+		case 6:
+			val = readl((unsigned int *)APCR_CORE6_VETE_REG);
+			val |= APCR_COREX_DEFAULT_VATE_VALUE;
+			writel(val, (unsigned int *)APCR_CORE6_VETE_REG);
+			break;
+		case 7:
+			val = readl((unsigned int *)APCR_CORE7_VETE_REG);
+			val |= APCR_COREX_DEFAULT_VATE_VALUE;
+			writel(val, (unsigned int *)APCR_CORE7_VETE_REG);
+			break;
+		case 8:
+			val = readl((unsigned int *)APCR_CORE8_VETE_REG);
+			val |= APCR_COREX_DEFAULT_VATE_VALUE;
+			writel(val, (unsigned int *)APCR_CORE8_VETE_REG);
+			break;
+		case 9:
+			val = readl((unsigned int *)APCR_CORE9_VETE_REG);
+			val |= APCR_COREX_DEFAULT_VATE_VALUE;
+			writel(val, (unsigned int *)APCR_CORE9_VETE_REG);
+			break;
+		case 10:
+			val = readl((unsigned int *)APCR_CORE10_VETE_REG);
+			val |= APCR_COREX_DEFAULT_VATE_VALUE;
+			writel(val, (unsigned int *)APCR_CORE10_VETE_REG);
+			break;
+		case 11:
+			val = readl((unsigned int *)APCR_CORE11_VETE_REG);
+			val |= APCR_COREX_DEFAULT_VATE_VALUE;
+			writel(val, (unsigned int *)APCR_CORE11_VETE_REG);
+			break;
+		case 12:
+			val = readl((unsigned int *)APCR_CORE12_VETE_REG);
+			val |= APCR_COREX_DEFAULT_VATE_VALUE;
+			writel(val, (unsigned int *)APCR_CORE12_VETE_REG);
+			break;
+		case 13:
+			val = readl((unsigned int *)APCR_CORE13_VETE_REG);
+			val |= APCR_COREX_DEFAULT_VATE_VALUE;
+			writel(val, (unsigned int *)APCR_CORE13_VETE_REG);
+			break;
+		case 14:
+			val = readl((unsigned int *)APCR_CORE14_VETE_REG);
+			val |= APCR_COREX_DEFAULT_VATE_VALUE;
+			writel(val, (unsigned int *)APCR_CORE14_VETE_REG);
+			break;
+		case 15:
+			val = readl((unsigned int *)APCR_CORE15_VETE_REG);
+			val |= APCR_COREX_DEFAULT_VATE_VALUE;
+			writel(val, (unsigned int *)APCR_CORE15_VETE_REG);
 			break;
 		default:
 			break;
 		}
+	}
+}
 
-		spacemit_cx_m2_int_enable(i);
+static void spacemit_devote_core_apcr(void *priv)
+{
+	int i;
+	unsigned int val;
+	int hartid;
+	struct spacemit_rpmi_hsm_config *config = priv;
+
+	for (i = 0; i < config->hartcnt; ++i) {
+		hartid = config->hartids[i];
+
+		switch (hartid) {
+		case 0:
+			val = readl((unsigned int *)APCR_CORE0_VETE_REG);
+			val &= ~APCR_COREX_DEFAULT_VATE_VALUE;
+			writel(val, (unsigned int *)APCR_CORE0_VETE_REG);
+			break;
+		case 1:
+			val = readl((unsigned int *)APCR_CORE1_VETE_REG);
+			val &= ~APCR_COREX_DEFAULT_VATE_VALUE;
+			writel(val, (unsigned int *)APCR_CORE1_VETE_REG);
+			break;
+		case 2:
+			val = readl((unsigned int *)APCR_CORE2_VETE_REG);
+			val &= ~APCR_COREX_DEFAULT_VATE_VALUE;
+			writel(val, (unsigned int *)APCR_CORE2_VETE_REG);
+			break;
+		case 3:
+			val = readl((unsigned int *)APCR_CORE3_VETE_REG);
+			val &= ~APCR_COREX_DEFAULT_VATE_VALUE;
+			writel(val, (unsigned int *)APCR_CORE3_VETE_REG);
+			break;
+		case 4:
+			val = readl((unsigned int *)APCR_CORE4_VETE_REG);
+			val &= ~APCR_COREX_DEFAULT_VATE_VALUE;
+			writel(val, (unsigned int *)APCR_CORE4_VETE_REG);
+			break;
+		case 5:
+			val = readl((unsigned int *)APCR_CORE5_VETE_REG);
+			val &= ~APCR_COREX_DEFAULT_VATE_VALUE;
+			writel(val, (unsigned int *)APCR_CORE5_VETE_REG);
+			break;
+		case 6:
+			val = readl((unsigned int *)APCR_CORE6_VETE_REG);
+			val &= ~APCR_COREX_DEFAULT_VATE_VALUE;
+			writel(val, (unsigned int *)APCR_CORE6_VETE_REG);
+			break;
+		case 7:
+			val = readl((unsigned int *)APCR_CORE7_VETE_REG);
+			val &= ~APCR_COREX_DEFAULT_VATE_VALUE;
+			writel(val, (unsigned int *)APCR_CORE7_VETE_REG);
+			break;
+		case 8:
+			val = readl((unsigned int *)APCR_CORE8_VETE_REG);
+			val &= ~APCR_COREX_DEFAULT_VATE_VALUE;
+			writel(val, (unsigned int *)APCR_CORE8_VETE_REG);
+			break;
+		case 9:
+			val = readl((unsigned int *)APCR_CORE9_VETE_REG);
+			val &= ~APCR_COREX_DEFAULT_VATE_VALUE;
+			writel(val, (unsigned int *)APCR_CORE9_VETE_REG);
+			break;
+		case 10:
+			val = readl((unsigned int *)APCR_CORE10_VETE_REG);
+			val &= ~APCR_COREX_DEFAULT_VATE_VALUE;
+			writel(val, (unsigned int *)APCR_CORE10_VETE_REG);
+			break;
+		case 11:
+			val = readl((unsigned int *)APCR_CORE11_VETE_REG);
+			val &= ~APCR_COREX_DEFAULT_VATE_VALUE;
+			writel(val, (unsigned int *)APCR_CORE11_VETE_REG);
+			break;
+		case 12:
+			val = readl((unsigned int *)APCR_CORE12_VETE_REG);
+			val &= ~APCR_COREX_DEFAULT_VATE_VALUE;
+			writel(val, (unsigned int *)APCR_CORE12_VETE_REG);
+			break;
+		case 13:
+			val = readl((unsigned int *)APCR_CORE13_VETE_REG);
+			val &= ~APCR_COREX_DEFAULT_VATE_VALUE;
+			writel(val, (unsigned int *)APCR_CORE13_VETE_REG);
+			break;
+		case 14:
+			val = readl((unsigned int *)APCR_CORE14_VETE_REG);
+			val &= ~APCR_COREX_DEFAULT_VATE_VALUE;
+			writel(val, (unsigned int *)APCR_CORE14_VETE_REG);
+			break;
+		case 15:
+			val = readl((unsigned int *)APCR_CORE15_VETE_REG);
+			val &= ~APCR_COREX_DEFAULT_VATE_VALUE;
+			writel(val, (unsigned int *)APCR_CORE15_VETE_REG);
+			break;
+		default:
+			break;
+		}
+	}
+}
+
+static void spacemit_m2_enter_exit(int vector, void *param)
+{
+	struct spacemit_rpmi_hsm_config *config = param;
+	rpmi_uint32_t cluster_id = CPU_TO_CLUSTER(config->bootcore_index);
+
+	if ((vector == AP_C0_M2_ENTER_INT_NUM) ||
+			(vector == AP_C1_M2_ENTER_INT_NUM) ||
+			(vector == AP_C2_M2_ENTER_INT_NUM) ||
+			(vector == AP_C3_M2_ENTER_INT_NUM)) {
+
+		/* clear the pending */
+		spacemit_cx_m2_enter_wait(config->bootcore_index);
+
+		rt_sem_release(config->cm2_etr_sem);
+
+		return;
 	}
 
-	/* create a event */
-	config->event = rt_event_create("m2_event", RT_IPC_FLAG_FIFO);
+	/* mask the AP wakeup */
+	spacemit_core_assert(config->bootcore_index);
 
-	/* create the rpmsg poll thread */
-	config->tid = rt_thread_create("m2_thread",
-			spacemit_m2_poll,
-			(void *)priv,
-			2048,
-			RT_THREAD_PRIORITY_MAX / 3,
-			20);
-	if (!config->tid) {
-		rt_kprintf("Failed to create hsm service\n");
-		return -RT_EINVAL;
+	/* clear the pending and wakeup the cluster */
+	spacemit_cx_m2_int_disabled(config->bootcore_index);
+
+	/* send the signal */
+	rt_sem_release(config->cm2_ext_sem);
+}
+
+static rt_int32_t _k3_os0_hsm_init(void *priv)
+{
+	char *tmp;
+	struct spacemit_rpmi_hsm_config *config = priv;
+
+	tmp = rt_calloc(1, 64);
+	rt_snprintf(tmp, 64, "Cr%d_sem", config->bootcore_index);
+
+	config->cm2_etr_sem = rt_sem_create(tmp, 0, RT_IPC_FLAG_FIFO);
+
+	tmp = rt_calloc(1, 64);
+	rt_snprintf(tmp, 64, "Ce%d_sem", config->bootcore_index);
+
+	config->cm2_ext_sem = rt_sem_create(tmp, 0, RT_IPC_FLAG_FIFO);
+
+	tmp = rt_calloc(1, 64);
+	rt_snprintf(tmp, 64, "CWK%d_sem", config->bootcore_index);
+
+	config->cmwk_sem = rt_sem_create(tmp, 0, RT_IPC_FLAG_FIFO);
+
+	rpmi_uint32_t cluster_id = CPU_TO_CLUSTER(config->bootcore_index);
+
+	switch (cluster_id) {
+	case 0:
+		/* exit m2 */
+		rt_hw_interrupt_install(AP_C0_M2_EXIT_INT_NUM, spacemit_m2_enter_exit, priv, "c0_m2_exit");
+		rt_hw_interrupt_install(AP_C0_M2_ENTER_INT_NUM, spacemit_m2_enter_exit, priv, "c0_m2_enter");
+		rt_hw_interrupt_umask(AP_C0_M2_EXIT_INT_NUM);
+		rt_hw_interrupt_umask(AP_C0_M2_ENTER_INT_NUM);
+	break;
+	case 1:
+		rt_hw_interrupt_install(AP_C1_M2_EXIT_INT_NUM, spacemit_m2_enter_exit, priv, "c1_m2_exit");
+		rt_hw_interrupt_install(AP_C1_M2_ENTER_INT_NUM, spacemit_m2_enter_exit, priv, "c1_m2_enter");
+		rt_hw_interrupt_umask(AP_C1_M2_EXIT_INT_NUM);
+		rt_hw_interrupt_umask(AP_C1_M2_ENTER_INT_NUM);
+	break;
+	case 2:
+		rt_hw_interrupt_install(AP_C2_M2_EXIT_INT_NUM, spacemit_m2_enter_exit, priv, "c2_m2_exit");
+		rt_hw_interrupt_install(AP_C2_M2_ENTER_INT_NUM, spacemit_m2_enter_exit, priv, "c2_m2_enter");
+		rt_hw_interrupt_umask(AP_C2_M2_EXIT_INT_NUM);
+		rt_hw_interrupt_umask(AP_C2_M2_ENTER_INT_NUM);
+	break;
+	case 3:
+		rt_hw_interrupt_install(AP_C3_M2_EXIT_INT_NUM, spacemit_m2_enter_exit, priv, "c3_m2_exit");
+		rt_hw_interrupt_install(AP_C3_M2_ENTER_INT_NUM, spacemit_m2_enter_exit, priv, "c3_m2_enter");
+		rt_hw_interrupt_umask(AP_C3_M2_EXIT_INT_NUM);
+		rt_hw_interrupt_umask(AP_C3_M2_ENTER_INT_NUM);
+        break;
+	default:
+        	break;
 	}
-
-	rt_thread_startup(config->tid);
-#endif
 
 	return 0;
 }
@@ -869,17 +747,25 @@ static enum rpmi_error syssusp_prepare(
 		const struct rpmi_system_suspend_type* syssusp_type,
 		rpmi_uint64_t resume_addr)
 {
-	/* Do nothing */
+	struct spacemit_rpmi_hsm_config *config = (struct spacemit_rpmi_hsm_config *)priv;
+	rpmi_uint32_t cluster_id = CPU_TO_CLUSTER(config->bootcore_index);
+
+	/* vote core enter D2 */
+	spacemit_vote_core_apcr(priv);
+
+	spacemit_cx_m2_int_enable(config->bootcore_index);
 
 	return 0;
 }
 
 static rpmi_bool_t syssusp_ready(void* priv, rpmi_uint32_t hart_index)
 {
+	struct spacemit_rpmi_hsm_config *config = (struct spacemit_rpmi_hsm_config *)priv;
+
+	rt_sem_take(config->cm2_etr_sem, RT_WAITING_FOREVER);
+
 	return true;
 }
-
-/* extern void mbox_test_start(void); */
 
 static void syssusp_finalize(
 		void* priv,
@@ -887,46 +773,9 @@ static void syssusp_finalize(
 		const struct rpmi_system_suspend_type* syssusp_type,
 		rpmi_uint64_t resume_addr)
 {
-	int i;
-	int flags = 0;
-	struct spacemit_rpmi_hsm_config *config = priv;
-	rpmi_uint32_t cluster_id = CPU_TO_CLUSTER(hart_index);
-	clusterx_m2_lp_ctrl *clx_m2_lp_ctl;
+	struct spacemit_rpmi_hsm_config *config = (struct spacemit_rpmi_hsm_config *)priv;
 
-	/* here we just wait the cluster0 enter M2 */
-	for (i = (hart_index & ~(PLATFORM_MAX_CPUS_PER_CLUSTER - 1)); i <
-				((hart_index & ~(PLATFORM_MAX_CPUS_PER_CLUSTER - 1)) + PLATFORM_MAX_CPUS_PER_CLUSTER); ++i) {
-		if (i == hart_index)
-			continue;
-
-		if (config->hsm->leaf.harts[i].state == RPMI_HSM_HART_STATE_STOPPED)
-			++flags;
-	}
-
-	if (flags == (PLATFORM_MAX_CPUS_PER_CLUSTER - 1)) {
-		/* the first core of this cluster */
-		/* then wait */
-		if (cluster_id == 0) {
-#ifdef USING_INTERRUPT_TO_TRIGGER_STATE_TRANSITION_OF_CLUSTER
-			rt_sem_take(config->sem_enter0, RT_WAITING_FOREVER);
-#else
-			clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C0_M2_INT_EN_REG;
-			__m2_enter(clx_m2_lp_ctl);
-#endif
-		} else {
-			rt_kprintf("%s:%d, the last cluster is not cluster0\n", __func__, __LINE__);
-			while (1);
-		}
-	} else {
-		rt_kprintf("%s:%d, cluster0 has the unstoped cores\n", __func__, __LINE__);
-		while (1);
-	}
-
-	/* let rcpu1 enter lp mode */
-	/* mbox_test_start(); */
-
-	/* trigger the system suspend */
-	/* rt_pm_release(RT_PM_DEFAULT_SLEEP_MODE); */
+	rt_event_send(config->event, (1 << config->bootcore_index));
 }
 
 static rpmi_bool_t syssusp_can_resume(void* priv, rpmi_uint32_t hart_index)
@@ -941,14 +790,18 @@ static enum rpmi_error syssusp_resume(
 		rpmi_uint64_t resume_addr)
 {
 	struct spacemit_rpmi_hsm_config *config = priv;
-	clusterx_m2_lp_ctrl *clx_m2_lp_ctl;
 
-#ifdef USING_INTERRUPT_TO_TRIGGER_STATE_TRANSITION_OF_CLUSTER
-	rt_sem_take(config->sem_exit0, RT_WAITING_FOREVER);
-#else
-	clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C0_M2_INT_EN_REG;
-	__m2_exit(clx_m2_lp_ctl);
-#endif
+	/* wait resume signale */
+	rt_sem_take(config->cm2_ext_sem, RT_WAITING_FOREVER);
+
+	/* we should first let the rcpu1 wakeup, so wait for the notify by spacmeit-hsm layer */
+	rt_sem_take(config->cmwk_sem, RT_WAITING_FOREVER);
+
+	/* devote core enter D2 */
+	spacemit_devote_core_apcr(priv);
+
+	/* release the core */
+	spacemit_core_de_assert(config->bootcore_index);
 
 	return 0;
 }

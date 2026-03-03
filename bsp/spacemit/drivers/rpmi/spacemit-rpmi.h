@@ -32,13 +32,14 @@
 #define HSM_SUSPEND_CLUSTER_NON_RET	(HSM_SUSPEND_CPU_NON_RET | 0x1000000)
 #define HSM_SUSPEND_HOME_SCREEN_NON_RET	(HSM_SUSPEND_CPU_NON_RET | 0x2000000)
 
+#define PLATFROM_MAX_OS			4
 #define HSM_SUSPEND_MAX_HARTIDS		16
+
+struct spacemit_multiple_os;
 
 /* RPMI HSM structures  */
 struct spacemit_rpmi_hsm_config {
 	rt_uint32_t hartids[HSM_SUSPEND_MAX_HARTIDS];
-	rt_uint32_t stop_flag[HSM_SUSPEND_MAX_HARTIDS];
-	rt_uint32_t suspend_flag[HSM_SUSPEND_MAX_HARTIDS];
 	struct rpmi_hsm_suspend_type stype[MAX_HSM_SUSPEND_TYPE];
 	rt_int32_t hartcnt;
 	rt_int32_t type_cnt;
@@ -48,9 +49,11 @@ struct spacemit_rpmi_hsm_config {
 	struct rpmi_hsm_platform_ops *hsm_ops;
 	struct rpmi_syssusp_platform_ops *syssup_ops;
 	rt_event_t event;
-	rt_sem_t sem_exit0, sem_exit1, sem_exit2, sem_exit3;
-	rt_sem_t sem_enter0, sem_enter1, sem_enter2, sem_enter3;
-	rt_thread_t tid;
+	rt_sem_t cm2_ext_sem;
+	rt_sem_t cm2_etr_sem;
+	rt_sem_t cmwk_sem;
+	rt_uint32_t bootcore_index;
+	struct spacemit_multiple_os *mulos;
 	/* reserved for future use */
 	void *priv;
 };
@@ -175,6 +178,13 @@ struct spacemit_rpmi_msi_ops {
 	rt_int32_t (*init)(void *priv);
 	struct rpmi_sysmsi_platform_ops *msi_ops;
 	rt_list_t list;
+};
+
+struct spacemit_multiple_os {
+	struct spacemit_rpmi_hsm_config *hsm[PLATFROM_MAX_OS];
+	int os_count;
+	rt_event_t multiple_event;
+	rt_thread_t multiple_tid;
 };
 
 struct spacemit_rpmi_config {
