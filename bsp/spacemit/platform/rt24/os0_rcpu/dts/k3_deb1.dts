@@ -137,6 +137,10 @@
 	pwr_ext-supply = <&pwren_exterdc>;
 };
 
+&rpmi_hsm {
+	bootcore_index = <0>;
+};
+
 &rpmi_rtc {
 	bind_driver = "ri2c2";
 	slave_addr = <0x41>;
