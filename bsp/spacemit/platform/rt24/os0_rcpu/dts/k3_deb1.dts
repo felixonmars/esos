@@ -147,6 +147,12 @@
 	status = "okay";
 };
 
+&rpmi_pwrkey {
+	bind_driver = "ri2c2";
+	slave_addr = <0x41>;
+	status = "okay";
+};
+
 &regulators {
 	pvin: pvin {
 		compatible = "regulator-fixed";
