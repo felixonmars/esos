@@ -162,15 +162,21 @@ configure)
             ESOS_SEEK=4096
             ;;
         "/dev/mtdblock0")
-            ESOS=/dev/mtdblock0
-            # 以KB为单位
-            ESOS_SEEK=704
+            if [ -e "/dev/mtdblock3" ]; then
+                ESOS=/dev/mtdblock3
+                # 以KB为单位
+                ESOS_SEEK=0
+            elif [ -e "/dev/mtdblock0" ]; then
+                ESOS=/dev/mtdblock0
+                # 以KB为单位
+                ESOS_SEEK=704
+            fi
             ;;
         "/dev/nvme0n1")
             # 兼容无bootmode的情况
-            if [ -e "/dev/mtdblock4" ]; then
+            if [ -e "/dev/mtdblock3" ]; then
                 # nor + ssd
-                ESOS=/dev/mtdblock4
+                ESOS=/dev/mtdblock3
                 # 以KB为单位
                 ESOS_SEEK=0
             elif [ -e "/dev/mtdblock0" ]; then
