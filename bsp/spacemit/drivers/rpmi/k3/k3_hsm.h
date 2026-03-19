@@ -83,7 +83,7 @@
 #define APCR_CORE15_VETE_REG		(0xd4050000 + 0x10fc)
 #define APCR_PER_VETE_REG		(0xd4050000 + 0x1098)
 
-#define APCR_COREX_DEFAULT_VATE_VALUE	((1 << 3) | (1 << 13) | (1 << 14) | /* (1 << 19) | */ (1 << 25) | (1 << 26) | /* (1 << 27) | */ (1 << 29) | (1 << 31))
+#define APCR_COREX_DEFAULT_VATE_VALUE	((1 << 3) | (1 << 13) | (1 << 14) | (1 << 19) | (1 << 25) | (1 << 26) | (1 << 27) | (1 << 29) | (1 << 31))
 
 #define PMU_CORE_STATUS0		(0xd4282800 + 0x90)
 #define PMU_CORE_STATUS1		(0xd4282800 + 0x80)
@@ -133,7 +133,15 @@
 #define PMU_L2_FLUSH_HW_EN              (1 << 2)
 
 #define CPU_MASK_FI_INTTERUPT		((1 << 3) | (1 << 4))
-#define CPU_PWR_DOWN_VALUE              (0x3)
-#define CLUSTER_PWR_DOWN_VALUE          (0x2007)
+#define CPU_PWR_DOWN_VALUE              (0x1f)
+#define CLUSTER_PWR_DOWN_VALUE          (0x8f)
+
+#define CPU_TO_CLUSTER(cpu)    ((cpu) / PLATFORM_MAX_CPUS_PER_CLUSTER)
+
+void spacemit_cx_m2_int_enable(rt_uint32_t hartid);
+void spacemit_cx_m2_enter_wait(rt_uint32_t hartid);
+void spacemit_cx_m2_int_disabled(rt_uint32_t hartid);
+void spacemit_deassert_corex(unsigned int hartid);
+void spacemit_assert_corex(unsigned int hartid);
 
 #endif /* __k3_HSM_H__ */

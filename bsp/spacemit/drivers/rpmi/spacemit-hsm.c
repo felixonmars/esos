@@ -336,7 +336,7 @@ static void spacemit_multiple_os_poll(void *priv)
 		/* TODO: let rcpu1 enter low power mode */
 
 		/* trigger the system suspend */
-		// rt_pm_release(RT_PM_DEFAULT_SLEEP_MODE);
+		rt_pm_release(RT_PM_DEFAULT_SLEEP_MODE);
 
 		/* will enter idle thread */
 		rt_schedule();

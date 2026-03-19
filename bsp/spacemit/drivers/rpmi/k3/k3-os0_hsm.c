@@ -5,10 +5,11 @@
  */
 
 #include <rthw.h>
- #include <drivers/pm.h>
+#include <drivers/pm.h>
 #include <rtthread.h>
 #include <dtb_head.h>
 #include <riscv-ops.h>
+#include <riscv-plic.h>
 #include "k3_hsm.h"
 #include <register_defination.h>
 #include "../spacemit-rpmi.h"
@@ -142,523 +143,9 @@ struct rpmi_hsm_platform_ops k3_os0_hsm_pops = {
 	.hart_suspend_finalize = k3_hsm_hart_suspend_finalize
 };
 
-#define CPU_TO_CLUSTER(cpu)    ((cpu) / PLATFORM_MAX_CPUS_PER_CLUSTER)
-
-static void spacemit_cx_m2_int_enable(rt_uint32_t hartid)
-{
-	rt_uint32_t val;
-	clusterx_m2_lp_ctrl *clx_m2_lp_ctl;
-	rpmi_uint32_t cluster_id = CPU_TO_CLUSTER(hartid);
-
-	switch (cluster_id) {
-	case 0:
-		clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C0_M2_INT_EN_REG;
-		val = readl((unsigned int *)AUDIO_WAKEUP_EN_REG);
-		val |= (3 << 10);
-		writel(val, (unsigned int *)AUDIO_WAKEUP_EN_REG);
-		break;
-	case 1:
-		clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C1_M2_INT_EN_REG;
-		val = readl((unsigned int *)AUDIO_WAKEUP_EN_REG);
-		val |= (3 << 12);
-		writel(val, (unsigned int *)AUDIO_WAKEUP_EN_REG);
-		break;
-	case 2:
-		clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C2_M2_INT_EN_REG;
-		val = readl((unsigned int *)AUDIO_WAKEUP_EN_REG);
-		val |= (3 << 14);
-		writel(val, (unsigned int *)AUDIO_WAKEUP_EN_REG);
-		break;
-	case 3:
-		clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C3_M2_INT_EN_REG;
-		val = readl((unsigned int *)AUDIO_WAKEUP_EN_REG);
-		val |= (3 << 16);
-		writel(val, (unsigned int *)AUDIO_WAKEUP_EN_REG);
-		break;
-	default:
-		break;
-	}
-
-	val = readl((unsigned int *)clx_m2_lp_ctl);
-	val |= (1 << 0);
-	writel(val, (unsigned int *)clx_m2_lp_ctl);
-}
-
-static void spacemit_cx_m2_enter_wait(rt_uint32_t hartid)
-{
-	rt_uint32_t val;
-	clusterx_m2_lp_ctrl *clx_m2_lp_ctl;
-	rpmi_uint32_t cluster_id = CPU_TO_CLUSTER(hartid);
-
-	switch (cluster_id) {
-	case 0:
-		clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C0_M2_INT_EN_REG;
-		break;
-	case 1:
-		clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C1_M2_INT_EN_REG;
-		break;
-	case 2:
-		clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C2_M2_INT_EN_REG;
-		break;
-	case 3:
-		clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C3_M2_INT_EN_REG;
-		break;
-	default:
-		break;
-	}
-
-	val = readl((unsigned int *)clx_m2_lp_ctl);
-	if (((val >> 6) & 0x3f) == 0x13) {
-		rt_kprintf("Cluster:%d, enter M2 OK\n", cluster_id);
-	} else {
-		rt_kprintf("Cluster:%d, enter M2 Failed\n", cluster_id);
-	}
-
-	val = readl((unsigned int *)clx_m2_lp_ctl);
-	val |= (1 << 2);
-	writel(val, (unsigned int *)clx_m2_lp_ctl);
-
-	val = readl((unsigned int *)clx_m2_lp_ctl);
-	while ((val >> 4) & 0x1) {
-		val = readl((unsigned int *)clx_m2_lp_ctl);	
-	}
-
-	val = readl((unsigned int *)clx_m2_lp_ctl);
-	val &= ~(1 << 2);
-	writel(val, (unsigned int *)clx_m2_lp_ctl);
-}
-
-static void spacemit_cx_m2_int_disabled(rt_uint32_t hartid)
-{
-	rt_uint32_t val;
-	clusterx_m2_lp_ctrl *clx_m2_lp_ctl;
-	rpmi_uint32_t cluster_id = CPU_TO_CLUSTER(hartid);
-
-	switch (cluster_id) {
-	case 0:
-		clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C0_M2_INT_EN_REG;
-		val = readl((unsigned int *)AUDIO_WAKEUP_EN_REG);
-		val &= ~(3 << 10);
-		writel(val, (unsigned int *)AUDIO_WAKEUP_EN_REG);
-		break;
-	case 1:
-		clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C1_M2_INT_EN_REG;
-		val = readl((unsigned int *)AUDIO_WAKEUP_EN_REG);
-		val &= ~(3 << 12);
-		writel(val, (unsigned int *)AUDIO_WAKEUP_EN_REG);
-		break;
-	case 2:
-		clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C2_M2_INT_EN_REG;
-		val = readl((unsigned int *)AUDIO_WAKEUP_EN_REG);
-		val &= ~(3 << 14);
-		writel(val, (unsigned int *)AUDIO_WAKEUP_EN_REG);
-		break;
-	case 3:
-		clx_m2_lp_ctl = (clusterx_m2_lp_ctrl *)AP_C3_M2_INT_EN_REG;
-		val = readl((unsigned int *)AUDIO_WAKEUP_EN_REG);
-		val &= ~(3 << 16);
-		writel(val, (unsigned int *)AUDIO_WAKEUP_EN_REG);
-		break;
-	default:
-		break;
-	}
-
-	val = readl((unsigned int *)clx_m2_lp_ctl);
-	val |= (0x1 << 1);
-	writel(val, (unsigned int *)clx_m2_lp_ctl);
-
-	val = readl((unsigned int *)clx_m2_lp_ctl);
-	while (((val >> 6) & 0x3f) != 1) {
-		val = readl((unsigned int *)clx_m2_lp_ctl);
-	}
-
-	val = readl((unsigned int *)clx_m2_lp_ctl);
-	val &= ~(0x1 << 1);
-	writel(val, (unsigned int *)clx_m2_lp_ctl);
-
-	val = readl((unsigned int *)clx_m2_lp_ctl);
-	val &= ~(0x1 << 0);
-	writel(val, (unsigned int *)clx_m2_lp_ctl);
-}
-
-void spacemit_core_assert(uint32_t hartid)
-{
-	unsigned int value;
-
-	/* vote core power-down & cluster power-down */
-	switch (hartid) {
-	case 0:
-		value = readl((unsigned int *)PMU_CC2_AP);
-		value |= (1 << CORE0_POP_RST_BIT);
-		writel(value, (unsigned int *)PMU_CC2_AP);
-		break;
-	case 1:
-		value = readl((unsigned int *)PMU_CC2_AP);
-		value |= (1 << CORE1_POP_RST_BIT);
-		writel(value, (unsigned int *)PMU_CC2_AP);
-		break;
-	case 2:
-		value = readl((unsigned int *)PMU_CC2_AP);
-		value |= (1 << CORE2_POP_RST_BIT);
-		writel(value, (unsigned int *)PMU_CC2_AP);
-		break;
-	case 3:
-		value = readl((unsigned int *)PMU_CC2_AP);
-		value |= (1 << CORE3_POP_RST_BIT);
-		writel(value, (unsigned int *)PMU_CC2_AP);
-		break;
-	case 4:
-		value = readl((unsigned int *)PMU_CC2_AP);
-		value |= (1 << CORE4_POP_RST_BIT);
-		writel(value, (unsigned int *)PMU_CC2_AP);
-		break;
-	case 5:
-		value = readl((unsigned int *)PMU_CC2_AP);
-		value |= (1 << CORE5_POP_RST_BIT);
-		writel(value, (unsigned int *)PMU_CC2_AP);
-		break;
-	case 6:
-		value = readl((unsigned int *)PMU_CC2_AP);
-		value |= (1 << CORE6_POP_RST_BIT);
-		writel(value, (unsigned int *)PMU_CC2_AP);
-		break;
-	case 7:
-		value = readl((unsigned int *)PMU_CC2_AP);
-		value |= (1 << CORE7_POP_RST_BIT);
-		writel(value, (unsigned int *)PMU_CC2_AP);
-		break;
-	case 8:
-		value = readl((unsigned int *)PMU_CC3_AP);
-		value |= (1 << CORE8_POP_RST_BIT);
-		writel(value, (unsigned int *)PMU_CC3_AP);
-		break;
-	case 9:
-		value = readl((unsigned int *)PMU_CC3_AP);
-		value |= (1 << CORE9_POP_RST_BIT);
-		writel(value, (unsigned int *)PMU_CC3_AP);
-		break;
-	case 10:
-		value = readl((unsigned int *)PMU_CC3_AP);
-		value |= (1 << CORE10_POP_RST_BIT);
-		writel(value, (unsigned int *)PMU_CC3_AP);
-		break;
-	case 11:
-		value = readl((unsigned int *)PMU_CC3_AP);
-		value |= (1 << CORE11_POP_RST_BIT);
-		writel(value, (unsigned int *)PMU_CC3_AP);
-		break;
-	case 12:
-		value = readl((unsigned int *)PMU_CC3_AP);
-		value |= (1 << CORE12_POP_RST_BIT);
-		writel(value, (unsigned int *)PMU_CC3_AP);
-		break;
-	case 13:
-		value = readl((unsigned int *)PMU_CC3_AP);
-		value |= (1 << CORE13_POP_RST_BIT);
-		writel(value, (unsigned int *)PMU_CC3_AP);
-		break;
-	case 14:
-		value = readl((unsigned int *)PMU_CC3_AP);
-		value |= (1 << CORE14_POP_RST_BIT);
-		writel(value, (unsigned int *)PMU_CC3_AP);
-		break;
-	case 15:
-		value = readl((unsigned int *)PMU_CC3_AP);
-		value |= (1 << CORE15_POP_RST_BIT);
-		writel(value, (unsigned int *)PMU_CC3_AP);
-		break;
-	default:
-		break;
-	}
-}
-
-void spacemit_core_de_assert(uint32_t hartid)
-{
-	unsigned int value;
-
-	/* vote core power-down & cluster power-down */
-	switch (hartid) {
-	case 0:
-		value = readl((unsigned int *)PMU_CC2_AP);
-		value &= ~(1 << CORE0_POP_RST_BIT);
-		writel(value, (unsigned int *)PMU_CC2_AP);
-		break;
-	case 1:
-		value = readl((unsigned int *)PMU_CC2_AP);
-		value &= ~(1 << CORE1_POP_RST_BIT);
-		writel(value, (unsigned int *)PMU_CC2_AP);
-		break;
-	case 2:
-		value = readl((unsigned int *)PMU_CC2_AP);
-		value &= ~(1 << CORE2_POP_RST_BIT);
-		writel(value, (unsigned int *)PMU_CC2_AP);
-		break;
-	case 3:
-		value = readl((unsigned int *)PMU_CC2_AP);
-		value &= ~(1 << CORE3_POP_RST_BIT);
-		writel(value, (unsigned int *)PMU_CC2_AP);
-		break;
-	case 4:
-		value = readl((unsigned int *)PMU_CC2_AP);
-		value &= ~(1 << CORE4_POP_RST_BIT);
-		writel(value, (unsigned int *)PMU_CC2_AP);
-		break;
-	case 5:
-		value = readl((unsigned int *)PMU_CC2_AP);
-		value &= ~(1 << CORE5_POP_RST_BIT);
-		writel(value, (unsigned int *)PMU_CC2_AP);
-		break;
-	case 6:
-		value = readl((unsigned int *)PMU_CC2_AP);
-		value &= ~(1 << CORE6_POP_RST_BIT);
-		writel(value, (unsigned int *)PMU_CC2_AP);
-		break;
-	case 7:
-		value = readl((unsigned int *)PMU_CC2_AP);
-		value &= ~(1 << CORE7_POP_RST_BIT);
-		writel(value, (unsigned int *)PMU_CC2_AP);
-		break;
-	case 8:
-		value = readl((unsigned int *)PMU_CC3_AP);
-		value &= ~(1 << CORE8_POP_RST_BIT);
-		writel(value, (unsigned int *)PMU_CC3_AP);
-		break;
-	case 9:
-		value = readl((unsigned int *)PMU_CC3_AP);
-		value &= ~(1 << CORE9_POP_RST_BIT);
-		writel(value, (unsigned int *)PMU_CC3_AP);
-		break;
-	case 10:
-		value = readl((unsigned int *)PMU_CC3_AP);
-		value &= ~(1 << CORE10_POP_RST_BIT);
-		writel(value, (unsigned int *)PMU_CC3_AP);
-		break;
-	case 11:
-		value = readl((unsigned int *)PMU_CC3_AP);
-		value &= ~(1 << CORE11_POP_RST_BIT);
-		writel(value, (unsigned int *)PMU_CC3_AP);
-		break;
-	case 12:
-		value = readl((unsigned int *)PMU_CC3_AP);
-		value &= ~(1 << CORE12_POP_RST_BIT);
-		writel(value, (unsigned int *)PMU_CC3_AP);
-		break;
-	case 13:
-		value = readl((unsigned int *)PMU_CC3_AP);
-		value &= ~(1 << CORE13_POP_RST_BIT);
-		writel(value, (unsigned int *)PMU_CC3_AP);
-		break;
-	case 14:
-		value = readl((unsigned int *)PMU_CC3_AP);
-		value &= ~(1 << CORE14_POP_RST_BIT);
-		writel(value, (unsigned int *)PMU_CC3_AP);
-		break;
-	case 15:
-		value = readl((unsigned int *)PMU_CC3_AP);
-		value &= ~(1 << CORE15_POP_RST_BIT);
-		writel(value, (unsigned int *)PMU_CC3_AP);
-		break;
-	default:
-		break;
-	}
-}
-
-static void spacemit_vote_core_apcr(void *priv)
-{
-	int i;
-	unsigned int val;
-	int hartid;
-	struct spacemit_rpmi_hsm_config *config = priv;
-
-	for (i = 0; i < config->hartcnt; ++i) {
-		hartid = config->hartids[i];
-
-		switch (hartid) {
-		case 0:
-			val = readl((unsigned int *)APCR_CORE0_VETE_REG);
-			val |= APCR_COREX_DEFAULT_VATE_VALUE;
-			writel(val, (unsigned int *)APCR_CORE0_VETE_REG);
-			break;
-		case 1:
-			val = readl((unsigned int *)APCR_CORE1_VETE_REG);
-			val |= APCR_COREX_DEFAULT_VATE_VALUE;
-			writel(val, (unsigned int *)APCR_CORE1_VETE_REG);
-			break;
-		case 2:
-			val = readl((unsigned int *)APCR_CORE2_VETE_REG);
-			val |= APCR_COREX_DEFAULT_VATE_VALUE;
-			writel(val, (unsigned int *)APCR_CORE2_VETE_REG);
-			break;
-		case 3:
-			val = readl((unsigned int *)APCR_CORE3_VETE_REG);
-			val |= APCR_COREX_DEFAULT_VATE_VALUE;
-			writel(val, (unsigned int *)APCR_CORE3_VETE_REG);
-			break;
-		case 4:
-			val = readl((unsigned int *)APCR_CORE4_VETE_REG);
-			val |= APCR_COREX_DEFAULT_VATE_VALUE;
-			writel(val, (unsigned int *)APCR_CORE4_VETE_REG);
-			break;
-		case 5:
-			val = readl((unsigned int *)APCR_CORE5_VETE_REG);
-			val |= APCR_COREX_DEFAULT_VATE_VALUE;
-			writel(val, (unsigned int *)APCR_CORE5_VETE_REG);
-			break;
-		case 6:
-			val = readl((unsigned int *)APCR_CORE6_VETE_REG);
-			val |= APCR_COREX_DEFAULT_VATE_VALUE;
-			writel(val, (unsigned int *)APCR_CORE6_VETE_REG);
-			break;
-		case 7:
-			val = readl((unsigned int *)APCR_CORE7_VETE_REG);
-			val |= APCR_COREX_DEFAULT_VATE_VALUE;
-			writel(val, (unsigned int *)APCR_CORE7_VETE_REG);
-			break;
-		case 8:
-			val = readl((unsigned int *)APCR_CORE8_VETE_REG);
-			val |= APCR_COREX_DEFAULT_VATE_VALUE;
-			writel(val, (unsigned int *)APCR_CORE8_VETE_REG);
-			break;
-		case 9:
-			val = readl((unsigned int *)APCR_CORE9_VETE_REG);
-			val |= APCR_COREX_DEFAULT_VATE_VALUE;
-			writel(val, (unsigned int *)APCR_CORE9_VETE_REG);
-			break;
-		case 10:
-			val = readl((unsigned int *)APCR_CORE10_VETE_REG);
-			val |= APCR_COREX_DEFAULT_VATE_VALUE;
-			writel(val, (unsigned int *)APCR_CORE10_VETE_REG);
-			break;
-		case 11:
-			val = readl((unsigned int *)APCR_CORE11_VETE_REG);
-			val |= APCR_COREX_DEFAULT_VATE_VALUE;
-			writel(val, (unsigned int *)APCR_CORE11_VETE_REG);
-			break;
-		case 12:
-			val = readl((unsigned int *)APCR_CORE12_VETE_REG);
-			val |= APCR_COREX_DEFAULT_VATE_VALUE;
-			writel(val, (unsigned int *)APCR_CORE12_VETE_REG);
-			break;
-		case 13:
-			val = readl((unsigned int *)APCR_CORE13_VETE_REG);
-			val |= APCR_COREX_DEFAULT_VATE_VALUE;
-			writel(val, (unsigned int *)APCR_CORE13_VETE_REG);
-			break;
-		case 14:
-			val = readl((unsigned int *)APCR_CORE14_VETE_REG);
-			val |= APCR_COREX_DEFAULT_VATE_VALUE;
-			writel(val, (unsigned int *)APCR_CORE14_VETE_REG);
-			break;
-		case 15:
-			val = readl((unsigned int *)APCR_CORE15_VETE_REG);
-			val |= APCR_COREX_DEFAULT_VATE_VALUE;
-			writel(val, (unsigned int *)APCR_CORE15_VETE_REG);
-			break;
-		default:
-			break;
-		}
-	}
-}
-
-static void spacemit_devote_core_apcr(void *priv)
-{
-	int i;
-	unsigned int val;
-	int hartid;
-	struct spacemit_rpmi_hsm_config *config = priv;
-
-	for (i = 0; i < config->hartcnt; ++i) {
-		hartid = config->hartids[i];
-
-		switch (hartid) {
-		case 0:
-			val = readl((unsigned int *)APCR_CORE0_VETE_REG);
-			val &= ~APCR_COREX_DEFAULT_VATE_VALUE;
-			writel(val, (unsigned int *)APCR_CORE0_VETE_REG);
-			break;
-		case 1:
-			val = readl((unsigned int *)APCR_CORE1_VETE_REG);
-			val &= ~APCR_COREX_DEFAULT_VATE_VALUE;
-			writel(val, (unsigned int *)APCR_CORE1_VETE_REG);
-			break;
-		case 2:
-			val = readl((unsigned int *)APCR_CORE2_VETE_REG);
-			val &= ~APCR_COREX_DEFAULT_VATE_VALUE;
-			writel(val, (unsigned int *)APCR_CORE2_VETE_REG);
-			break;
-		case 3:
-			val = readl((unsigned int *)APCR_CORE3_VETE_REG);
-			val &= ~APCR_COREX_DEFAULT_VATE_VALUE;
-			writel(val, (unsigned int *)APCR_CORE3_VETE_REG);
-			break;
-		case 4:
-			val = readl((unsigned int *)APCR_CORE4_VETE_REG);
-			val &= ~APCR_COREX_DEFAULT_VATE_VALUE;
-			writel(val, (unsigned int *)APCR_CORE4_VETE_REG);
-			break;
-		case 5:
-			val = readl((unsigned int *)APCR_CORE5_VETE_REG);
-			val &= ~APCR_COREX_DEFAULT_VATE_VALUE;
-			writel(val, (unsigned int *)APCR_CORE5_VETE_REG);
-			break;
-		case 6:
-			val = readl((unsigned int *)APCR_CORE6_VETE_REG);
-			val &= ~APCR_COREX_DEFAULT_VATE_VALUE;
-			writel(val, (unsigned int *)APCR_CORE6_VETE_REG);
-			break;
-		case 7:
-			val = readl((unsigned int *)APCR_CORE7_VETE_REG);
-			val &= ~APCR_COREX_DEFAULT_VATE_VALUE;
-			writel(val, (unsigned int *)APCR_CORE7_VETE_REG);
-			break;
-		case 8:
-			val = readl((unsigned int *)APCR_CORE8_VETE_REG);
-			val &= ~APCR_COREX_DEFAULT_VATE_VALUE;
-			writel(val, (unsigned int *)APCR_CORE8_VETE_REG);
-			break;
-		case 9:
-			val = readl((unsigned int *)APCR_CORE9_VETE_REG);
-			val &= ~APCR_COREX_DEFAULT_VATE_VALUE;
-			writel(val, (unsigned int *)APCR_CORE9_VETE_REG);
-			break;
-		case 10:
-			val = readl((unsigned int *)APCR_CORE10_VETE_REG);
-			val &= ~APCR_COREX_DEFAULT_VATE_VALUE;
-			writel(val, (unsigned int *)APCR_CORE10_VETE_REG);
-			break;
-		case 11:
-			val = readl((unsigned int *)APCR_CORE11_VETE_REG);
-			val &= ~APCR_COREX_DEFAULT_VATE_VALUE;
-			writel(val, (unsigned int *)APCR_CORE11_VETE_REG);
-			break;
-		case 12:
-			val = readl((unsigned int *)APCR_CORE12_VETE_REG);
-			val &= ~APCR_COREX_DEFAULT_VATE_VALUE;
-			writel(val, (unsigned int *)APCR_CORE12_VETE_REG);
-			break;
-		case 13:
-			val = readl((unsigned int *)APCR_CORE13_VETE_REG);
-			val &= ~APCR_COREX_DEFAULT_VATE_VALUE;
-			writel(val, (unsigned int *)APCR_CORE13_VETE_REG);
-			break;
-		case 14:
-			val = readl((unsigned int *)APCR_CORE14_VETE_REG);
-			val &= ~APCR_COREX_DEFAULT_VATE_VALUE;
-			writel(val, (unsigned int *)APCR_CORE14_VETE_REG);
-			break;
-		case 15:
-			val = readl((unsigned int *)APCR_CORE15_VETE_REG);
-			val &= ~APCR_COREX_DEFAULT_VATE_VALUE;
-			writel(val, (unsigned int *)APCR_CORE15_VETE_REG);
-			break;
-		default:
-			break;
-		}
-	}
-}
-
 static void spacemit_m2_enter_exit(int vector, void *param)
 {
+	unsigned int val;
 	struct spacemit_rpmi_hsm_config *config = param;
 	rpmi_uint32_t cluster_id = CPU_TO_CLUSTER(config->bootcore_index);
 
@@ -667,16 +154,16 @@ static void spacemit_m2_enter_exit(int vector, void *param)
 			(vector == AP_C2_M2_ENTER_INT_NUM) ||
 			(vector == AP_C3_M2_ENTER_INT_NUM)) {
 
-		/* clear the pending */
-		spacemit_cx_m2_enter_wait(config->bootcore_index);
+			/* clear the pending */
+			spacemit_cx_m2_enter_wait(config->bootcore_index);
 
-		rt_sem_release(config->cm2_etr_sem);
+			rt_sem_release(config->cm2_etr_sem);
 
 		return;
 	}
 
-	/* mask the AP wakeup */
-	spacemit_core_assert(config->bootcore_index);
+	/* assert corex */
+	spacemit_assert_corex(config->bootcore_index);
 
 	/* clear the pending and wakeup the cluster */
 	spacemit_cx_m2_int_disabled(config->bootcore_index);
@@ -714,24 +201,28 @@ static rt_int32_t _k3_os0_hsm_init(void *priv)
 		rt_hw_interrupt_install(AP_C0_M2_ENTER_INT_NUM, spacemit_m2_enter_exit, priv, "c0_m2_enter");
 		rt_hw_interrupt_umask(AP_C0_M2_EXIT_INT_NUM);
 		rt_hw_interrupt_umask(AP_C0_M2_ENTER_INT_NUM);
+		config->cm2_ext_vector = AP_C0_M2_EXIT_INT_NUM;
 	break;
 	case 1:
 		rt_hw_interrupt_install(AP_C1_M2_EXIT_INT_NUM, spacemit_m2_enter_exit, priv, "c1_m2_exit");
 		rt_hw_interrupt_install(AP_C1_M2_ENTER_INT_NUM, spacemit_m2_enter_exit, priv, "c1_m2_enter");
 		rt_hw_interrupt_umask(AP_C1_M2_EXIT_INT_NUM);
 		rt_hw_interrupt_umask(AP_C1_M2_ENTER_INT_NUM);
+		config->cm2_ext_vector = AP_C1_M2_EXIT_INT_NUM;
 	break;
 	case 2:
 		rt_hw_interrupt_install(AP_C2_M2_EXIT_INT_NUM, spacemit_m2_enter_exit, priv, "c2_m2_exit");
 		rt_hw_interrupt_install(AP_C2_M2_ENTER_INT_NUM, spacemit_m2_enter_exit, priv, "c2_m2_enter");
 		rt_hw_interrupt_umask(AP_C2_M2_EXIT_INT_NUM);
 		rt_hw_interrupt_umask(AP_C2_M2_ENTER_INT_NUM);
+		config->cm2_ext_vector = AP_C2_M2_EXIT_INT_NUM;
 	break;
 	case 3:
 		rt_hw_interrupt_install(AP_C3_M2_EXIT_INT_NUM, spacemit_m2_enter_exit, priv, "c3_m2_exit");
 		rt_hw_interrupt_install(AP_C3_M2_ENTER_INT_NUM, spacemit_m2_enter_exit, priv, "c3_m2_enter");
 		rt_hw_interrupt_umask(AP_C3_M2_EXIT_INT_NUM);
 		rt_hw_interrupt_umask(AP_C3_M2_ENTER_INT_NUM);
+		config->cm2_ext_vector = AP_C3_M2_EXIT_INT_NUM;
         break;
 	default:
         	break;
@@ -747,11 +238,10 @@ static enum rpmi_error syssusp_prepare(
 		const struct rpmi_system_suspend_type* syssusp_type,
 		rpmi_uint64_t resume_addr)
 {
+	unsigned int val;
+
 	struct spacemit_rpmi_hsm_config *config = (struct spacemit_rpmi_hsm_config *)priv;
 	rpmi_uint32_t cluster_id = CPU_TO_CLUSTER(config->bootcore_index);
-
-	/* vote core enter D2 */
-	spacemit_vote_core_apcr(priv);
 
 	spacemit_cx_m2_int_enable(config->bootcore_index);
 
@@ -789,6 +279,7 @@ static enum rpmi_error syssusp_resume(
 		const struct rpmi_system_suspend_type* syssusp_type,
 		rpmi_uint64_t resume_addr)
 {
+	unsigned int val;
 	struct spacemit_rpmi_hsm_config *config = priv;
 
 	/* wait resume signale */
@@ -797,11 +288,8 @@ static enum rpmi_error syssusp_resume(
 	/* we should first let the rcpu1 wakeup, so wait for the notify by spacmeit-hsm layer */
 	rt_sem_take(config->cmwk_sem, RT_WAITING_FOREVER);
 
-	/* devote core enter D2 */
-	spacemit_devote_core_apcr(priv);
-
-	/* release the core */
-	spacemit_core_de_assert(config->bootcore_index);
+	/* de-assert bootcore */
+	spacemit_deassert_corex(config->bootcore_index);
 
 	return 0;
 }

@@ -12,9 +12,10 @@
 #include <riscv_encoding.h>
 
 .section    .bss
+    .align 8
     .global __sleep_sp_store
 __sleep_sp_store:
-    .space 4
+    .space 8
 
 	.text
 
@@ -58,7 +59,7 @@ __cpu_suspend_enter:
 
 	/* save the context to __sleep_sp_store */
 	la t0, __sleep_sp_store
-	sw a0, 0*REGBYTES(t0)
+	STORE a0, 0*REGBYTES(t0)
 
 	/* Return non-zero value */
 	li      a0, 1
@@ -80,7 +81,7 @@ __cpu_resume_enter:
 
 	/* get the saved context */
 	la a1, __sleep_sp_store
-	lw a0, 0*REGBYTES(a1)
+	LOAD a0, 0*REGBYTES(a1)
 
         /* Restore CSRs */
         LOAD	t0, (SUSPEND_CONTEXT_REGS + PT_EPC)(a0)

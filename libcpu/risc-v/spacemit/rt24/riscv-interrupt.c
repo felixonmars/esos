@@ -118,13 +118,10 @@ void rt_hw_eclic_save(void)
     for (idx = 0; idx < SOC_INT_MAX; idx++)
     {
 	    ecli_save_reg[idx] = rt_hw_interrupt_is_enabled(idx);
-    }
-
-    /* disable all the irqs */
-    for (idx = 0; idx < SOC_INT_MAX; idx++)
-    {
-	    rt_hw_interrupt_mask(idx);
-	    rt_hw_interrupt_clear_pending(idx);
+	    if (ecli_save_reg[idx]) {
+		__plic_set_priority(idx, 0);
+		rt_hw_interrupt_mask(idx);
+	    }
     }
 }
 
@@ -137,10 +134,10 @@ void rt_hw_eclic_restore(void)
 
     for (; idx < SOC_INT_MAX; idx++)
     {
-	__plic_set_priority(idx, 1);
-
-	if (ecli_save_reg[idx])
+	if (ecli_save_reg[idx]) {
+		__plic_set_priority(idx, 1);
 		rt_hw_interrupt_umask(idx);
+	}
     }
 }
 #endif

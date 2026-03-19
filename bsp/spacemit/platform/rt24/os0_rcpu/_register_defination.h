@@ -37,11 +37,10 @@ typedef volatile struct {
 typedef volatile union audio_pmu_vote_reg {
 	rt_uint32_t val;
 	struct {
-		rt_uint32_t reserved0:1;
-		rt_uint32_t vote_for_lp:1;
+		rt_uint32_t vote_for_clk_off:1;
+		rt_uint32_t reserved:1;
 		rt_uint32_t vote_for_plloff:1;
-		rt_uint32_t vote_for_pwroff:1;
-		rt_uint32_t reserved2:28;
+		rt_uint32_t reserved2:29;
 	} bits;
 } audio_pmu_vote_t;
 
@@ -148,6 +147,8 @@ typedef volatile union rt24_core0_idle_cfg_reg {
 
 #define RCPU_CORE1_BOOT_ENTRY_LO	0xc088008c
 #define RCPU_CORE1_BOOT_ENTRY_HI	0xc0880090
+
+#define APCR_PER_VETE_REG              (0xd4050000 + 0x1098)
 
 #define RT_HEAP_START		0x100500000
 #define RT_HEAP_END		0x100700000

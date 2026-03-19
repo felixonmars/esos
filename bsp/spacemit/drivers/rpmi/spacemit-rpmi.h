@@ -52,6 +52,7 @@ struct spacemit_rpmi_hsm_config {
 	rt_sem_t cm2_ext_sem;
 	rt_sem_t cm2_etr_sem;
 	rt_sem_t cmwk_sem;
+	unsigned int cm2_ext_vector;
 	rt_uint32_t bootcore_index;
 	struct spacemit_multiple_os *mulos;
 	/* reserved for future use */
