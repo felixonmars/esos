@@ -208,6 +208,11 @@ function create_esos_itb()
 
 function build_kernel()
 {
+	# build esos-lite first
+	cd components/esos-lite/rt-thread/
+	./build_top.sh
+	cd -
+
 	local count=0
 	source ${TOP_ESOS_BASE_DEFCONF}
 
