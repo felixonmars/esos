@@ -4,7 +4,9 @@ from building import *
 
 cwd  = GetCurrentDir()
 src     = Glob('*.c')
+src     += Glob('*.S')
 CPPPATH = [cwd]
+list = os.listdir(cwd)
 
 if GetDepend('SOC_SPACEMIT_K1_X') == False:
     SrcRemove(src, ['k1x_pm.c'])
@@ -13,5 +15,10 @@ if GetDepend('SOC_SPACEMIT_K3') == False:
     SrcRemove(src, ['k3_pm.c'])
 
 group = DefineGroup('Drivers_pm', src, depend = ['BSP_USING_PM'], CPPPATH = CPPPATH)
+
+for d in list:
+    path = os.path.join(cwd, d)
+    if os.path.isfile(os.path.join(path, 'SConscript')):
+        group = group + SConscript(os.path.join(d, 'SConscript'))
 
 Return('group')
