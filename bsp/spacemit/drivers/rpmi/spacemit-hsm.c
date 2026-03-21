@@ -8,6 +8,8 @@
 #include <rtthread.h>
 #include <rtservice.h>
 #include <dtb_node.h>
+#include <riscv-ops.h>
+#include <register_defination.h>
 #include "spacemit-rpmi.h"
 
 static rt_list_t rpmi_hsm_list = RT_LIST_OBJECT_INIT(rpmi_hsm_list);
@@ -314,7 +316,7 @@ rt_int32_t spacemit_rpmi_hsm_register(rt_list_t *node)
 static void spacemit_multiple_os_poll(void *priv)
 {
 	int ret, i;
-	rt_uint32_t e, msk = 0;;
+	rt_uint32_t e, msk = 0;
 	struct spacemit_multiple_os *config = (struct spacemit_multiple_os *)priv;
 
 	for (i = 0; i < config->os_count; ++i)
@@ -333,7 +335,10 @@ static void spacemit_multiple_os_poll(void *priv)
 				RT_EVENT_FLAG_AND | RT_EVENT_FLAG_CLEAR,
 				RT_WAITING_FOREVER, &e);
 
-		/* TODO: let rcpu1 enter low power mode */
+		/* Let rcpu1 enter low power mode */
+		mbox_send_message(multiple_os_array->mtx_chan, &ret);
+		/* wait rcpu1 power down */
+		rt_sem_take(multiple_os_array->msem, RT_WAITING_FOREVER);
 
 		/* trigger the system suspend */
 		rt_pm_release(RT_PM_DEFAULT_SLEEP_MODE);
@@ -342,7 +347,19 @@ static void spacemit_multiple_os_poll(void *priv)
 		rt_schedule();
 
 		/* exit from low power mode */
-		/* TODO: wakeup rcpu1 */
+		/* assert rcpu1 */
+		writel(0, (unsigned int *)RT24_CORE1_SW_RESET_REG);
+		/* keep rcpu1 sleep */
+		writel(0, (unsigned int *)RT24_CORE1_SW_WAKEUP_REG);
+		/* set hartid */
+		writel(1, (unsigned int *)RCPU_CORE1_HART_ID_SET);
+		/* de-assert rcpu1 */
+		writel(1, (unsigned int *)RT24_CORE1_SW_RESET_REG);
+		/* wakeup rcpu1 */
+		writel(1, (unsigned int *)RT24_CORE1_SW_WAKEUP_REG);
+
+		/* wait rcpu1 power up */
+		rt_sem_take(multiple_os_array->msem, RT_WAITING_FOREVER);
 
 		/* wakeup AP */
 		for (i = 0; i < config->os_count; ++i) {
@@ -369,8 +386,18 @@ static int k3_multiple_os_power_init(void)
 }
 INIT_PREV_EXPORT(k3_multiple_os_power_init);
 
+static void lpm_rx_callback(struct mbox_client *cl, void *data)
+{
+	rt_sem_release(multiple_os_array->msem);
+}
+
 static int k3_multiple_os_power_lunch(void)
 {
+	char *string, *strend;
+	rt_int32_t size;
+	struct dtb_node *compatible_node;
+	struct dtb_node *dtb_head_node = get_dtb_node_head();
+
 	multiple_os_array->multiple_tid = rt_thread_create("multiple_thread",
 			spacemit_multiple_os_poll,
 			(void *)multiple_os_array,
@@ -379,6 +406,36 @@ static int k3_multiple_os_power_lunch(void)
 			20);
 	if (!multiple_os_array->multiple_tid) {
 		rt_kprintf("Failed to create multiple os dealing thread\n");
+		return -RT_EINVAL;
+	}
+
+	if (read_csr(mhartid) == 1)
+		return 0;
+
+	compatible_node = dtb_node_find_compatible_node(dtb_head_node, "spacemit,rslpm");
+	if (compatible_node != RT_NULL) {
+		/* check the status */
+		if (!dtb_node_device_is_available(compatible_node))
+			return -RT_EINVAL;
+
+		for_each_property_string_extend(compatible_node, "mbox-names", string, strend, size) {
+			if (rt_strcmp(string, "tx") == 0) {
+				multiple_os_array->mtx_client.dev = compatible_node;
+				multiple_os_array->mtx_client.tx_block = false;
+				multiple_os_array->mtx_client.rx_callback = RT_NULL;
+				multiple_os_array->mtx_chan = mbox_request_channel_byname(&multiple_os_array->mtx_client, string);
+			} else {
+				multiple_os_array->mrx_client.dev = compatible_node;
+				multiple_os_array->mrx_client.tx_block = false;
+				multiple_os_array->mrx_client.rx_callback = lpm_rx_callback;
+				multiple_os_array->mrx_chan = mbox_request_channel_byname(&multiple_os_array->mrx_client, string);
+			}
+		}
+	}
+
+	multiple_os_array->msem = rt_sem_create("lpmsem", 0, RT_IPC_FLAG_FIFO);
+	if (!multiple_os_array->msem) {
+		rt_kprintf("create low power sem error\n");
 		return -RT_EINVAL;
 	}
 

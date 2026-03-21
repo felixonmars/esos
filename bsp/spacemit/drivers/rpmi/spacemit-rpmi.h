@@ -186,6 +186,9 @@ struct spacemit_multiple_os {
 	int os_count;
 	rt_event_t multiple_event;
 	rt_thread_t multiple_tid;
+	rt_sem_t msem;
+	struct mbox_client mtx_client, mrx_client;
+	struct mbox_chan *mtx_chan, *mrx_chan;
 };
 
 struct spacemit_rpmi_config {

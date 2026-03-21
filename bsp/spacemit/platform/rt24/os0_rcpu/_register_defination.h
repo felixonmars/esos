@@ -154,4 +154,14 @@ typedef volatile union rt24_core0_idle_cfg_reg {
 #define RT_HEAP_END		0x100700000
 #define SHARED_MEM_PA		0x30200000
 
+#define RT24_CORE0_SW_WAKEUP_REG	(0xc088c0d4)
+#define RT24_CORE1_SW_WAKEUP_REG	(0xc088c0d8)
+#define RT24_CORE0_SW_RESET_REG		(0xc088c0cc)
+#define RT24_CORE1_SW_RESET_REG		(0xc088c0d0)
+#define RCPU_CORE1_HART_ID_SET		0xc0880094
+
+#define PMU_AUDIO_CLK_CTRL		(0xd428294c)
+#define AUIO_FORCE_PWR_ON_OFFSET	(13)
+#define AUDIO_CTRL_BY_AP_OFFSET		(28)
+
 #endif

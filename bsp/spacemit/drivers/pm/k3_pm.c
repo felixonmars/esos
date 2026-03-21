@@ -8,8 +8,14 @@
 #include <riscv_encoding.h>
 #include <clint.h>
 #include <stdlib.h>
+#include <riscv-plic.h>
 #include <spacemit_sdk_soc.h>
 #include <register_defination.h>
+
+static rt_sem_t rt_lowpwrsem;
+static rt_thread_t rt_lowpwrtid;
+static struct mbox_client lpm_tx_client, lpm_rx_client;
+static struct mbox_chan *lpm_tx_chan, *lpm_rx_chan;
 
 extern unsigned long __esos_lite_start[], __esos_lite_end[];
 
@@ -18,7 +24,6 @@ static int __suspend_asm_finish(rt_ubase_t arg, rt_ubase_t entry, rt_ubase_t con
 	unsigned int val;
 	typedef void (*__entry)(void *);
 	__entry ptr;
-	rt24_core0_idle_cfg *idle_cfg = (rt24_core0_idle_cfg *)RT24_CORE1_IDLE_CFG_REG;
 
 	if (read_csr(mhartid) == 0) {
 		rt_memcpy((void *)0x0, (void *)__esos_lite_start,
@@ -30,11 +35,18 @@ static int __suspend_asm_finish(rt_ubase_t arg, rt_ubase_t entry, rt_ubase_t con
 		ptr = (__entry)0x0;
 		ptr((void *)entry);
 	} else {
+		/* tell rcpu0 that i will power down */
+		mbox_send_message(lpm_tx_chan, &val);
+
 		writel(entry & 0xffffffff, (void *)RCPU_CORE1_BOOT_ENTRY_LO);
 		writel((entry >> 32) & 0xffffffff, (void *)RCPU_CORE1_BOOT_ENTRY_HI);
 
-		idle_cfg->bits.core_idle = 1;
-		idle_cfg->bits.core_pwrdwn = 1;
+		val = readl((unsigned int *)RT24_CORE1_IDLE_CFG_REG);
+		val |= 0x3;
+		writel(val, (unsigned int *)RT24_CORE1_IDLE_CFG_REG);	
+
+		asm volatile ("fence iorw, iorw");
+		asm volatile ("fence");
 	}
 
 
@@ -121,8 +133,7 @@ extern void rt_hw_eclic_restore(void);
  */
 static void sleep(struct rt_pm *pm, uint8_t mode)
 {
-	rt24_core0_idle_cfg *idle_cfg = (rt24_core0_idle_cfg *)(read_csr(mhartid) ?
-			(void *)RT24_CORE1_IDLE_CFG_REG : (void *)RT24_CORE0_IDLE_CFG_REG);
+	rt_uint32_t val;
 	rt_uint64_t time;
 
 	switch (mode)
@@ -154,9 +165,14 @@ static void sleep(struct rt_pm *pm, uint8_t mode)
 		/* restore the plic configuration */
 		rt_hw_eclic_restore();
 
-		/* devote core powrdown */
-		idle_cfg->bits.core_idle = 0;
-		idle_cfg->bits.core_pwrdwn = 0;
+		if (read_csr(mhartid) == 1) {
+			val = readl((unsigned int *)RT24_CORE1_IDLE_CFG_REG);
+			val &= ~0x3;
+			writel(val, (unsigned int *)RT24_CORE1_IDLE_CFG_REG);
+
+			/* tell rcpu0 that i has been powered up */
+			rt_sem_release(rt_lowpwrsem);
+		}
 
 		rt_pm_request(RT_PM_DEFAULT_SLEEP_MODE);
 	break;
@@ -211,11 +227,51 @@ static rt_tick_t pm_timer_get_tick(struct rt_pm *pm)
 	return 0;
 }
 
+static void rt_lowpwr_rx_callback(struct mbox_client *cl, void *data)
+{
+	rt_pm_release(RT_PM_DEFAULT_SLEEP_MODE);
+}
+
+static void rt_lowpwr_poll(void *priv)
+{
+	unsigned int val;
+
+	while (1) {
+		rt_sem_take(rt_lowpwrsem, RT_WAITING_FOREVER);
+
+		/* tell rcpu0 that i has been waked up*/
+		mbox_send_message(lpm_tx_chan, &val);
+	}
+}
+
+void rt_lowpwr_notify(rt_uint8_t event, rt_uint8_t mode, void *data)
+{
+	unsigned int val;
+
+	switch (event) {
+	case RT_PM_ENTER_SLEEP:
+		/* let rcpu control is own low power mode */
+		val = readl((unsigned int *)PMU_AUDIO_CLK_CTRL);
+		val &= ~((1 << AUIO_FORCE_PWR_ON_OFFSET) | (1 << AUDIO_CTRL_BY_AP_OFFSET));
+		writel(val, (unsigned int *)PMU_AUDIO_CLK_CTRL);
+		break;
+	case RT_PM_EXIT_SLEEP:
+		val = readl((unsigned int *)PMU_AUDIO_CLK_CTRL);
+		val |= ((1 << AUIO_FORCE_PWR_ON_OFFSET) | (1 << AUDIO_CTRL_BY_AP_OFFSET));
+		writel(val, (unsigned int *)PMU_AUDIO_CLK_CTRL);
+ 		break;
+	}
+}
+
 int rt_hw_k3_pm_init(void)
 {
-	int ret;
+	int ret, i;
 	unsigned int value;
+	char *string, *strend;
+	rt_int32_t size;
 	rt_uint8_t timer_mask = 0;
+	struct dtb_node *compatible_node;
+	struct dtb_node *dtb_head_node = get_dtb_node_head();
 	audio_pmu_vote_t *lpvote = (audio_pmu_vote_t *)AUDIO_PMU_VOTE_REG;
 
 	static const struct rt_pm_ops _ops = {
@@ -239,9 +295,54 @@ int rt_hw_k3_pm_init(void)
 	/* initialize timer mask */
 	/* timer_mask = 1UL << PM_SLEEP_MODE_DEEP; */
 
+	rt_pm_notify_set(rt_lowpwr_notify, RT_NULL);
+
 	/* initialize system pm module */
 	rt_system_pm_init(&_ops, timer_mask, RT_NULL);
 
+	if (read_csr(mhartid) == 0)
+		return 0;
+
+	compatible_node = dtb_node_find_compatible_node(dtb_head_node, "spacemit,rslpm");
+	if (compatible_node != RT_NULL) {
+		/* check the status */
+		if (!dtb_node_device_is_available(compatible_node))
+			return -RT_EINVAL;
+
+		for_each_property_string_extend(compatible_node, "mbox-names", string, strend, size) {
+			if (rt_strcmp(string, "tx") == 0) {
+				lpm_tx_client.dev = compatible_node;
+				lpm_tx_client.tx_block = false;
+				lpm_tx_client.rx_callback = RT_NULL;
+				lpm_tx_chan = mbox_request_channel_byname(&lpm_tx_client, string);
+			} else {
+				lpm_rx_client.dev = compatible_node;
+				lpm_rx_client.tx_block = false;
+				lpm_rx_client.rx_callback = rt_lowpwr_rx_callback;
+				lpm_rx_chan = mbox_request_channel_byname(&lpm_rx_client, string);
+			}
+		}
+	}
+
+	rt_lowpwrsem = rt_sem_create("lpmsem", 0, RT_IPC_FLAG_FIFO);
+	if (!rt_lowpwrsem) {
+		rt_kprintf("create low power sem error\n");
+		return -RT_EINVAL;
+	}
+
+	rt_lowpwrtid = rt_thread_create("lpm_thread",
+			rt_lowpwr_poll,
+			RT_NULL,
+			2048,
+			RT_THREAD_PRIORITY_MAX / 3,
+			20);
+	if (!rt_lowpwrtid) {
+		rt_kprintf("Failed to create low power mode thread\n");
+		return -RT_EINVAL;
+	}
+
+	rt_thread_startup(rt_lowpwrtid);
+
 	return 0;
 }
-INIT_APP_EXPORT(rt_hw_k3_pm_init);
+INIT_ENV_EXPORT(rt_hw_k3_pm_init);
