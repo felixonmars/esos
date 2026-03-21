@@ -76,8 +76,7 @@
 
 &mailbox7 {
 	interrupts = <0 66 0>;
-	rcpu-communicate;
-	status = "disabled";
+	status = "okay";
 };
 
 &rproc {
@@ -86,6 +85,12 @@
 	shared_mem_buf_offset = <0x40498000>;
 	shared_mem_size	= <0x40594000>;
 	mboxes = <&mailbox4 0>, <&mailbox4 1>;
+};
+
+&rslpm {
+	mbox-names = "rx", "tx";
+	mboxes = <&mailbox7 0>, <&mailbox7 1>;
+	status = "okay";
 };
 
 &rpmi {

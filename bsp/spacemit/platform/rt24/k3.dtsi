@@ -600,6 +600,12 @@
 			status = "disabled";
 		};
 
+		rslpm: rslpm@0 {
+			compatible = "spacemit,rslpm";
+			reg = <0x0 0x0>;
+			status = "disabled";
+		};
+
 		rproc: rproc@1 {
 			compatible = "spacemit,k3-rproc0";
 			reg = <0x0 0x0>;

@@ -54,7 +54,14 @@
 };
 
 &mailbox7 {
-	status = "disabled";
+	rcpu-communicate = <1>;
+	status = "okay";
+};
+
+&rslpm {
+	mbox-names = "tx", "rx";
+	mboxes = <&mailbox7 0>, <&mailbox7 1>;
+	status = "okay";
 };
 
 &rproc {
