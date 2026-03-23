@@ -143,5 +143,6 @@ void spacemit_cx_m2_enter_wait(rt_uint32_t hartid);
 void spacemit_cx_m2_int_disabled(rt_uint32_t hartid);
 void spacemit_deassert_corex(unsigned int hartid);
 void spacemit_assert_corex(unsigned int hartid);
+void spacemit_vote_powrdown_cluster(unsigned int hartid);
 
 #endif /* __k3_HSM_H__ */

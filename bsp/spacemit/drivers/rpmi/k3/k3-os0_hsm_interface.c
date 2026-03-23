@@ -310,3 +310,94 @@ void spacemit_deassert_corex(unsigned int hartid)
 		break;
 	}
 }
+
+void spacemit_vote_powrdown_cluster(unsigned int hartid)
+{
+	unsigned int value;
+
+	/* vote core power-down & cluster power-down */
+	switch (hartid) {
+	case 0:
+		value = readl((unsigned int *)PMU_CX_CAPMP_IDLE_CFG0);
+		value |= CLUSTER_PWR_DOWN_VALUE;
+		writel(value, (unsigned int *)PMU_CX_CAPMP_IDLE_CFG0);
+		break;
+	case 1:
+		value = readl((unsigned int *)PMU_CX_CAPMP_IDLE_CFG1);
+		value |= CLUSTER_PWR_DOWN_VALUE;
+		writel(value, (unsigned int *)PMU_CX_CAPMP_IDLE_CFG1);
+		break;
+	case 2:
+		value = readl((unsigned int *)PMU_CX_CAPMP_IDLE_CFG2);
+		value |= CLUSTER_PWR_DOWN_VALUE;
+		writel(value, (unsigned int *)PMU_CX_CAPMP_IDLE_CFG2);
+		break;
+	case 3:
+		value = readl((unsigned int *)PMU_CX_CAPMP_IDLE_CFG3);
+		value |= CLUSTER_PWR_DOWN_VALUE;
+		writel(value, (unsigned int *)PMU_CX_CAPMP_IDLE_CFG3);
+		break;
+	case 4:
+		value = readl((unsigned int *)PMU_CX_CAPMP_IDLE_CFG4);
+		value |= CLUSTER_PWR_DOWN_VALUE;
+		writel(value, (unsigned int *)PMU_CX_CAPMP_IDLE_CFG4);
+		break;
+	case 5:
+		value = readl((unsigned int *)PMU_CX_CAPMP_IDLE_CFG5);
+		value |= CLUSTER_PWR_DOWN_VALUE;
+		writel(value, (unsigned int *)PMU_CX_CAPMP_IDLE_CFG5);
+		break;
+	case 6:
+		value = readl((unsigned int *)PMU_CX_CAPMP_IDLE_CFG6);
+		value |= CLUSTER_PWR_DOWN_VALUE;
+		writel(value, (unsigned int *)PMU_CX_CAPMP_IDLE_CFG6);
+		break;
+	case 7:
+		value = readl((unsigned int *)PMU_CX_CAPMP_IDLE_CFG7);
+		value |= CLUSTER_PWR_DOWN_VALUE;
+		writel(value, (unsigned int *)PMU_CX_CAPMP_IDLE_CFG7);
+		break;
+	case 8:
+		value = readl((unsigned int *)PMU_CX_CAPMP_IDLE_CFG8);
+		value |= CLUSTER_PWR_DOWN_VALUE;
+		writel(value, (unsigned int *)PMU_CX_CAPMP_IDLE_CFG8);
+		break;
+	case 9:
+		value = readl((unsigned int *)PMU_CX_CAPMP_IDLE_CFG9);
+		value |= CLUSTER_PWR_DOWN_VALUE;
+		writel(value, (unsigned int *)PMU_CX_CAPMP_IDLE_CFG9);
+		break;
+	case 10:
+		value = readl((unsigned int *)PMU_CX_CAPMP_IDLE_CFG10);
+		value |= CLUSTER_PWR_DOWN_VALUE;
+		writel(value, (unsigned int *)PMU_CX_CAPMP_IDLE_CFG10);
+		break;
+	case 11:
+		value = readl((unsigned int *)PMU_CX_CAPMP_IDLE_CFG11);
+		value |= CLUSTER_PWR_DOWN_VALUE;
+		writel(value, (unsigned int *)PMU_CX_CAPMP_IDLE_CFG11);
+		break;
+	case 12:
+		value = readl((unsigned int *)PMU_CX_CAPMP_IDLE_CFG12);
+		value |= CLUSTER_PWR_DOWN_VALUE;
+		writel(value, (unsigned int *)PMU_CX_CAPMP_IDLE_CFG12);
+		break;
+	case 13:
+		value = readl((unsigned int *)PMU_CX_CAPMP_IDLE_CFG13);
+		value |= CLUSTER_PWR_DOWN_VALUE;
+		writel(value, (unsigned int *)PMU_CX_CAPMP_IDLE_CFG13);
+		break;
+	case 14:
+		value = readl((unsigned int *)PMU_CX_CAPMP_IDLE_CFG14);
+		value |= CLUSTER_PWR_DOWN_VALUE;
+		writel(value, (unsigned int *)PMU_CX_CAPMP_IDLE_CFG14);
+		break;
+	case 15:
+		value = readl((unsigned int *)PMU_CX_CAPMP_IDLE_CFG15);
+		value |= CLUSTER_PWR_DOWN_VALUE;
+		writel(value, (unsigned int *)PMU_CX_CAPMP_IDLE_CFG15);
+		break;
+	default:
+		break;
+	}
+}

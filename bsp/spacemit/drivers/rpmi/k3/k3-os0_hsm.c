@@ -243,6 +243,11 @@ static enum rpmi_error syssusp_prepare(
 	struct spacemit_rpmi_hsm_config *config = (struct spacemit_rpmi_hsm_config *)priv;
 	rpmi_uint32_t cluster_id = CPU_TO_CLUSTER(config->bootcore_index);
 
+	if (hart_index == 0) {
+		/* vote cluster2 power down */
+		spacemit_vote_powrdown_cluster(8);
+	}
+
 	spacemit_cx_m2_int_enable(config->bootcore_index);
 
 	return 0;
