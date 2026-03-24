@@ -30,7 +30,7 @@ void rt_hw_interrupt_init(void)
 
     for (; idx < SOC_INT_MAX; idx++)
     {
-        isr_irq_table[idx].handler = (rt_isr_handler_t)rt_hw_interrupt_handle;
+        isr_irq_table[idx].handler = /* (rt_isr_handler_t)rt_hw_interrupt_handle */ RT_NULL;
         isr_irq_table[idx].param = RT_NULL;
 
 	__plic_set_priority(idx, 1);
@@ -102,7 +102,8 @@ void rt_hw_irq_isr(void)
 {
 	unsigned int vector = __plic_irq_claim();
 
-	isr_irq_table[vector].handler(vector, isr_irq_table[vector].param);
+	if (isr_irq_table[vector].handler)
+		isr_irq_table[vector].handler(vector, isr_irq_table[vector].param);
 
 	__plic_irq_complete(vector);
 }

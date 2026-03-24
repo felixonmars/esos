@@ -199,7 +199,7 @@ static rt_int32_t _k3_os0_hsm_init(void *priv)
 		/* exit m2 */
 		rt_hw_interrupt_install(AP_C0_M2_EXIT_INT_NUM, spacemit_m2_enter_exit, priv, "c0_m2_exit");
 		rt_hw_interrupt_install(AP_C0_M2_ENTER_INT_NUM, spacemit_m2_enter_exit, priv, "c0_m2_enter");
-		rt_hw_interrupt_umask(AP_C0_M2_EXIT_INT_NUM);
+		/* rt_hw_interrupt_umask(AP_C0_M2_EXIT_INT_NUM); */
 		rt_hw_interrupt_umask(AP_C0_M2_ENTER_INT_NUM);
 		config->cm2_ext_vector = AP_C0_M2_EXIT_INT_NUM;
 	break;
@@ -287,7 +287,7 @@ static enum rpmi_error syssusp_resume(
 	unsigned int val;
 	struct spacemit_rpmi_hsm_config *config = priv;
 
-	/* wait resume signale */
+	/* wait resume signle */
 	rt_sem_take(config->cm2_ext_sem, RT_WAITING_FOREVER);
 
 	/* we should first let the rcpu1 wakeup, so wait for the notify by spacmeit-hsm layer */
@@ -295,6 +295,10 @@ static enum rpmi_error syssusp_resume(
 
 	/* de-assert bootcore */
 	spacemit_deassert_corex(config->bootcore_index);
+
+	if (hart_index == 0)
+		/* mask the Cluster0 M2 exit interrupt */
+		rt_hw_interrupt_mask(AP_C0_M2_EXIT_INT_NUM);
 
 	return 0;
 }

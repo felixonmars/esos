@@ -172,6 +172,9 @@ static void sleep(struct rt_pm *pm, uint8_t mode)
 
 			/* tell rcpu0 that i has been powered up */
 			rt_sem_release(rt_lowpwrsem);
+		} else {
+			/* unmaks Cluster0 M2 exit interrupt */
+			rt_hw_interrupt_umask(AP_C0_M2_EXIT_INT_NUM);
 		}
 
 		rt_pm_request(RT_PM_DEFAULT_SLEEP_MODE);

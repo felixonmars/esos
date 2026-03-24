@@ -164,4 +164,8 @@ typedef volatile union rt24_core0_idle_cfg_reg {
 #define AUIO_FORCE_PWR_ON_OFFSET	(13)
 #define AUDIO_CTRL_BY_AP_OFFSET		(28)
 
+#define AP_C0_M2_ENTER_INT_NUM		(83)
+#define AP_C0_M2_EXIT_INT_NUM		(84)
+#define AWUCRM_REG			(0xd4050000 + 0x104c)
+
 #endif
