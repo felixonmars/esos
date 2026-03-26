@@ -42,3 +42,4 @@ tags
 .idea
 CMakeLists.txt
 cmake-build-debug
+components/esos-lite

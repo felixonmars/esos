@@ -1,3 +1,0 @@
-[submodule "components/esos-lite"]
-	path = components/esos-lite
-	url = ssh://gerrit.dc.com:29418/esos-lite
