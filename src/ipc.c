@@ -43,6 +43,7 @@
 
 #include <rtthread.h>
 #include <rthw.h>
+#include <rtconfig.h>
 
 #ifdef RT_USING_HOOK
 extern void (*rt_object_trytake_hook)(struct rt_object *object);
@@ -904,6 +905,10 @@ rt_err_t rt_mutex_take(rt_mutex_t mutex, rt_int32_t time)
 
     /* get current thread */
     thread = rt_thread_self();
+#ifdef SOC_SPACEMIT
+    if (!thread)
+        return RT_EOK;
+#endif
 
     /* disable interrupt */
     temp = rt_hw_interrupt_disable();
@@ -1090,6 +1095,10 @@ rt_err_t rt_mutex_release(rt_mutex_t mutex)
 
     /* get current thread */
     thread = rt_thread_self();
+#ifdef SOC_SPACEMIT
+    if (!thread)
+        return RT_EOK;
+#endif
 
     /* disable interrupt */
     temp = rt_hw_interrupt_disable();

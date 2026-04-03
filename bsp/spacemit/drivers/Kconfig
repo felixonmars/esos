@@ -191,6 +191,12 @@ endmenu
 
 endmenu
 
+config SOC_SPACEMIT
+    bool "Spacemit platform"
+    default y
+
+if SOC_SPACEMIT
+
 menu "Platform Config"
 
 choice
@@ -229,3 +235,4 @@ if SOC_SPACEMIT_K3
 endif
 endchoice
 endmenu
+endif
