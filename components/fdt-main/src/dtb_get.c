@@ -12,6 +12,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <rtthread.h>
+#include <rtconfig.h>
 
 // #define RT_TRUE     true
 // #define RT_FALSE    false
@@ -71,6 +72,97 @@ static int _dtb_node_get_dtb_properties_list(struct dtb_property *dtb_property, 
 
     return FDT_RET_GET_OK;
 }
+
+#ifdef SOC_SPACEMIT
+static int _dtb_node_get_dtb_nodes_list(struct dtb_node *dtb_node_head, struct dtb_node *dtb_node,
+					const char *pathname, int root_off)
+{
+    off_t node_off;
+    int pathname_sz;
+    int node_name_sz;
+
+    pathname_sz = strlen(pathname);
+    node_off = fdt_first_subnode(current_fdt, root_off);
+
+    if (node_off < 0)
+    {
+        return FDT_RET_GET_EMPTY;
+    }
+
+    for (;;)
+    {
+        dtb_node->parent = dtb_node_head;
+        dtb_node->sibling = NULL;
+        dtb_node->name = fdt_get_name(current_fdt, node_off, &node_name_sz);
+
+        /* parent_path + name + '/' + '\0' */
+        if (paths_buf.cur + pathname_sz + node_name_sz + 2 < paths_buf.end)
+        {
+            dtb_node->path = (const char *)paths_buf.cur;
+            strncpy(paths_buf.cur, pathname, pathname_sz);
+            paths_buf.cur += pathname_sz;
+            strncpy(paths_buf.cur, (char *)dtb_node->name, node_name_sz);
+            paths_buf.cur += node_name_sz;
+            *paths_buf.cur++ = '/';
+            *paths_buf.cur++ = '\0';
+        }
+        else
+        {
+            dtb_node->path = NULL;
+            printf("\033[31m\rERROR: `FDT_DTB_ALL_NODES_PATH_SIZE' = %d bytes is configured too low.\033[0m\n", FDT_DTB_ALL_NODES_PATH_SIZE);
+            return FDT_RET_NO_MEMORY;
+        }
+
+        dtb_node->handle = fdt_get_phandle(current_fdt, node_off);
+        dtb_node->properties = (struct dtb_property *)malloc(sizeof(struct dtb_property));
+        dtb_node->child = (struct dtb_node *)malloc(sizeof(struct dtb_node));
+
+        if (dtb_node->properties == NULL || dtb_node->child == NULL)
+        {
+            return FDT_RET_NO_MEMORY;
+        }
+
+        fdt_exec_status = _dtb_node_get_dtb_properties_list(dtb_node->properties, node_off);
+        if (fdt_exec_status == FDT_RET_GET_EMPTY)
+        {
+            free(dtb_node->properties);
+            dtb_node->properties = NULL;
+        }
+        else if (fdt_exec_status != FDT_RET_GET_OK)
+        {
+            return fdt_exec_status;
+        }
+
+        fdt_exec_status = _dtb_node_get_dtb_nodes_list(dtb_node, dtb_node->child, dtb_node->path, node_off);
+        if (fdt_exec_status == FDT_RET_GET_EMPTY)
+        {
+            free(dtb_node->child);
+            dtb_node->child = NULL;
+        }
+        else if (fdt_exec_status != FDT_RET_GET_OK)
+        {
+            return fdt_exec_status;
+        }
+
+        node_off = fdt_next_subnode(current_fdt, node_off);
+        if (node_off >= 0)
+        {
+            dtb_node->sibling = (struct dtb_node *)malloc(sizeof(struct dtb_node));
+            if (dtb_node->sibling == NULL)
+            {
+                return FDT_RET_NO_MEMORY;
+            }
+            dtb_node = dtb_node->sibling;
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    return FDT_RET_GET_OK;
+}
+#else
 
 static int _dtb_node_get_dtb_nodes_list(struct dtb_node *dtb_node_head, struct dtb_node *dtb_node, const char *pathname)
 {
@@ -164,6 +256,7 @@ static int _dtb_node_get_dtb_nodes_list(struct dtb_node *dtb_node_head, struct d
 
     return FDT_RET_GET_OK;
 }
+#endif
 
 struct dtb_node *dtb_node_get_dtb_list(void *fdt)
 {
@@ -255,7 +348,11 @@ struct dtb_node *dtb_node_get_dtb_list(void *fdt)
         goto fail;
     }
 
+#ifdef SOC_SPACEMIT
+    if ((fdt_exec_status = _dtb_node_get_dtb_nodes_list(dtb_node_head, dtb_node_head->child, dtb_node_head->path, root_off)) != FDT_RET_GET_OK)
+#else
     if ((fdt_exec_status = _dtb_node_get_dtb_nodes_list(dtb_node_head, dtb_node_head->child, dtb_node_head->path)) != FDT_RET_GET_OK)
+#endif
     {
         goto fail;
     }
