@@ -398,6 +398,9 @@ static int k3_multiple_os_power_lunch(void)
 	struct dtb_node *compatible_node;
 	struct dtb_node *dtb_head_node = get_dtb_node_head();
 
+	if (read_csr(mhartid) == 1)
+		return 0;
+
 	multiple_os_array->multiple_tid = rt_thread_create("multiple_thread",
 			spacemit_multiple_os_poll,
 			(void *)multiple_os_array,
@@ -408,9 +411,6 @@ static int k3_multiple_os_power_lunch(void)
 		rt_kprintf("Failed to create multiple os dealing thread\n");
 		return -RT_EINVAL;
 	}
-
-	if (read_csr(mhartid) == 1)
-		return 0;
 
 	compatible_node = dtb_node_find_compatible_node(dtb_head_node, "spacemit,rslpm");
 	if (compatible_node != RT_NULL) {
