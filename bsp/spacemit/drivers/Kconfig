@@ -219,6 +219,7 @@ choice
         select ARCH_RISCV_FPU
         select ARCH_RISCV_FPU_D
         select RT_USING_CACHE
+endchoice
 
 if SOC_SPACEMIT_K3
     choice
@@ -233,6 +234,49 @@ if SOC_SPACEMIT_K3
         bool "Runtime OS"
     endchoice
 endif
-endchoice
+
+if SOC_SPACEMIT_K3_CORE0
+    choice
+        prompt "select project"
+        default SOC_SPACEMIT_K3_CORE0_COM260
+
+        config SOC_SPACEMIT_K3_CORE0_COM260
+        bool "os0 com260 project"
+
+        config SOC_SPACEMIT_K3_CORE0_DEB1
+        bool "os0 deb1 project"
+
+        config SOC_SPACEMIT_K3_CORE0_EVB
+        bool "os0 evb project"
+
+        config SOC_SPACEMIT_K3_CORE0_EVB2_1
+        bool "os0 evb2_1 project"
+
+        config SOC_SPACEMIT_K3_CORE0_EVB2_2
+        bool "os0 evb2_2 project"
+   endchoice
+endif
+
+if SOC_SPACEMIT_K3_CORE1
+    choice
+        prompt "select project"
+        default SOC_SPACEMIT_K3_CORE1_COM260
+
+        config SOC_SPACEMIT_K3_CORE1_COM260
+        bool "os1 com260 project"
+
+        config SOC_SPACEMIT_K3_CORE1_DEB1
+        bool "os1 deb1 project"
+
+        config SOC_SPACEMIT_K3_CORE1_EVB
+        bool "os1 evb project"
+
+        config SOC_SPACEMIT_K3_CORE1_EVB2_1
+        bool "os1 evb2_1 project"
+
+        config SOC_SPACEMIT_K3_CORE1_EVB2_2
+        bool "os1 evb2_2 project"
+   endchoice
+endif
 endmenu
 endif

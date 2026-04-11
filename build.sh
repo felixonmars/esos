@@ -1,5 +1,11 @@
 #!/bin/bash
 
+TARGET_CHIP=
+TARGET_BOARD=
+TARGET_ENTRY_POINT=
+TARGET_DEFCONFIG=
+TARGET_PROJECT=
+
 export TOP_DIR=`pwd`
 export CPU_DIR="${TOP_DIR}/libcpu/risc-v/spacemit"
 export BSP_DIR="${TOP_DIR}/bsp/spacemit"
@@ -7,11 +13,6 @@ export BOARD_DIR="${BSP_DIR}/platform"
 export ESOS_BASE_DEFCONF="${BSP_DIR}/.esos.config"
 export ESOS_DEFCONF="${BSP_DIR}/.config"
 export TOP_OUTPUT_DIR="${TOP_DIR}/../output/esos"
-
-TARGET_CHIP=
-TARGET_BOARD=
-TARGET_ENTRY_POINT=
-TARGET_DEFCONFIG=
 
 function mk_error()
 {
@@ -102,6 +103,45 @@ function select_board()
 	fi
 }
 
+function select_project()
+{
+	count=0
+	REPLY=0
+	RES=0
+
+	printf "All valid projects:\n"
+
+	for project in $(cd ${BOARD_DIR}/${TARGET_CHIP}/${TARGET_BOARD}/; find -mindepth 1 -maxdepth 1 -type d |grep -v default|sort); do
+		if [ `basename ${BOARD_DIR}/${TARGET_CHIP}/${TARGET_BOARD}/$project` != ".git" ] && [ `basename ${BOARD_DIR}/${TARGET_CHIP}/${TARGET_BOARD}/$project` != "dts" ]; then
+			projects[$count]=`basename ${BOARD_DIR}/${TARGET_CHIP}/${TARGET_BOARD}/$project`
+			printf "\t$count: ${projects[$count]}\n"
+			let count=$count+1
+		fi
+	done
+
+	if [ "$count" -gt 0 ] ; then
+		while true; do
+			read -p "Please select a project:"
+			RES=`expr match $REPLY "[0-9][0-9]*$"`
+			if [ "$RES" -le 0 ]; then
+				printf "please use index number\n"
+				continue
+			fi
+			if [ "$REPLY" -ge $count ] || [ "$REPLY" -lt "0" ]; then
+				printf "input is invalid!\n"
+				continue
+			fi
+			break
+		done
+
+		TARGET_PROJECT=${projects[$REPLY]}
+		return 0
+	else
+		mk_error "No valid project!"
+		return 1
+	fi
+}
+
 function select_entry_point()
 {
 	if [ "x${TARGET_CHIP}_${TARGET_BOARD}" = "xn308_k1-x" ]; then
@@ -167,9 +207,14 @@ function config_sdk()
 
 	select_chip
 	select_board
+	select_project
 	select_entry_point
 
-	TARGET_DEFCONFIG=${TARGET_CHIP}_${TARGET_BOARD}_defconfig
+	if [ "x${TARGET_PROJECT}" != "x" ]; then
+		TARGET_DEFCONFIG=${TARGET_CHIP}_${TARGET_BOARD}_${TARGET_PROJECT}_defconfig
+	else
+		TARGET_DEFCONFIG=${TARGET_CHIP}_${TARGET_BOARD}_defconfig
+	fi
 
 	# check if the build.cfg is full configured
 	if [ "x${TARGET_CHIP}" = "x" ]; then
@@ -180,10 +225,11 @@ function config_sdk()
 		mk_error "TARGET_BOARD is not configured!!!"
 	fi
 
-	cp ${BOARD_DIR}/${TARGET_CHIP}/${TARGET_BOARD}/${TARGET_DEFCONFIG} ${BSP_DIR}/.config
+	cp ${BOARD_DIR}/${TARGET_CHIP}/${TARGET_BOARD}/${TARGET_PROJECT}/${TARGET_DEFCONFIG} ${BSP_DIR}/.config
 
 	echo "export TARGET_CHIP=${TARGET_CHIP}" >> ${ESOS_BASE_DEFCONF}
 	echo "export TARGET_BOARD=${TARGET_BOARD}" >> ${ESOS_BASE_DEFCONF}
+	echo "export TARGET_PROJECT=${TARGET_PROJECT}" >> ${ESOS_BASE_DEFCONF}
 	echo "export TARGET_DEFCONFIG=${TARGET_DEFCONFIG}" >> ${ESOS_BASE_DEFCONF}
 	echo "export TARGET_ENTRY_POINT=${TARGET_ENTRY_POINT}" >> ${ESOS_BASE_DEFCONF}
 
@@ -261,14 +307,20 @@ function build_kernel()
 
 	# build dtb
 	source ${ESOS_BASE_DEFCONF}
-	cd ${BSP_DIR}/platform/${TARGET_CHIP}/${TARGET_BOARD}/dts/
+	cd ${BSP_DIR}/platform/${TARGET_CHIP}/${TARGET_BOARD}/${TARGET_PROJECT}/dts/
 	make
 	if [ $? -ne 0 ]; then
 		mk_error "Failed to build dtb"
 		cd -
 		return 1
 	fi
-	cp ./*.dtb ../../
+
+	if [ "x${TARGET_PROJECT}" == "x" ]; then
+		cp ./*.dtb ../../
+	else
+		cp ./*.dtb ../../../
+	fi
+
 	make clean
 	cd -
 
@@ -278,7 +330,7 @@ function build_kernel()
 	# build src
 	source ${ESOS_BASE_DEFCONF}
 	# Export variables for Python scripts
-	export TARGET_CHIP TARGET_BOARD TARGET_ENTRY_POINT TARGET_DEFCONFIG
+	export TARGET_CHIP TARGET_BOARD TARGET_PROJECT TARGET_ENTRY_POINT TARGET_DEFCONFIG
 	cd ${BSP_DIR}
 	scons --useconfig=.config
 	if [ $? -ne 0 ]; then
@@ -306,7 +358,7 @@ function kernel_menuconfig()
 	# build src
 	source ${ESOS_BASE_DEFCONF}
 	# Export variables for Python scripts
-	export TARGET_CHIP TARGET_BOARD TARGET_ENTRY_POINT TARGET_DEFCONFIG
+	export TARGET_CHIP TARGET_BOARD TARGET_PROJECT TARGET_ENTRY_POINT TARGET_DEFCONFIG
 	cd ${BSP_DIR}
 	scons --useconfig=.config
 	if [ $? -ne 0 ]; then
@@ -341,9 +393,9 @@ function kernel_menuconfig()
 		mk_info "Configuration changed, saving to defconfig..."
 
 		# Save full .config format (preserves all options and comments)
-		if [ -d "platform/${TARGET_CHIP}/${TARGET_BOARD}" ]; then
-			cp .config platform/${TARGET_CHIP}/${TARGET_BOARD}/${TARGET_DEFCONFIG}
-			mk_info "Updated platform/${TARGET_CHIP}/${TARGET_BOARD}/${TARGET_DEFCONFIG}"
+		if [ -d "platform/${TARGET_CHIP}/${TARGET_BOARD}/${TARGET_PROJECT}/" ]; then
+			cp .config platform/${TARGET_CHIP}/${TARGET_BOARD}/${TARGET_PROJECT}/${TARGET_DEFCONFIG}
+			mk_info "Updated platform/${TARGET_CHIP}/${TARGET_BOARD}/${TARGET_PROJECT}/${TARGET_DEFCONFIG}"
 		fi
 	else
 		mk_info "Configuration not changed"

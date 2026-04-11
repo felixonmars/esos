@@ -6,8 +6,8 @@
 
 /dts-v1/;
 
-#include "../../k3.dtsi"
-#include "../../k3-pinctrl.dtsi"
+#include "../../../k3.dtsi"
+#include "../../../k3-pinctrl.dtsi"
 
 &cpu_0 {
 	cpu_frequency = <614400000>;
