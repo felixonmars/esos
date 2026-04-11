@@ -8,6 +8,8 @@
 #include <rtthread.h>
 #include <rtdevice.h>
 #include <rtconfig.h>
+#include <riscv-ops.h>
+#include <register_defination.h>
 #include <drivers/i2c.h>
 #include <drivers/regulator.h>
 #include <drivers/regulator_dm.h>
@@ -24,6 +26,10 @@ static struct regulator_linear_range p1_ldo_ranges[] = {
 
 static struct regulator_linear_range is6608_buck_ranges[] = {
 	[0] = REGULATOR_LINEAR_RANGE(534000, 0x10b, 0x1f4, 2000),
+};
+
+static struct regulator_linear_range is6615a_buck_ranges[] = {
+	[0] = REGULATOR_LINEAR_RANGE(531216, 0x110, 0x202, 1953),
 };
 
 static const struct regulator_desc p1_regulator_descs[]  = {
@@ -119,11 +125,37 @@ static const struct regulator_desc is6608_regulator_descs[]  = {
 			is6608_buck_ranges),
 };
 
+static const struct regulator_desc is6615a_regulator_descs[]  = {
+	/* leaf */
+	REGULATOR_DESC_COMMON(EXTERN_LEAF_A100,
+			4096, IS6615A_BUCK1_VOLT_REG, IS6615A_BUCK1_VSEL_MSK,
+			0, 0,
+			0, 0,
+			is6615a_buck_ranges),
+	REGULATOR_DESC_COMMON(EXTERN_LEAF_X100,
+			4096, IS6615A_BUCK1_VOLT_REG, IS6615A_BUCK1_VSEL_MSK,
+			0, 0,
+			0, 0,
+			is6615a_buck_ranges),
+};
+
 static struct dtb_compatible_array __compatible[] = {
-	{ .compatible = "regulator-is6608", .data = (void *)is6608_regulator_descs },
 	{ .compatible = "p1-regulator", .data = (void *)p1_regulator_descs },
 	{}
 };
+
+static const char *pmic_name[] = {
+	[0] = "regulator-is6608",
+	[1] = "regulator-is6615a",
+};
+
+static struct dtb_compatible_array __dcdc_compatible[] = {
+	{ .compatible = "regulator-is6608", .data = (void *)is6608_regulator_descs },
+	{ .compatible = "regulator-is6615a-1", .data = (void *)is6615a_regulator_descs },
+	{ .compatible = "regulator-is6615a-2", .data = (void *)is6615a_regulator_descs },
+};
+
+#define PMIC_TYPE_MASK			0x7
 
 static rt_err_t regulator_dynamic_enable(struct rt_regulator_node *reg)
 {
@@ -288,7 +320,7 @@ static int regulator_desc_list_voltage_linear_range(const struct regulator_desc 
 	unsigned int val;
 	int ret;
 
-	RT_ASSERT(!desc->n_linear_ranges);
+	RT_ASSERT(desc->n_linear_ranges);
 
 	ret = linear_range_get_value_array(desc->linear_ranges,
 					   desc->n_linear_ranges, selector,
@@ -592,11 +624,13 @@ static rt_int32_t spacemit_regulator_probe(void)
 	int ret;
 	rt_int32_t i, val, j = 0;
 	char *string, *strend;
+	const char *selected_pmic;
 	rt_int32_t size;
 	struct spacemit_regulator *sr;
 	struct rt_regulator_node *rnp;
 	struct dtb_node *compatible_node, *child_node;
 	struct dtb_node *dtb_head_node = get_dtb_node_head();
+	rt_uint32_t reg, mask;
 
 	for (i = 0; i < sizeof(__compatible) / sizeof(__compatible[0]); ++i) {
 		compatible_node = dtb_node_find_compatible_node(dtb_head_node,
@@ -661,33 +695,70 @@ static rt_int32_t spacemit_regulator_probe(void)
 
 					++j;
 				}
-			} else {
-				sr->rd = (struct regulator_dynamic *)rt_calloc(1, sizeof(struct regulator_dynamic));
-				if (sr->rd == RT_NULL) {
-					rt_kprintf("%s:%d, No memory\n", __func__, __LINE__);
-					return -RT_EINVAL;
-				}
+			}
+		}
+	}
 
-				/* only has one node */
-				regulator_dtb_parse(compatible_node, &sr->rd->param);
+	reg = readl((unsigned int *)RCPU_CORE1_BOOT_ENTRY_HI);
+	mask = reg & PMIC_TYPE_MASK;
+	if (mask >= ARRAY_SIZE(pmic_name) || pmic_name[mask] == RT_NULL)
+		selected_pmic = pmic_name[0];
+	else
+		selected_pmic = pmic_name[mask];
+	
+	for (i = 0; i < ARRAY_SIZE(__dcdc_compatible); ++i) {
+		if (rt_strncmp(__dcdc_compatible[i].compatible, selected_pmic, 16))
+			continue;
+		compatible_node = dtb_node_find_compatible_node(dtb_head_node,
+			__dcdc_compatible[i].compatible);
+		if (compatible_node != RT_NULL) {
+			sr = (struct spacemit_regulator *)rt_calloc(1, sizeof(struct spacemit_regulator));
+			if (sr == RT_NULL) {
+				rt_kprintf("%s:%d, No memory\n", __func__, __LINE__);
+				return -RT_EINVAL;
+			}
 
-				rnp = &sr->rd->parent;
-				rnp->supply_name = sr->rd->param.name;
-				rnp->ops = &regulator_independ_ops;
-				rnp->param = &sr->rd->param;
-				rnp->dev = &sr->rd->dev;
-				rnp->dev->node = compatible_node;
-
-				sr->rd->sr = sr;
-				rnp->priv = sr->rd;
-
-				/* register the regulator */
-				ret = rt_regulator_register(rnp);
-				if (ret) {
-					rt_kprintf("%s:%d, register regulator error\n", __func__, __LINE__);
+			/* get the handle driver */
+			for_each_property_string_extend(compatible_node, "bind_driver", string, strend, size) {
+				sr->handle_driver = rt_i2c_bus_device_find(string);
+				if (sr->handle_driver == RT_NULL) {
+					rt_kprintf("%s:%d, the bind driver has not registered\n", __func__, __LINE__);
 					return -RT_EINVAL;
 				}
 			}
+
+			/* get the slave address */
+			dtb_node_read_u32_array(compatible_node, "slave_addr", &sr->slave_addr, 1);
+
+			sr->priv_data = (void *)__dcdc_compatible[i].data;
+
+			sr->rd = (struct regulator_dynamic *)rt_calloc(1, sizeof(struct regulator_dynamic));
+			if (sr->rd == RT_NULL) {
+				rt_kprintf("%s:%d, No memory\n", __func__, __LINE__);
+				return -RT_EINVAL;
+			}
+
+			/* only has one node */
+			regulator_dtb_parse(compatible_node, &sr->rd->param);
+
+			rnp = &sr->rd->parent;
+			rnp->supply_name = sr->rd->param.name;
+			rnp->ops = &regulator_independ_ops;
+			rnp->param = &sr->rd->param;
+			rnp->dev = &sr->rd->dev;
+			rnp->dev->node = compatible_node;
+
+			sr->rd->sr = sr;
+			rnp->priv = sr->rd;
+
+			/* register the regulator */
+			ret = rt_regulator_register(rnp);
+			if (ret) {
+				rt_kprintf("%s:%d, register regulator error\n", __func__, __LINE__);
+				return -RT_EINVAL;
+			}
+			if (i == 0)
+				break;
 		}
 	}
 
