@@ -28,6 +28,10 @@ static struct regulator_linear_range is6608_buck_ranges[] = {
 	[0] = REGULATOR_LINEAR_RANGE(534000, 0x10b, 0x1f4, 2000),
 };
 
+static struct regulator_linear_range tda38740_buck_ranges[] = {
+	[0] = REGULATOR_LINEAR_RANGE(531216, 0x88, 0x101, 3906),
+};
+
 static struct regulator_linear_range is6615a_buck_ranges[] = {
 	[0] = REGULATOR_LINEAR_RANGE(531216, 0x110, 0x202, 1953),
 };
@@ -125,6 +129,20 @@ static const struct regulator_desc is6608_regulator_descs[]  = {
 			is6608_buck_ranges),
 };
 
+static const struct regulator_desc tda38740_regulator_descs[]  = {
+	/* leaf */
+	REGULATOR_DESC_COMMON(EXTERN_LEAF_A100,
+			4096, TDA38740_BUCK1_VOLT_REG, TDA38740_BUCK1_VSEL_MSK,
+			0, 0,
+			0, 0,
+			tda38740_buck_ranges),
+	REGULATOR_DESC_COMMON(EXTERN_LEAF_X100,
+			4096, TDA38740_BUCK1_VOLT_REG, TDA38740_BUCK1_VSEL_MSK,
+			0, 0,
+			0, 0,
+			tda38740_buck_ranges),
+};
+
 static const struct regulator_desc is6615a_regulator_descs[]  = {
 	/* leaf */
 	REGULATOR_DESC_COMMON(EXTERN_LEAF_A100,
@@ -146,11 +164,14 @@ static struct dtb_compatible_array __compatible[] = {
 
 static const char *pmic_name[] = {
 	[0] = "regulator-is6608",
-	[1] = "regulator-is6615a",
+	[1] = "regulator-tda38740",
+	[2] = "regulator-is6615a",
 };
 
 static struct dtb_compatible_array __dcdc_compatible[] = {
 	{ .compatible = "regulator-is6608", .data = (void *)is6608_regulator_descs },
+	{ .compatible = "regulator-tda38740-1", .data = (void *)tda38740_regulator_descs },
+	{ .compatible = "regulator-tda38740-2", .data = (void *)tda38740_regulator_descs },
 	{ .compatible = "regulator-is6615a-1", .data = (void *)is6615a_regulator_descs },
 	{ .compatible = "regulator-is6615a-2", .data = (void *)is6615a_regulator_descs },
 };
@@ -709,6 +730,7 @@ static rt_int32_t spacemit_regulator_probe(void)
 	for (i = 0; i < ARRAY_SIZE(__dcdc_compatible); ++i) {
 		if (rt_strncmp(__dcdc_compatible[i].compatible, selected_pmic, 16))
 			continue;
+
 		compatible_node = dtb_node_find_compatible_node(dtb_head_node,
 			__dcdc_compatible[i].compatible);
 		if (compatible_node != RT_NULL) {
