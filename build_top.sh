@@ -15,6 +15,7 @@ TARGET_BOARD=
 TARGET_ENTRY_POINT=
 TOP_TARGET_CHIP=
 TOP_TARGET_BOARD=
+TOP_TARGET_PROJECT=
 TOP_TARGET_ENTRY_POINT=
 TOP_TARGET_DEFCONFIG=
 
@@ -224,7 +225,26 @@ function build_kernel()
 			printf "\t$count: ${boards[$count]}\n"
 
 			TOP_TARGET_BOARD=${boards[$count]}
-			TOP_TARGET_DEFCONFIG=${TOP_TARGET_CHIP}_${TOP_TARGET_BOARD}_defconfig
+			BOARD_BASE_DIR="${TOP_BOARD_DIR}/${TOP_TARGET_CHIP}/${TOP_TARGET_BOARD}"
+
+			SUB_DIRS=$(find "${BOARD_BASE_DIR}" -mindepth 1 -maxdepth 1 -type d | grep -v .git | sort)
+
+			USE_SUB_PROJECT=0
+			MATCHED_SUB_PROJECT=""
+
+			if [ -n "${SUB_DIRS}" ]; then
+				for sub in ${SUB_DIRS}; do
+					SUB_PROJECT=$(basename "${sub}")
+					if [ "${SUB_PROJECT}" = "${TOP_TARGET_RPOJECT}" ]; then
+						MATCHED_SUB_PROJECT="${SUB_PROJECT}"
+						TOP_TARGET_DEFCONFIG=${TOP_TARGET_CHIP}_${TOP_TARGET_BOARD}_${MATCHED_SUB_PROJECT}_defconfig
+						USE_SUB_PROJECT=1
+						break
+					fi
+				done
+			else
+				TOP_TARGET_DEFCONFIG=${TOP_TARGET_CHIP}_${TOP_TARGET_BOARD}_defconfig
+			fi
 
 			# Update config files
 			echo "export TOP_TARGET_CHIP=${TOP_TARGET_CHIP}" > ${TOP_ESOS_BASE_DEFCONF}
@@ -239,21 +259,26 @@ function build_kernel()
 			source ${TOP_ESOS_BASE_DEFCONF}
 
 			#build dtb
-			cd ${TOP_BSP_DIR}/platform/${TOP_TARGET_CHIP}/${TOP_TARGET_BOARD}/dts/
+			cd ${TOP_BSP_DIR}/platform/${TOP_TARGET_CHIP}/${TOP_TARGET_BOARD}/${MATCHED_SUB_PROJECT}/dts/
 			make
 			if [ $? -ne 0 ]; then
 				mk_error "Failed to build dtb"
 				cd -
 				return 1
 			fi
-			cp ./*.dtb ../../
+
+			if [ ${USE_SUB_PROJECT} -eq 1 ]; then
+				cp ./*.dtb ../../../
+			else
+				cp ./*.dtb ../../
+			fi
 			make clean
 			cd -
 
 			# generate version id
 			create_version_id
 
-			cp ${TOP_BOARD_DIR}/${TOP_TARGET_CHIP}/${TOP_TARGET_BOARD}/${TOP_TARGET_DEFCONFIG} ${TOP_BSP_DIR}/.config
+			cp ${TOP_BOARD_DIR}/${TOP_TARGET_CHIP}/${TOP_TARGET_BOARD}/${MATCHED_SUB_PROJECT}/${TOP_TARGET_DEFCONFIG} ${TOP_BSP_DIR}/.config
 
 			TARGET_CHIP=${TOP_TARGET_CHIP}
 			TARGET_BOARD=${TOP_TARGET_BOARD}

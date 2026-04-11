@@ -22,7 +22,13 @@ endif
 override_dh_auto_configure:
 	sed -i "s/XBS-Commit-Id:.*/XBS-Commit-Id: $(COMMIT_ID)/" debian/control
 	# Create base configuration for k3_all_cores
-	echo "export TOP_TARGET_CHIP=rt24" > $(TOP_ESOS_BASE_DEFCONF)
+	if [ -f /proc/device-tree/model ]; then \
+		MODEL=$$(cat /proc/device-tree/model | tr -d '\0' | tr 'A-Z' 'a-z'); \
+		echo "Detected model (lowercase): $$MODEL"; \
+		PROJECT=$$(echo $$MODEL | awk '{print tolower($$3)}'); \
+	fi; \
+	echo "export TOP_TARGET_RPOJECT=$${PROJECT}" > $(TOP_ESOS_BASE_DEFCONF); \
+	echo "export TOP_TARGET_CHIP=rt24" >> $(TOP_ESOS_BASE_DEFCONF)
 	touch ${TOP_BSP_DIR}/rtconfig.h
 
 override_dh_auto_build:
