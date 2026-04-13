@@ -8,6 +8,7 @@
 #include <rtthread.h>
 #include <dtb_head.h>
 #include <dtb_node.h>
+#include <libfdt.h>
 #include <rtdevice.h>
 #include <spacemit_sdk_soc.h>
 #include <register_defination.h>
@@ -128,7 +129,31 @@ void rt_hw_board_init(void)
     rt_system_heap_init((void *)RT_HEAP_START, (void *)RT_HEAP_END);
 #endif
 
+#ifdef SOC_SPACEMIT_K1_X
     device_tree_setup((void *)__irf_start);
+#else
+    void *dtb_base = RT_NULL;
+    int offset = 0;
+    void *board_property = RT_NULL;
+    void *cpu_property = RT_NULL;
+
+    for (dtb_base = (void *)DTB_TABLE_BASE_ADDR;;dtb_base += (unsigned long)DTB_TABLE_STEP) {
+	  if (fdt_check_header(dtb_base))
+		  continue;
+	  offset = fdt_path_offset(dtb_base, "/");
+	  board_property = fdt_getprop_namelen(dtb_base, offset, "model", rt_strlen("model"), RT_NULL);
+	  if (board_property) {
+                offset = fdt_path_offset(dtb_base, "/cpus/cpu@0");
+		cpu_property = fdt_getprop_namelen(dtb_base, offset, "reg", rt_strlen("reg"), RT_NULL);
+		if (rt_strcmp(board_property, (char *)AR_DATA_INTERACTION_BASE) == 0) {
+			if (read_csr(mhartid) == fdt32_to_cpu(*(unsigned int *)cpu_property)) {
+                                device_tree_setup((void *)dtb_base);
+				break;
+			}
+		}
+	  }
+    }
+#endif
 
 #ifdef RT_USING_RADIX_TREE
     radix_tree_init_maxindex();

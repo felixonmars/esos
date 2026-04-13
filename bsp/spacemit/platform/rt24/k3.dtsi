@@ -10,6 +10,7 @@
 
 / {
 	compatible = "spacemit,k3";
+	model = "";
 	#address-cells = <2>;
 	#size-cells = <2>;
 
