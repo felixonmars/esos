@@ -218,6 +218,7 @@ function build_kernel()
 	source ${TOP_ESOS_BASE_DEFCONF}
 
 	mkdir -p ${TOP_OUTPUT_DIR}
+	cp ./null.spacemit ${TOP_OUTPUT_DIR}
 
 	for board in $(cd $TOP_BOARD_DIR/$TOP_TARGET_CHIP; find -mindepth 1 -maxdepth 1 -type d |grep -v default|sort); do
 		if [ `basename $TOP_BOARD_DIR/$TOP_TARGET_CHIP/$board` != ".git" ] ; then
@@ -229,21 +230,35 @@ function build_kernel()
 
 			SUB_DIRS=$(find "${BOARD_BASE_DIR}" -mindepth 1 -maxdepth 1 -type d | grep -v .git | sort)
 
-			USE_SUB_PROJECT=0
-			MATCHED_SUB_PROJECT=""
-
 			if [ -n "${SUB_DIRS}" ]; then
 				for sub in ${SUB_DIRS}; do
 					SUB_PROJECT=$(basename "${sub}")
-					if [ "${SUB_PROJECT}" = "${TOP_TARGET_RPOJECT}" ]; then
-						MATCHED_SUB_PROJECT="${SUB_PROJECT}"
-						TOP_TARGET_DEFCONFIG=${TOP_TARGET_CHIP}_${TOP_TARGET_BOARD}_${MATCHED_SUB_PROJECT}_defconfig
-						USE_SUB_PROJECT=1
-						break
+					#build all dtb
+					cd ${TOP_BSP_DIR}/platform/${TOP_TARGET_CHIP}/${TOP_TARGET_BOARD}/${SUB_PROJECT}/dts/
+					make
+					if [ $? -ne 0 ]; then
+						mk_error "Failed to build dtb"
+						cd -
+						return 1
 					fi
+
+					cp ./*.dtb ${TOP_OUTPUT_DIR}/
+					make clean
+					cd -
+
 				done
 			else
-				TOP_TARGET_DEFCONFIG=${TOP_TARGET_CHIP}_${TOP_TARGET_BOARD}_defconfig
+				#build dtb
+				cd ${TOP_BSP_DIR}/platform/${TOP_TARGET_CHIP}/${TOP_TARGET_BOARD}/dts/
+				make
+				if [ $? -ne 0 ]; then
+					mk_error "Failed to build dtb"
+					cd -
+					return 1
+				fi
+				cp ./*.dtb ../../
+				make clean
+				cd -
 			fi
 
 			# Update config files
@@ -251,34 +266,20 @@ function build_kernel()
 			echo "export TOP_TARGET_BOARD=${TOP_TARGET_BOARD}" >> ${TOP_ESOS_BASE_DEFCONF}
 
 			source ${TOP_ESOS_BASE_DEFCONF}
+
 			select_entry_point
+
+			TOP_TARGET_DEFCONFIG=${TOP_TARGET_CHIP}_${TOP_TARGET_BOARD}_defconfig
 
 			echo "export TOP_TARGET_DEFCONFIG=${TOP_TARGET_DEFCONFIG}" >> ${TOP_ESOS_BASE_DEFCONF}
 			echo "export TOP_TARGET_ENTRY_POINT=${TOP_TARGET_ENTRY_POINT}" >> ${TOP_ESOS_BASE_DEFCONF}
 
 			source ${TOP_ESOS_BASE_DEFCONF}
 
-			#build dtb
-			cd ${TOP_BSP_DIR}/platform/${TOP_TARGET_CHIP}/${TOP_TARGET_BOARD}/${MATCHED_SUB_PROJECT}/dts/
-			make
-			if [ $? -ne 0 ]; then
-				mk_error "Failed to build dtb"
-				cd -
-				return 1
-			fi
-
-			if [ ${USE_SUB_PROJECT} -eq 1 ]; then
-				cp ./*.dtb ../../../
-			else
-				cp ./*.dtb ../../
-			fi
-			make clean
-			cd -
-
 			# generate version id
 			create_version_id
 
-			cp ${TOP_BOARD_DIR}/${TOP_TARGET_CHIP}/${TOP_TARGET_BOARD}/${MATCHED_SUB_PROJECT}/${TOP_TARGET_DEFCONFIG} ${TOP_BSP_DIR}/.config
+			cp ${TOP_BOARD_DIR}/${TOP_TARGET_CHIP}/${TOP_TARGET_BOARD}/${TOP_TARGET_DEFCONFIG} ${TOP_BSP_DIR}/.config
 
 			TARGET_CHIP=${TOP_TARGET_CHIP}
 			TARGET_BOARD=${TOP_TARGET_BOARD}
