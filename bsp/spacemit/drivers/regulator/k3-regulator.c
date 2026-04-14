@@ -36,6 +36,10 @@ static struct regulator_linear_range is6615a_buck_ranges[] = {
 	[0] = REGULATOR_LINEAR_RANGE(531216, 0x110, 0x202, 1953),
 };
 
+static struct regulator_linear_range au4562_buck_ranges[] = {
+	[0] = REGULATOR_LINEAR_RANGE(540000, 0x6c, 0xc8, 5000),
+};
+
 static const struct regulator_desc p1_regulator_descs[]  = {
 	REGULATOR_DESC_COMMON(P1_ID_DCDC1_2,
 			255, P1_BUCK1_VSEL_REG, P1_BUCK_VSEL_MASK,
@@ -157,15 +161,23 @@ static const struct regulator_desc is6615a_regulator_descs[]  = {
 			is6615a_buck_ranges),
 };
 
+static const struct regulator_desc au4562_regulator_descs[]  = {
+	/* leaf */
+	REGULATOR_DESC_COMMON(EXTERN_LEAF_A100,
+			4096, AU4562_BUCK1_VOLT_REG, AU4562_BUCK1_VSEL_MSK,
+			0, 0,
+			0, 0,
+			au4562_buck_ranges),
+	REGULATOR_DESC_COMMON(EXTERN_LEAF_X100,
+			4096, AU4562_BUCK1_VOLT_REG, AU4562_BUCK1_VSEL_MSK,
+			0, 0,
+			0, 0,
+			au4562_buck_ranges),
+};
+
 static struct dtb_compatible_array __compatible[] = {
 	{ .compatible = "p1-regulator", .data = (void *)p1_regulator_descs },
 	{}
-};
-
-static const char *pmic_name[] = {
-	[0] = "regulator-is6608",
-	[1] = "regulator-tda38740",
-	[2] = "regulator-is6615a",
 };
 
 static struct dtb_compatible_array __dcdc_compatible[] = {
@@ -174,6 +186,8 @@ static struct dtb_compatible_array __dcdc_compatible[] = {
 	{ .compatible = "regulator-tda38740-2", .data = (void *)tda38740_regulator_descs },
 	{ .compatible = "regulator-is6615a-1", .data = (void *)is6615a_regulator_descs },
 	{ .compatible = "regulator-is6615a-2", .data = (void *)is6615a_regulator_descs },
+	{ .compatible = "regulator-au4562-1", .data = (void *)au4562_regulator_descs },
+	{ .compatible = "regulator-au4562-2", .data = (void *)au4562_regulator_descs },
 };
 
 #define PMIC_TYPE_MASK			0x7
@@ -547,6 +561,23 @@ static int regulator_independ_get_voltage(struct rt_regulator_node *reg)
 	/* regulator index */
 	index = reg->param->index;
 
+	if (strncmp(reg->supply_name, "adcdc", 5) == 0) {
+		val[0] = 0x0;
+		if (strncmp(reg->supply_name, "adcdc1", 6) == 0)
+			val[1] = 0x1;
+		else if (strncmp(reg->supply_name, "adcdc2", 6) == 0)
+			val[1] = 0x0;;
+		msgs[0].addr  = sr->slave_addr;
+		msgs[0].flags = RT_I2C_WR;
+		msgs[0].buf = val;
+		msgs[0].len = 2;
+
+		if (rt_i2c_transfer(sr->handle_driver, msgs, 1) != 1) {
+			rt_kprintf("%s:%d, transfer error\n", __func__, __LINE__);
+			return -RT_ERROR;
+		}
+	}
+
 	msgs[0].addr  = sr->slave_addr;
 	msgs[0].flags = RT_I2C_WR;
 	msgs[0].buf = (rt_uint8_t *)&desc[index].vsel_reg;
@@ -586,6 +617,23 @@ static rt_err_t regulator_independ_set_voltage(struct rt_regulator_node *reg, in
 	desc = (struct regulator_desc *)sr->priv_data;
 	/* regulator index */
 	index = reg->param->index;
+
+	if (strncmp(reg->supply_name, "adcdc", 5) == 0) {
+		val[0] = 0x0;
+		if (strncmp(reg->supply_name, "adcdc1", 6) == 0)
+			val[1] = 0x1;
+		else if (strncmp(reg->supply_name, "adcdc2", 6) == 0)
+			val[1] = 0x0;;
+		msgs[0].addr  = sr->slave_addr;
+		msgs[0].flags = RT_I2C_WR;
+		msgs[0].buf = val;
+		msgs[0].len = 2;
+
+		if (rt_i2c_transfer(sr->handle_driver, msgs, 1) != 1) {
+			rt_kprintf("%s:%d, transfer error\n", __func__, __LINE__);
+			return -RT_ERROR;
+		}
+	}
 
 	sel = regulator_map_voltage_linear_range(&desc[index], min_uvolt, max_uvolt);
 	if (sel >= 0) {
@@ -720,17 +768,7 @@ static rt_int32_t spacemit_regulator_probe(void)
 		}
 	}
 
-	reg = readl((unsigned int *)RCPU_CORE1_BOOT_ENTRY_HI);
-	mask = reg & PMIC_TYPE_MASK;
-	if (mask >= ARRAY_SIZE(pmic_name) || pmic_name[mask] == RT_NULL)
-		selected_pmic = pmic_name[0];
-	else
-		selected_pmic = pmic_name[mask];
-	
 	for (i = 0; i < ARRAY_SIZE(__dcdc_compatible); ++i) {
-		if (rt_strncmp(__dcdc_compatible[i].compatible, selected_pmic, 16))
-			continue;
-
 		compatible_node = dtb_node_find_compatible_node(dtb_head_node,
 			__dcdc_compatible[i].compatible);
 		if (compatible_node != RT_NULL) {
@@ -779,8 +817,6 @@ static rt_int32_t spacemit_regulator_probe(void)
 				rt_kprintf("%s:%d, register regulator error\n", __func__, __LINE__);
 				return -RT_EINVAL;
 			}
-			if (i == 0)
-				break;
 		}
 	}
 

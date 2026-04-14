@@ -84,6 +84,8 @@
 #define TDA38740_BUCK1_VSEL_MSK		0xfff
 #define IS6615A_BUCK1_VOLT_REG		0x21
 #define IS6615A_BUCK1_VSEL_MSK		0xfff
+#define AU4562_BUCK1_VOLT_REG		0x21
+#define AU4562_BUCK1_VSEL_MSK		0xfff
 
 struct regulator_linear_range {
 	unsigned int min;
