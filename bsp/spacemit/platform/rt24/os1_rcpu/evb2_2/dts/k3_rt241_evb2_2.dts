@@ -10,7 +10,7 @@
 #include "../../../k3-pinctrl.dtsi"
 
 / {
-	model = "k3_evb2_2";
+	model = "k3_evb2-2";
 };
 
 &cpu_0 {
