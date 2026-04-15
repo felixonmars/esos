@@ -199,6 +199,17 @@ static void spacemit_i2c_unit_init(struct spacemit_i2c_dev *spacemit_i2c)
 	cr_val |= CR_MSDE | CR_MSDIE;
 
 	spacemit_i2c_write_reg(spacemit_i2c, REG_CR, cr_val);
+
+	/*
+	 * The K1 I2C controller has an SDA glitch fix which can suppress short
+	 * pulses on SDA, but it may also introduce a small delay on restart
+	 * (repeated-start) signals on some systems.
+	 */
+	if (spacemit_i2c->sda_glitch_nofix) {
+		rt_uint32_t rcr_val = spacemit_i2c_read_reg(spacemit_i2c, REG_RST_CYC);
+		rcr_val |= RCR_SDA_GLITCH_NOFIX;
+		spacemit_i2c_write_reg(spacemit_i2c, REG_RST_CYC, rcr_val);
+	}
 }
 
 static void spacemit_i2c_trigger_byte_xfer(struct spacemit_i2c_dev *spacemit_i2c)
@@ -912,6 +923,10 @@ spacemit_i2c_parse_dt(struct dtb_node * dnode, struct spacemit_i2c_dev *spacemit
 	{
 		spacemit_i2c->i2c_wcr = u32_value;
 	}
+
+	property_status = dtb_node_get_dtb_node_property(dnode, "spacemit,sda-glitch-nofix", RT_NULL);
+	if (property_status)
+		spacemit_i2c->sda_glitch_nofix = true;
 
 	return 0;
 }

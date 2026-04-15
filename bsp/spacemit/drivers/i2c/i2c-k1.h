@@ -105,6 +105,11 @@ enum {
 	WCR_COUNT2	= 0x00007C00,	/* HS_COUNT2: bit[14:10] */
 };
 
+/* register REG_RST_CYC fields */
+enum {
+	RCR_SDA_GLITCH_NOFIX	= BIT(7),	/* bypass the SDA glitch fix */
+};
+
 /* register REG_BMR fields */
 enum {
 	BMR_SDA		= BIT(0),	/* SDA line level */
@@ -256,6 +261,9 @@ struct spacemit_i2c_dev {
 
 	/*  apb clock */
 	rt_uint32_t			apb_clock;
+
+	/* Controls whether to bypass the controller's SDA glitch fix logic. */
+	bool				sda_glitch_nofix;
 };
 
 #endif /* _I2C_SPACEMIT_K1X_H */
