@@ -21,8 +21,8 @@ if os.getenv('RTT_EXEC_PATH'):
 
 TARGET_ENTRY=os.getenv('TARGET_ENTRY_POINT')
 
-BUILD = 'debug'
-# BUILD = 'release'
+# BUILD = 'debug'
+BUILD = 'release'
 
 if CPU == 'n308':
     if os.getenv('RTT_EXEC_PATH') is None:
