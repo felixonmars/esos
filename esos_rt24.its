@@ -299,6 +299,34 @@
 			};
 		};
 
+		rcpu0-dtb-BS01DCMA {
+			description = "ESOS Core0 BS01DCMA dtb";
+			type = "standalone";
+			os = "esos";
+			arch = "riscv";
+			compression = "none";
+			load = <0x1 0xeff000>;
+			entry = <0x1 0xeff000>;
+			data = /incbin/("../output/esos/k3_rt240_BS01DCMA.dtb");
+			hash {
+				algo = "crc32";
+			};
+		};
+
+		rcpu1-dtb-BS01DCMA {
+			description = "ESOS Core1 BS01DCMA dtb";
+			type = "standalone";
+			os = "esos";
+			arch = "riscv";
+			compression = "none";
+			load = <0x1 0xf0b800>;
+			entry = <0x1 0xf0b800>;
+			data = /incbin/("../output/esos/k3_rt241_BS01DCMA.dtb");
+			hash {
+				algo = "crc32";
+			};
+		};
+
 		rcpu0-fw {
 			description = "ESOS Core0";
 			type = "standalone";
@@ -335,7 +363,8 @@
 			description = "ESOS Dual Core Configuration";
 			loadables = "rcpu-data-null", "rcpu0-dtb-com260", "rcpu0-dtb-deb1", "rcpu0-dtb-evb", "rcpu0-dtb-evb2_1", "rcpu0-dtb-evb2_2", "rcpu1-dtb-com260", "rcpu1-dtb-deb1",
 			"rcpu1-dtb-evb", "rcpu1-dtb-evb2_1", "rcpu1-dtb-evb2_2", "rcpu0-dtb-dc-board", "rcpu1-dtb-dc-board", "rcpu0-dtb-com260-kit-v02", "rcpu1-dtb-com260-kit-v02",
-			"rcpu0-dtb-gemini-c0", "rcpu1-dtb-gemini-c0", "rcpu0-dtb-gemini-c1", "rcpu1-dtb-gemini-c1", "rcpu0-dtb-pico-itx", "rcpu1-dtb-pico-itx", "rcpu0-fw", "rcpu1-fw";
+			"rcpu0-dtb-gemini-c0", "rcpu1-dtb-gemini-c0", "rcpu0-dtb-gemini-c1", "rcpu1-dtb-gemini-c1", "rcpu0-dtb-pico-itx", "rcpu1-dtb-pico-itx",
+			"rcpu0-dtb-BS01DCMA", "rcpu1-dtb-BS01DCMA", "rcpu0-fw", "rcpu1-fw";
 		};
 	};
 };
