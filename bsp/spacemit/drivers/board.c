@@ -134,8 +134,8 @@ void rt_hw_board_init(void)
 #else
     void *dtb_base = RT_NULL;
     int offset = 0;
-    void *board_property = RT_NULL;
-    void *cpu_property = RT_NULL;
+    const void *board_property = RT_NULL;
+    const void *cpu_property = RT_NULL;
 
     for (dtb_base = (void *)DTB_TABLE_BASE_ADDR;;dtb_base += (unsigned long)DTB_TABLE_STEP) {
 	  if (fdt_check_header(dtb_base))
