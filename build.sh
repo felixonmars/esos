@@ -211,6 +211,39 @@ function config_sdk()
 	touch ${TOP_DIR}/bsp/spacemit/rtconfig.h
 }
 
+function compress_esos_fit_inputs()
+{
+	local output_dir="$1"
+	local payload=
+
+	if ! command -v lzop >/dev/null 2>&1; then
+		mk_error "lzop not found. Please install lzop before generating ESOS ITB."
+		return 1
+	fi
+
+	if [ ! -d "${output_dir}" ]; then
+		mk_error "ESOS output directory not found: ${output_dir}"
+		return 1
+	fi
+
+	while IFS= read -r -d '' payload; do
+		mk_info "Compressing FIT payload: ${payload}"
+		if ! lzop -9 -f "${payload}"; then
+			mk_error "Failed to compress FIT payload: ${payload}"
+			return 1
+		fi
+	done < <(find "${output_dir}" -maxdepth 1 -type f \( -name "*.dtb" -o -name "*.elf" \) -print0)
+
+	# Keep the ITS self-consistent by compressing the AP interaction blob too.
+	if [ -f "${output_dir}/null.spacemit" ]; then
+		mk_info "Compressing FIT payload: ${output_dir}/null.spacemit"
+		if ! lzop -9 -f "${output_dir}/null.spacemit"; then
+			mk_error "Failed to compress FIT payload: ${output_dir}/null.spacemit"
+			return 1
+		fi
+	fi
+}
+
 function create_esos_itb()
 {
 	mk_info "Creating ESOS ITB package..."
@@ -232,6 +265,10 @@ function create_esos_itb()
 	# Check if mkimage is available
 	if ! command -v mkimage >/dev/null 2>&1; then
 		mk_warn "mkimage not found, ITB not created. Please install u-boot-tools."
+		return 1
+	fi
+
+	if ! compress_esos_fit_inputs "${TOP_OUTPUT_DIR}"; then
 		return 1
 	fi
 
