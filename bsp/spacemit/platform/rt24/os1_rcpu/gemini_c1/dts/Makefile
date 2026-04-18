@@ -1,4 +1,4 @@
-dtc_script=$(shell command -v dtc || echo ./dtc)
+dtc_script=$(shell command -v dtc || echo $(TOP_DIR)/bsp/spacemit/tools/dtc)
 
 SRCS = $(wildcard *.dts)
 OBJS = $(patsubst %.dts, %.dtb, $(SRCS))
