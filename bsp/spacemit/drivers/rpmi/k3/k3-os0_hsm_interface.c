@@ -1,6 +1,7 @@
 #include <rthw.h>
 #include <rtthread.h>
 #include <riscv-ops.h>
+#include <riscv_encoding.h>
 #include "k3_hsm.h"
 #include <register_defination.h>
 #include "../spacemit-rpmi.h"
@@ -401,3 +402,155 @@ void spacemit_vote_powrdown_cluster(unsigned int hartid)
 		break;
 	}
 }
+
+void spacemit_devote_pwrdown_c2(void)
+{
+	unsigned int value;
+
+	value = readl((unsigned int *)PMU_CAP_CORE8_IDLE_CFG);
+	value &= ~(CPU_PWR_DOWN_VALUE | CPU_MASK_FI_INTTERUPT);
+	writel(value, (unsigned int *)PMU_CAP_CORE8_IDLE_CFG);
+	value = readl((unsigned int *)PMU_CX_CAPMP_IDLE_CFG8);
+	value &= ~CLUSTER_PWR_DOWN_VALUE;
+	writel(value, (unsigned int *)PMU_CX_CAPMP_IDLE_CFG8);
+}
+
+void spacemit_vote_powrdown_c2_core(void)
+{
+	unsigned int value;
+
+	value = readl((unsigned int *)PMU_CAP_CORE8_IDLE_CFG);
+	value |= CPU_PWR_DOWN_VALUE;
+	writel(value, (unsigned int *)PMU_CAP_CORE8_IDLE_CFG);
+}
+
+int spacemit_wakeup_c2(void)
+{
+	writel((1 << 8), (unsigned int *)PMU_CAP_CORE8_WAKEUP);
+}
+
+void spacemit_devote_pwrdown_c3(void)
+{
+	unsigned int value;
+
+	value = readl((unsigned int *)PMU_CAP_CORE12_IDLE_CFG);
+	value &= ~(CPU_PWR_DOWN_VALUE | CPU_MASK_FI_INTTERUPT);
+	writel(value, (unsigned int *)PMU_CAP_CORE12_IDLE_CFG);
+	value = readl((unsigned int *)PMU_CX_CAPMP_IDLE_CFG12);
+	value &= ~CLUSTER_PWR_DOWN_VALUE;
+	writel(value, (unsigned int *)PMU_CX_CAPMP_IDLE_CFG12);
+}
+
+void spacemit_vote_powrdown_c3_core(void)
+{
+	unsigned int value;
+
+	value = readl((unsigned int *)PMU_CAP_CORE12_IDLE_CFG);
+	value |= CPU_PWR_DOWN_VALUE;
+	writel(value, (unsigned int *)PMU_CAP_CORE12_IDLE_CFG);
+}
+
+int spacemit_wakeup_c3(void)
+{
+	writel((1 << 12), (unsigned int *)PMU_CAP_CORE12_WAKEUP);
+}
+
+void boot_entry_dummy(unsigned int hartid)
+{
+	rpmi_uint32_t cluster_id = CPU_TO_CLUSTER(hartid);
+
+	if (cluster_id == 2) {
+		spacemit_devote_pwrdown_c2();
+		spacemit_vote_powrdown_c2_core();
+	} else if (cluster_id == 3) {
+		spacemit_devote_pwrdown_c3();
+		spacemit_vote_powrdown_c3_core();
+	}
+
+	/* disable local timer */
+	write_csr(0x14D, 0xffffffffffffffff);
+	/* disable all irq */
+        clear_csr(0x304, MIP_SSIP | MIP_MSIP | MIP_STIP | MIP_MTIP | MIP_SEIP | MIP_MEIP);
+        /* disable prefetch */
+        asm volatile ("fence iorw, iorw");
+
+        while (1)
+		asm volatile ("wfi");
+}
+
+unsigned long long spacemit_get_c2_bootenty(void)
+{
+	unsigned long long low, high;
+
+	low = readl((unsigned int *)C2_RVBADDR_LO_ADDR);
+	high = readl((unsigned int *)C2_RVBADDR_HI_ADDR);
+
+	return ((high << 32) | low);
+}
+
+void spacemit_set_c2_bootenty(unsigned long long _entry)
+{
+	/* re-set the bootentry of cluster2 */
+	writel((unsigned long)_entry & 0xffffffff, (unsigned int *)(C2_RVBADDR_LO_ADDR));
+
+	writel((((unsigned long)_entry) >> 32) & 0xffffffff, (unsigned int*)(C2_RVBADDR_HI_ADDR));
+}
+
+unsigned long long spacemit_get_c0_bootenty(void)
+{
+	unsigned long long low, high;
+
+	low = readl((unsigned int *)C0_RVBADDR_LO_ADDR);
+	high = readl((unsigned int *)C0_RVBADDR_HI_ADDR);
+
+	return ((high << 32) | low);
+}
+
+void spacemit_set_c0_bootenty(unsigned long long _entry)
+{
+	/* re-set the bootentry of cluster2 */
+	writel((unsigned long)_entry & 0xffffffff, (unsigned int *)(C0_RVBADDR_LO_ADDR));
+
+	writel((((unsigned long)_entry) >> 32) & 0xffffffff, (unsigned int*)(C0_RVBADDR_HI_ADDR));
+}
+
+void spacemit_wait_c2_pwrup(void)
+{
+	unsigned int value;
+
+	while (1) {
+		value = readl((unsigned int *)PMU_CORE_STATUS1);
+		if (((value & (1 << 3)) == 0) && (value & (1 << 6)))
+			break;
+	}
+}
+
+unsigned long long spacemit_get_c3_bootenty(void)
+{
+	unsigned long long low, high;
+
+	low = readl((unsigned int *)C3_RVBADDR_LO_ADDR);
+	high = readl((unsigned int *)C3_RVBADDR_HI_ADDR);
+
+	return ((high << 32) | low);
+}
+
+void spacemit_set_c3_bootenty(unsigned long long _entry)
+{
+	/* re-set the bootentry of cluster2 */
+	writel((unsigned long)_entry & 0xffffffff, (unsigned int *)(C3_RVBADDR_LO_ADDR));
+
+	writel((((unsigned long)_entry) >> 32) & 0xffffffff, (unsigned int*)(C3_RVBADDR_HI_ADDR));
+}
+
+void spacemit_wait_c3_pwrup(void)
+{
+	unsigned int value;
+
+	while (1) {
+		value = readl((unsigned int *)PMU_CORE_STATUS1);
+		if (((value & (1 << 19)) == 0) && (value & (1 << 22)))
+			break;
+	}
+}
+

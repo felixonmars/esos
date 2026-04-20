@@ -144,5 +144,22 @@ void spacemit_cx_m2_int_disabled(rt_uint32_t hartid);
 void spacemit_deassert_corex(unsigned int hartid);
 void spacemit_assert_corex(unsigned int hartid);
 void spacemit_vote_powrdown_cluster(unsigned int hartid);
+void boot_entry_dummy(unsigned int hartid);
+void c0boot_entry_dummy(unsigned int hartid);
+void spacemit_devote_pwrdown_c2(void);
+void spacemit_vote_powrdown_c2_core(void);
+int spacemit_wakeup_c2(void);
+unsigned long long spacemit_get_c2_bootenty(void);
+void spacemit_set_c2_bootenty(unsigned long long _entry);
+unsigned long long spacemit_get_c0_bootenty(void);
+void spacemit_set_c0_bootenty(unsigned long long _entry);
+void spacemit_wait_c2_pwrup(void);
+
+void spacemit_devote_pwrdown_c3(void);
+void spacemit_vote_powrdown_c3_core(void);
+int spacemit_wakeup_c3(void);
+unsigned long long spacemit_get_c3_bootenty(void);
+void spacemit_set_c3_bootenty(unsigned long long _entry);
+void spacemit_wait_c3_pwrup(void);
 
 #endif /* __k3_HSM_H__ */

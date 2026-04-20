@@ -313,10 +313,22 @@ rt_int32_t spacemit_rpmi_hsm_register(rt_list_t *node)
 	return 0;
 }
 
+extern void _start_warm_dummy(void);
+extern void spacemit_wait_c2_pwrup(void);
+extern void spacemit_set_c2_bootenty(unsigned long long _entry);
+extern unsigned long long spacemit_get_c2_bootenty(void);
+extern int spacemit_wakeup_c2(void);
+
+extern void spacemit_wait_c3_pwrup(void);
+extern void spacemit_set_c3_bootenty(unsigned long long _entry);
+extern unsigned long long spacemit_get_c3_bootenty(void);
+extern int spacemit_wakeup_c3(void);
+
 static void spacemit_multiple_os_poll(void *priv)
 {
 	int ret, i;
 	rt_uint32_t e, msk = 0;
+	unsigned long long _entry;
 	struct spacemit_multiple_os *config = (struct spacemit_multiple_os *)priv;
 
 	for (i = 0; i < config->os_count; ++i)
@@ -360,6 +372,32 @@ static void spacemit_multiple_os_poll(void *priv)
 
 		/* wait rcpu1 power up */
 		rt_sem_take(multiple_os_array->msem, RT_WAITING_FOREVER);
+
+		/* waitup cluster2 */
+		_entry = spacemit_get_c2_bootenty();
+		/* set bootentry */
+		spacemit_set_c2_bootenty((unsigned long long)_start_warm_dummy);
+
+		spacemit_wakeup_c2();
+
+		/* wait c2 power up */
+		spacemit_wait_c2_pwrup();
+
+		/* retore the bootentry */
+		spacemit_set_c2_bootenty((unsigned long long)_entry);
+
+		/* waitup cluster3 */
+		_entry = spacemit_get_c3_bootenty();
+		/* set bootentry */
+		spacemit_set_c3_bootenty((unsigned long long)_start_warm_dummy);
+
+		spacemit_wakeup_c3();
+
+		/* wait c3 power up */
+		spacemit_wait_c3_pwrup();
+
+		/* retore the bootentry */
+		spacemit_set_c3_bootenty((unsigned long long)_entry);
 
 		/* wakeup AP */
 		for (i = 0; i < config->os_count; ++i) {
@@ -411,6 +449,7 @@ static int k3_multiple_os_power_lunch(void)
 		rt_kprintf("Failed to create multiple os dealing thread\n");
 		return -RT_EINVAL;
 	}
+
 
 	compatible_node = dtb_node_find_compatible_node(dtb_head_node, "spacemit,rslpm");
 	if (compatible_node != RT_NULL) {

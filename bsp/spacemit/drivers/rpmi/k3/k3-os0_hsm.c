@@ -14,6 +14,8 @@
 #include <register_defination.h>
 #include "../spacemit-rpmi.h"
 
+static unsigned long long _c0_entry = RT_NULL;
+
 struct rpmi_hsm_hart {
 	/** Lock to protect this structure and perform platform operations */
 	void *lock;
@@ -278,6 +280,18 @@ static rpmi_bool_t syssusp_can_resume(void* priv, rpmi_uint32_t hart_index)
 	return true;
 }
 
+void c0boot_entry_dummy(unsigned int hartid)
+{
+	typedef void (*_jump_entry)(void);
+	_jump_entry ptr = (_jump_entry)_c0_entry;
+
+	spacemit_set_c0_bootenty(_c0_entry);
+
+	ptr();
+}
+
+extern void _c0start_warm_dummy(void);
+
 static enum rpmi_error syssusp_resume(
 		void* priv,
 		rpmi_uint32_t hart_index,
@@ -292,6 +306,9 @@ static enum rpmi_error syssusp_resume(
 
 	/* we should first let the rcpu1 wakeup, so wait for the notify by spacmeit-hsm layer */
 	rt_sem_take(config->cmwk_sem, RT_WAITING_FOREVER);
+
+	_c0_entry = spacemit_get_c0_bootenty();
+	spacemit_set_c0_bootenty((unsigned long long)_c0start_warm_dummy);
 
 	/* de-assert bootcore */
 	spacemit_deassert_corex(config->bootcore_index);

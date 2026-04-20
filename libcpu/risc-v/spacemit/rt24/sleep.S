@@ -8,6 +8,7 @@
  * 2024/03/23     Nell        First Spacemit RISC-V porting implementation
  */
 
+#include <rtconfig.h>
 #include <riscv-sleep.h>
 #include <riscv_encoding.h>
 
@@ -16,6 +17,13 @@
     .global __sleep_sp_store
 __sleep_sp_store:
     .space 8
+
+    .global _g_ap_sp_base
+    .global _g_ap_sp_top
+_g_ap_sp_base:
+    .space 1024
+_g_ap_sp_top:
+.align 8
 
 	.text
 
@@ -126,3 +134,300 @@ __cpu_resume_enter:
 
         /* Return to C code */
         ret
+
+#ifdef SOC_SPACEMIT
+        .align 3
+        .globl _reset_regs
+_reset_regs:
+	/* flush the instruction cache */
+	fence.i
+	/* Reset all registers except ra, a0, a1, a2, a3 and a4 */
+	li sp, 0
+	li gp, 0
+	li tp, 0
+	li t0, 0
+	li t1, 0
+	li t2, 0
+	li s0, 0
+	li s1, 0
+	li a5, 0
+	li a6, 0
+	li a7, 0
+	li s2, 0
+	li s3, 0
+	li s4, 0
+	li s5, 0
+	li s6, 0
+	li s7, 0
+	li s8, 0
+	li s9, 0
+	li s10, 0
+	li s11, 0
+	li t3, 0
+	li t4, 0
+	li t5, 0
+	li t6, 0
+	csrw CSR_MSCRATCH, 0
+
+	ret
+
+        .align 3
+        .globl _start_warm_dummy
+_start_warm_dummy:
+        /* Reset all registers except ra, a0, a1, a2, a3 and a4 for non-boot HART */
+        li      ra, 0
+        call    _reset_regs
+
+	/* reset nic400 */
+	/* re-set 0xd84402cc */
+	lui     t0, 0x3611
+	slli    t0, t0, 0x6
+	addi    t0, t0, 556
+	li      a5, 0
+	sw      a5, 0(t0)
+	fence   w, o
+
+	/* delay 1ms */
+	rdtime a5
+	li     t1, 240000
+	add    t0, a5, t1
+.Lloop:
+	rdtime t2
+	blt    t2, t0, .Lloop
+
+	li      a5, 1
+	lui     t0, 0x3611
+	slli    t0, t0, 0x6
+	addi    t0, t0, 556
+	sw      a5, 0(t0)
+	fence   w, o
+
+	/* re-set 0xd8440234 */
+	li	a5, 0
+	lui     t0, 0x3611
+	slli    t0, t0, 0x6
+	addi    t0, t0, 564
+	sw      a5, 0(t0)
+	fence   w,o
+
+	/* delay 1ms */
+	rdtime a5
+	li     t1, 240000
+	add    t0, a5, t1
+.Lloop0:
+	rdtime t2
+	blt    t2, t0, .Lloop0
+
+	li	a5, 1
+	lui     t0, 0x3611
+	slli    t0, t0, 0x6
+	addi    t0, t0, 564
+	sw      a5, 0(t0)
+	fence   w,o
+
+	/* re-set 0xd8440244 */
+	li	a5, 1
+	lui     t0, 0x3611
+	slli    t0, t0, 0x6
+	addi    t0, t0, 580
+	sw      a5, 0(t0)
+	fence   w,o
+
+	/* delay 1ms */
+	rdtime a5
+	li     t1, 240000
+	add    t0, a5, t1
+.Lloop1:
+	rdtime t2
+	blt    t2, t0, .Lloop1
+
+	li	a5, 0
+	lui     t0, 0x3611
+	slli    t0, t0, 0x6
+	addi    t0, t0, 580
+	sw      a5, 0(t0)
+	fence   w,o
+
+	/* re-set 0xd8440248 */
+	li	a5, 1
+	lui     t0, 0x3611
+	slli    t0, t0, 0x6
+	addi    t0, t0, 584
+	sw      a5, 0(t0)
+	fence   w,o
+
+	/* delay 1ms */
+	rdtime a5
+	li     t1, 240000
+	add    t0, a5, t1
+.Lloop2:
+	rdtime t2
+	blt    t2, t0, .Lloop2
+
+	li	a5, 0
+	lui     t0, 0x3611
+	slli    t0, t0, 0x6
+	addi    t0, t0, 584
+	sw      a5, 0(t0)
+	fence   w,o
+
+        /* Disable all interrupts */
+        csrw    CSR_MIE, zero
+
+	/* disable l2 cache preftch */
+//	li	a5, 768
+//	csrs	0x7d1, a5
+
+        /* set audio buffer to cacheable */
+        li      t0, 0xff
+        slli    t0, t0, 48
+        csrc    0xbc0, t0
+        li      t0, 0x20
+        slli    t0, t0, 48
+        csrs    0xbc0, t0
+        sfence.vma
+
+        /* set XIP address to IO attribute */
+        lui     t0, 0xff0
+        csrc    0xbc0, t0
+        lui     t0, 0x220
+        csrs    0xbc0, t0
+        sfence.vma
+
+	/* get the hartid */
+	csrr    a0, CSR_MHARTID
+
+	/* set the sp */
+	la sp, _g_ap_sp_top
+	call boot_entry_dummy
+
+	.align 3
+	.globl _c0start_warm_dummy
+_c0start_warm_dummy:
+        /* Reset all registers except ra, a0, a1, a2, a3 and a4 for non-boot HART */
+        li      ra, 0
+        call    _reset_regs
+
+	/* reset nic400 */
+	/* re-set 0xd84402cc */
+	lui     t0, 0x3611
+	slli    t0, t0, 0x6
+	addi    t0, t0, 556
+	li      a5, 0
+	sw      a5, 0(t0)
+	fence   w, o
+
+	/* delay 1ms */
+	rdtime a5
+	li     t1, 240000
+	add    t0, a5, t1
+.Lloop3:
+	rdtime t2
+	blt    t2, t0, .Lloop3
+
+	li      a5, 1
+	lui     t0, 0x3611
+	slli    t0, t0, 0x6
+	addi    t0, t0, 556
+	sw      a5, 0(t0)
+	fence   w, o
+
+	/* re-set 0xd8440234 */
+	li	a5, 0
+	lui     t0, 0x3611
+	slli    t0, t0, 0x6
+	addi    t0, t0, 564
+	sw      a5, 0(t0)
+	fence   w,o
+
+	/* delay 1ms */
+	rdtime a5
+	li     t1, 240000
+	add    t0, a5, t1
+.Lloop4:
+	rdtime t2
+	blt    t2, t0, .Lloop4
+
+	li	a5, 1
+	lui     t0, 0x3611
+	slli    t0, t0, 0x6
+	addi    t0, t0, 564
+	sw      a5, 0(t0)
+	fence   w,o
+
+	/* re-set 0xd8440244 */
+	li	a5, 1
+	lui     t0, 0x3611
+	slli    t0, t0, 0x6
+	addi    t0, t0, 580
+	sw      a5, 0(t0)
+	fence   w,o
+
+	/* delay 1ms */
+	rdtime a5
+	li     t1, 240000
+	add    t0, a5, t1
+.Lloop5:
+	rdtime t2
+	blt    t2, t0, .Lloop5
+
+	li	a5, 0
+	lui     t0, 0x3611
+	slli    t0, t0, 0x6
+	addi    t0, t0, 580
+	sw      a5, 0(t0)
+	fence   w,o
+
+	/* re-set 0xd8440248 */
+	li	a5, 1
+	lui     t0, 0x3611
+	slli    t0, t0, 0x6
+	addi    t0, t0, 584
+	sw      a5, 0(t0)
+	fence   w,o
+
+	/* delay 1ms */
+	rdtime a5
+	li     t1, 240000
+	add    t0, a5, t1
+.Lloop6:
+	rdtime t2
+	blt    t2, t0, .Lloop6
+
+	li	a5, 0
+	lui     t0, 0x3611
+	slli    t0, t0, 0x6
+	addi    t0, t0, 584
+	sw      a5, 0(t0)
+	fence   w,o
+
+        /* Disable all interrupts */
+        csrw    CSR_MIE, zero
+
+	/* disable l2 cache preftch */
+//	li	a5, 768
+//	csrs	0x7d1, a5
+
+        /* set audio buffer to cacheable */
+        li      t0, 0xff
+        slli    t0, t0, 48
+        csrc    0xbc0, t0
+        li      t0, 0x20
+        slli    t0, t0, 48
+        csrs    0xbc0, t0
+        sfence.vma
+
+        /* set XIP address to IO attribute */
+        lui     t0, 0xff0
+        csrc    0xbc0, t0
+        lui     t0, 0x220
+        csrs    0xbc0, t0
+        sfence.vma
+
+	/* get the hartid */
+	csrr    a0, CSR_MHARTID
+
+	/* set the sp */
+	la sp, _g_ap_sp_top
+	call c0boot_entry_dummy
+#endif
