@@ -14,6 +14,8 @@
 
 #include <rtconfig.h>
 
+#undef REGBYTES
+
 /* bytes of register width  */
 #ifdef ARCH_CPU_64BIT
 #define STORE                   sd
