@@ -61,6 +61,16 @@ static void rt_scheduler_1(void *priv)
 			all * 1000000000 / SOC_TIMER_FREQ,
 			min * 1000000000 / SOC_TIMER_FREQ,
 			max * 1000000000 / SOC_TIMER_FREQ);
+
+	if (timestamp != RT_NULL) {
+		rt_free(timestamp);
+		timestamp = RT_NULL;
+	}
+
+	rt_sem_delete(rtipc_sem);
+	rtipc_sem = RT_NULL;
+	rtscheduler0 = RT_NULL;
+	rtscheduler1 = RT_NULL;
 }
 
 static int rt_ipc(int argc, char **argv)
