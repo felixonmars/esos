@@ -5,6 +5,7 @@
 #include <sys/ioctl.h>
 #include <string.h>
 #include <unistd.h>
+#include <time.h>
 
 #define RPMSG_NAME_SIZE	32
 #define RPMSG_ADDR_ANY          0xFFFFFFFF
@@ -57,6 +58,7 @@ int main(void)
 	int rpmsg_ctrl_fd, rpmsg_fd;
 	char r[128];
 	struct rpmsg_endpoint_info chinfo;
+	struct timespec t0, t1;
 
 	rpmsg_ctrl_fd = open("/dev/rpmsg_ctrl0", O_RDWR);
 	if (rpmsg_ctrl_fd < 0) {
@@ -81,9 +83,13 @@ int main(void)
 	}
 
 	while (1) {
+		clock_gettime(CLOCK_MONOTONIC, &t0);
 		ret = write(rpmsg_fd, "Hello World", strlen("Hello World"));
 		read(rpmsg_fd, r, 128);
-		printf("%s----------%d, %s\n", __func__, __LINE__, r);
+		clock_gettime(CLOCK_MONOTONIC, &t1);
+
+		long ns = (t1.tv_sec - t0.tv_sec) * 1000000000L + (t1.tv_nsec - t0.tv_nsec);
+		printf("%s:%d, reply=%s, rtt=%ld us\n",__func__, __LINE__, r, ns / 1000);
 	}
 }
 
