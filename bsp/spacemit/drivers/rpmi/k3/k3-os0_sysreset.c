@@ -12,11 +12,13 @@
 
 #define P1_REG_NONVOLATILE_ADDR		0xab
 #define P1_REG_NONVOLATILE_FASTBOOT	0xf1
+#define P1_REG_NONVOLATILE_UPDATER	0xf3
 #define P1_REG_PWR_CTRL2_ADDR		0x7e
 #define P1_REG_PWR_CTRL2_SD		0x4
 #define P1_REG_PWR_CTRL2_RST		0x2
 #define LISTEN_ADDR			0xc087c000
 #define FLAG_FASTBOOT			0x1
+#define FLAG_UPDATER			0x3
 
 static struct rt_i2c_bus_device *i2c_bus_device;
 static rt_uint32_t i2c_addr = 0x0;
@@ -116,11 +118,30 @@ static inline bool k3_sys_reset_is_shutdown(rpmi_uint32_t sysreset_type)
 {
 	return (sysreset_type == RPMI_SYSRST_TYPE_SHUTDOWN);
 }
+
+static rt_size_t k3_sysreset_write_flag_to_p1(rpmi_uint8_t flag)
+{
+	struct rt_i2c_msg msgs[1];
+	rt_uint8_t send_buf[2];
+
+	if (!i2c_bus_device) {
+		rt_kprintf("k3 sysreset: no valid pwr i2c!\n");
+		return 0;
+	}
+
+	send_buf[0] = P1_REG_NONVOLATILE_ADDR;
+	send_buf[1] = flag;
+	msgs[0].addr = (rt_uint8_t)i2c_addr;
+	msgs[0].flags = RT_I2C_WR;
+	msgs[0].buf = send_buf;
+	msgs[0].len = 2;
+
+	return rt_i2c_transfer(i2c_bus_device, msgs, 1);
+}
+
 static void k3_os0_system_reset(void *priv, rpmi_uint32_t sysreset_type)
 {
 	volatile rt_uint8_t val = 0;
-	struct rt_i2c_msg msgs[2];
-	rt_uint8_t send_buf[2];
 
 	if (k3_sysreset_is_reboot(sysreset_type)) {
 		/* read from share memory */
@@ -128,19 +149,19 @@ static void k3_os0_system_reset(void *priv, rpmi_uint32_t sysreset_type)
 		asm volatile("fence rw, rw");
 		val = *((volatile rt_uint8_t*)LISTEN_ADDR);
 		if (val == FLAG_FASTBOOT) {
-			send_buf[0] = P1_REG_NONVOLATILE_ADDR;
-			send_buf[1] = P1_REG_NONVOLATILE_FASTBOOT;
-			msgs[0].addr = (rt_uint8_t)i2c_addr;
-			msgs[0].flags = RT_I2C_WR;
-			msgs[0].buf = send_buf;
-			msgs[0].len = 2;
-
-			if (rt_i2c_transfer(i2c_bus_device, msgs, 1) != 1) {
+			if (k3_sysreset_write_flag_to_p1(P1_REG_NONVOLATILE_FASTBOOT) != 1) {
 				rt_kprintf("k3 sysreset: i2c transfer error, %s:%d\n",
 					   __func__, __LINE__);
 				return;
 			}
 			rt_kprintf("k3 sysreset: fastboot reboot\n");
+		} else if (val == FLAG_UPDATER) {
+			if (k3_sysreset_write_flag_to_p1(P1_REG_NONVOLATILE_UPDATER) != 1) {
+				rt_kprintf("k3 sysreset: i2c transfer error, %s:%d\n",
+					   __func__, __LINE__);
+				return;
+			}
+			rt_kprintf("k3 sysreset: updater reboot\n");
 		} else {
 			rt_kprintf("k3 sysreset: normal reboot\n");
 		}
