@@ -99,6 +99,7 @@
 
 		intc: interrupt-controller@e0000000 {
 			#interrupt-cells = <3>;
+			#address-cells = <1>;
 			compatible = "riscv,plic0";
 			interrupt-controller;
 			reg = <0xe0000000 0x04000000>;
@@ -167,7 +168,7 @@
 
 		uart0: serial0@c0881xxx {
 			compatible = "spacemit,pxa-uart0";
-			// reg = <0xc0881000 0x100>;
+			reg = <0xc0881000 0x100>;
 			/* the uart of RCPU on fpga is multiplexed with AP */
 			interrupt-parent = <&intc>;
 			status = "disabled";
@@ -601,7 +602,7 @@
 			status = "disabled";
 		};
 
-		rslpm: rslpm@0 {
+		rslpm: rslpm@20 {
 			compatible = "spacemit,rslpm";
 			reg = <0x0 0x0>;
 			status = "disabled";
