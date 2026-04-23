@@ -70,7 +70,7 @@
 };
 
 &rproc {
-	status = "okay";
+	status = "disabled";
 	shared_mem_pa_base = <0x0 0xc0876000>;
 	shared_mem_buf_offset = <0x3fe8a000>;
 	shared_mem_size	= <0x3ff86000>;

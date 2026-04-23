@@ -85,7 +85,7 @@
 };
 
 &rproc {
-	status = "disabled";
+	status = "okay";
 	shared_mem_pa_base = <0x0 0xc086c000>;
 	shared_mem_buf_offset = <0x40498000>;
 	shared_mem_size	= <0x40594000>;
