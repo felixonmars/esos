@@ -6,6 +6,7 @@
 
 #include <rthw.h>
 #include <rtthread.h>
+#include <rtdevice.h>
 #include <dtb_head.h>
 #include <librpmi.h>
 #include "../spacemit-rpmi.h"
@@ -49,18 +50,33 @@ static struct rt_i2c_bus_device* k3_os0_sysreset_get_i2c(void)
 
 static rt_int32_t _k3_os0_sysreset_init(void *priv)
 {
+	struct spacemit_rpmi_sysreset_config *config = priv;
+	rt_uint32_t gpio_num;
+	int cnt;
+
+	config->reset = -1;
+
+	if (dtb_node_read_u32_array(config->node, "shutdown-gpio", &gpio_num, 1) == 0) {
+		config->reset = (rt_int32_t)gpio_num;
+		rt_kprintf("k3 sysreset: shutdown-gpio = %d\n", config->reset);
+	}
+
 	/* try get i2c device for approximately 5s, then fail */
-	int cnt = 50;
+	cnt = 50;
 	while (cnt-- > 0) {
 		i2c_bus_device = k3_os0_sysreset_get_i2c();
-		if (i2c_bus_device != RT_NULL) {
+		if (i2c_bus_device != RT_NULL)
 			break;
-		}
 		rt_thread_mdelay(100);
 	}
 	if (cnt <= 0) {
-		rt_kprintf("k3 sysreset: get pwr i2c failed\n");
-		return RT_ERROR;
+		if (config->reset >= 0) {
+			/* shutdown via GPIO still works, reboot via I2C won't */
+			rt_kprintf("k3 sysreset: no pwr i2c, reboot may not work\n");
+		} else {
+			rt_kprintf("k3 sysreset: get pwr i2c failed\n");
+			return RT_ERROR;
+		}
 	}
 
 	return 0;
@@ -141,7 +157,16 @@ static rt_size_t k3_sysreset_write_flag_to_p1(rpmi_uint8_t flag)
 
 static void k3_os0_system_reset(void *priv, rpmi_uint32_t sysreset_type)
 {
+	struct spacemit_rpmi_sysreset_config *config = priv;
 	volatile rt_uint8_t val = 0;
+
+	if (k3_sys_reset_is_shutdown(sysreset_type) && config->reset >= 0) {
+		rt_kprintf("k3 sysreset: shutdown via GPIO%d\n", config->reset);
+		rt_pin_mode(config->reset, PIN_MODE_OUTPUT);
+		rt_pin_write(config->reset, PIN_LOW);
+		while (1)
+			rt_thread_mdelay(100);
+	}
 
 	if (k3_sysreset_is_reboot(sysreset_type)) {
 		/* read from share memory */
