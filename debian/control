@@ -10,7 +10,7 @@ Build-Depends: debhelper-compat (= 13),
                make,
                git,
                gcc-riscv64-unknown-elf,
-               libnewlib-riscv64-unknown-elf
+               libnewlib-dev
 Standards-Version: 4.5.0
 Homepage: https://gitee.com/spacemit-buildroot/esos
 XBS-Commit-Id:
