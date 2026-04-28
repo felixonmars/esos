@@ -233,8 +233,6 @@ configure)
     set -x
     dd if=/usr/lib/riscv64-linux-gnu/esos/esos.itb of=$ESOS seek=$ESOS_SEEK bs=1K && sync
     set +x
-    # Use initramfs-tools trigger for a graceful update
-    dpkg-trigger --no-await update-initramfs
     ;;
 esac
 
