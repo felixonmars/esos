@@ -61,6 +61,7 @@ static void rt_float_thread(void *priv)
 
 	while (loops-- >= 0) {
 		rt_float_case();
+		rt_kprintf("loops: %d\n",loops);
 		rt_thread_delay(100);
 	}
 }
@@ -80,7 +81,7 @@ static int rt_float(int argc, char **argv)
 
 	for (i = 0; i < num_threads; ++i) {
 		rt_sprintf(string, "rt_float:%d\n", i);
-		tid = rt_thread_create(string, rt_float_thread, (void *)argv, 1024, RT_THREAD_PRIORITY_MAX / 3, 20);
+		tid = rt_thread_create(string, rt_float_thread, (void *)argv, 2048, RT_THREAD_PRIORITY_MAX / 3, 20);
 		if (!tid) {
 			rt_kprintf("%s:%d, create thread: %s, error\n", __func__, __LINE__, string);
 			return -RT_ERROR;
