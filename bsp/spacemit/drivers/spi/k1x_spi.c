@@ -13,7 +13,7 @@
 #include "k1x_spi.h"
 #include <drivers/pinctrl/pinctrl.h>
 
-#define TIMEOUT 		100000
+#define SPI_WAIT_IDLE_TIMEOUT	(100)
 
 #define SSP_DATA_8BIT		8
 #define SSP_DATA_16BIT		16
@@ -407,6 +407,7 @@ static rt_uint32_t k1x_spi_xfer(struct rt_spi_device *dev, struct rt_spi_message
 	struct rt_spi_bus *bus = dev->bus;
 	struct k1x_spi *priv = to_k1x_spi(bus);
 	rt_uint32_t val = 0;
+	rt_uint32_t timeout = (uint32_t)SPI_WAIT_IDLE_TIMEOUT;
 	rt_int32_t ret = 0;
 
 	priv->msg = msg;
@@ -438,6 +439,15 @@ static rt_uint32_t k1x_spi_xfer(struct rt_spi_device *dev, struct rt_spi_message
 
 	if (msg->cs_release)
 	{
+		// Wait bus idle for 100ms
+		while ((readl(priv->base + REG_SSP_STATUS) & BIT_SSP_BSY) && timeout > 0) {
+			rt_thread_mdelay(1);
+			timeout--;
+		}
+
+		if (timeout <= 0)
+			rt_kprintf("k1x_spi: wait bus idle timeout!\n");
+
 		//release bus
 		val = readl(priv->base + REG_SSP_TOP_CTRL);
 		val &= ~(BIT_SSP_SSE | BIT_SSP_HOLD_FRAME_LOW);
@@ -458,6 +468,8 @@ static void spacemit_spi_int_handler(rt_int32_t irq, void *devid)
 {
 	rt_uint32_t int_en, status;
 	struct k1x_spi *priv = devid;
+	rt_uint8_t tx_done = 1;
+	rt_uint8_t rx_done = 1;
 
 	//disable interrupts
 	int_en = readl(priv->base + REG_SSP_INT_EN);
@@ -476,16 +488,21 @@ static void spacemit_spi_int_handler(rt_int32_t irq, void *devid)
 
 	k1x_spi_pio_xfer(priv);
 
-	if ((priv->tx && priv->tx == priv->tx_end)
-		|| (priv->rx && priv->rx == priv->rx_end))
-	{
-		//transmit or receive complete
+
+	if (priv->msg->send_buf)
+		tx_done = (priv->tx == priv->tx_end);
+
+	if (priv->msg->recv_buf)
+		rx_done = (priv->rx == priv->rx_end);
+
+	if (tx_done && rx_done) {
+		//transmit and receive complete
 		rt_completion_done(&priv->complete);
-	} else {
-		//enable interrupts
-		int_en = readl(priv->base + REG_SSP_INT_EN);
-		writel(int_en | BIT_SSP_TIE | BIT_SSP_RIE | BIT_SSP_TINTE, priv->base + REG_SSP_INT_EN);
+		return;
 	}
+	// enable interrupts
+	int_en = readl(priv->base + REG_SSP_INT_EN);
+	writel(int_en | BIT_SSP_TIE | BIT_SSP_RIE | BIT_SSP_TINTE, priv->base + REG_SSP_INT_EN);
 }
 
 static struct dtb_compatible_array __compatible[] = {
