@@ -40,6 +40,7 @@ static int test_routine(struct rt_spi_device *dev)
 	rt_uint8_t send[8] = {0x9F,0x11,0x22,0x00,0x55,0x66,0x77,0x88};
 	rt_uint8_t *tmp;
 	rt_uint8_t recv[8] = {0};
+	int length = 256;
 
 	tmp = (rt_uint8_t *)rt_malloc(sizeof(rt_uint8_t) * 1024);
 
@@ -52,6 +53,7 @@ static int test_routine(struct rt_spi_device *dev)
 	{
 		result = -RT_ERROR;
 		rt_kprintf("read jedec id failed\n");
+		rt_free(tmp);
 		return result;
 	}
 
@@ -100,7 +102,7 @@ static int test_routine(struct rt_spi_device *dev)
 	send[1] = 0x00;
 	send[2] = 0x00;
 	send[3] = 0x00;
-	if (rt_spi_send_then_recv(dev, send, 4, tmp, 256) == RT_EOK)
+	if (rt_spi_send_then_recv(dev, send, 4, tmp, length) == RT_EOK)
 	{
 		result = RT_EOK;
 	}
@@ -111,10 +113,10 @@ static int test_routine(struct rt_spi_device *dev)
 	}
 
 	rt_kprintf("erase result:\n");
-	for (int i = 0; i < 256; i++) {
+	for (int i = 0; i < length; i++) {
 		if (i > 0 && i % 24 == 0)
 			rt_kprintf("\n");
-		rt_kprintf("%0x", tmp[i]);
+		rt_kprintf("%02x", tmp[i]);
 	}
 	rt_kprintf("\n");
 
@@ -159,7 +161,7 @@ static int test_routine(struct rt_spi_device *dev)
 	send[1] = 0x00;
 	send[2] = 0x00;
 	send[3] = 0x00;
-	if (rt_spi_send_then_recv(dev, send, 4, tmp, 256) == RT_EOK)
+	if (rt_spi_send_then_recv(dev, send, 4, tmp, length) == RT_EOK)
 	{
 		result = RT_EOK;
 	}
@@ -171,7 +173,7 @@ static int test_routine(struct rt_spi_device *dev)
 
 	// check result
 	int sum = 0;
-	for (int i = 0; i < 256; i++)
+	for (int i = 0; i < length; i++)
 		if (tmp[i] == 0x55)
 			sum++;
 
@@ -183,6 +185,7 @@ static int test_routine(struct rt_spi_device *dev)
 		result = -RT_ERROR;
 	}
 
+	rt_free(tmp);
 	return result;
 
 }
@@ -199,15 +202,14 @@ int msh_spi_test(int argc, char **argv)
 		return -RT_EIO;
 	}
 
-	dev->config.mode = RT_SPI_MODE_3;
-	dev->config.data_width = 8;
 	if (argv[1][0] == '1') {
 		// multiple freq test
 		struct k1x_spi *spacemit_spi = rt_container_of(dev->bus, struct k1x_spi, bus);
 		rt_uint32_t freq_list[] = {812500, 1000000, 1625000, 3250000, 6500000,
-			13000000, 26000000, 52000000};
+			13000000, 26000000, 51200000};
 		for (int i = 0; i < sizeof(freq_list) / sizeof(freq_list[0]); i++) {
 			clk_set_rate(spacemit_spi->clk, freq_list[i]);
+			rt_thread_mdelay(10);
 			if (test_routine(dev) != RT_EOK)
 				break;
 			if (i == sizeof(freq_list) / sizeof(freq_list[0]) - 1)
