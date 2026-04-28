@@ -123,6 +123,7 @@ static void rt_memtester_thread(void *priv)
 
 	while (loops-- >= 0) {
 		mem_test((rt_uint64_t)buffer, mem);
+		rt_kprintf("loops: %d\n",loops);
 		rt_thread_delay(100);
 	}
 
@@ -144,7 +145,7 @@ static int rt_memtester(int argc, char **argv)
 
 	for (i = 0; i < num_threads; ++i) {
 		rt_sprintf(string, "rt_mem:%d\n", i);
-		tid = rt_thread_create(string, rt_memtester_thread, (void *)argv, 1024, RT_THREAD_PRIORITY_MAX / 3, 20);
+		tid = rt_thread_create(string, rt_memtester_thread, (void *)argv, 2048, RT_THREAD_PRIORITY_MAX / 3, 20);
 		if (!tid) {
 			rt_kprintf("%s:%d, create thread: %s, error\n", __func__, __LINE__, string);
 			return -RT_ERROR;
