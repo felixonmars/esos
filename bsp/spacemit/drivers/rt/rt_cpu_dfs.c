@@ -13,11 +13,10 @@
 struct clk *dfs_clk;
 
 static rt_uint64_t cpu_dfs_table[] = {
-	245000000,
-	307000000,
-	491000000,
-	409000000,
-	614000000,
+	245760000,
+	307200000,
+	491520000,
+	614400000,
 };
 
 static struct dtb_compatible_array __compatible[] = {
@@ -71,6 +70,7 @@ static int rt_cpu_dfs(int argc, char **argv)
 					temp_clk = clk_get_rate(dfs_clk);
 					if (temp_clk != cpu_dfs_table[j]) {
 						rt_kprintf("%s:%d, set Clk rate:%lld falied\n", __func__, __LINE__, cpu_dfs_table[j]);
+						rt_kprintf("Expected: %lld, Actual: %lld\n", cpu_dfs_table[j], temp_clk);
 						clk_set_rate(dfs_clk, origin_clk);
 						return -RT_ERROR;
 					}
@@ -78,6 +78,7 @@ static int rt_cpu_dfs(int argc, char **argv)
 
 					rt_thread_delay(100);
 				}
+				rt_kprintf("loops: %d\n\n\n",loops);
 			}
 
 			/* set the origin clk */
