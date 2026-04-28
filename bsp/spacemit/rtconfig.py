@@ -89,7 +89,7 @@ else:
             CFLAGS += ' -O0 -gdwarf-2'
             AFLAGS += ' -gdwarf-2'
         else:
-            CFLAGS += ' -O2 -g2'
+            CFLAGS += ' -Os -g2'
 
         CXXFLAGS = CFLAGS
 
