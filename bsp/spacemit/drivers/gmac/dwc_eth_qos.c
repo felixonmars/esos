@@ -439,9 +439,9 @@ static rt_err_t eqos_start(struct eqos_device *eqos)
 	}
 	rt_thread_mdelay(2);
 
-	eqos_powerup(eqos);
-
 	eqos->reg_access_ok = RT_TRUE;
+
+	eqos_powerup(eqos);
 
 	ret = wait_for_bit_le32(&eqos->dma_regs->mode,
 				EQOS_DMA_MODE_SWR, RT_FALSE,
@@ -750,8 +750,6 @@ static rt_err_t eqos_stop(struct eqos_device *eqos)
 
 	if (!eqos->started)
 		return RT_EOK;
-	eqos->started = RT_FALSE;
-	eqos->reg_access_ok = RT_FALSE;
 
 	/* Disable TX DMA */
 	clrbits_le32(&eqos->dma_regs->ch0_tx_control,
@@ -799,6 +797,9 @@ static rt_err_t eqos_stop(struct eqos_device *eqos)
 #endif
 
 	eqos->config->ops->eqos_stop_resets(eqos);
+
+	eqos->reg_access_ok = RT_FALSE;
+	eqos->started = RT_FALSE;
 
 	return RT_EOK;
 }
@@ -1441,9 +1442,12 @@ static int eqos_probe(void)
 			continue;
 
 		struct eqos_device *eqos = rt_calloc(1, sizeof(struct eqos_device));
-
 		if (!eqos)
 			return -RT_ENOMEM;
+
+		eqos->plat_data = rt_calloc(1, sizeof(struct eth_pdata));
+		if (!eqos->plat_data)
+			goto err_free_eqos;
 
 		eqos->node_name = parse_node_name(node);
 		eqos->config = match->config;
@@ -1451,7 +1455,7 @@ static int eqos_probe(void)
 		eqos->regs = (uintptr_t)dtb_node_get_addr_index(node, 0);
 		if (!eqos->regs) {
 			rt_kprintf("%s: failed to get base address\n", eqos->node_name);
-			goto err_free_eqos;
+			goto err_free_plat_data;
 		}
 
 		eqos->mac_regs = (void *)(eqos->regs + EQOS_MAC_REGS_BASE);
@@ -1467,36 +1471,32 @@ static int eqos_probe(void)
 		ret = parse_mac_address(eqos);
 		if (ret < 0) {
 			rt_kprintf("%s: failed to get mac address: %d\n", eqos->node_name, ret);
-			goto err_free_eqos;
+			goto err_free_plat_data;
 		}
 
 		ret = eqos_probe_resources_core(eqos);
 		if (ret < 0) {
 			rt_kprintf("%s: core resource probe failed: %d\n", eqos->node_name, ret);
-			goto err_free_eqos;
+			goto err_free_plat_data;
 		}
 
-		if (eqos->config->ops && eqos->config->ops->eqos_probe_resources) {
-			ret = eqos->config->ops->eqos_probe_resources(eqos);
-			if (ret < 0) {
-				rt_kprintf("%s: platform resource probe failed: %d\n", eqos->node_name, ret);
-				goto err_release_core;
-			}
+		ret = eqos->config->ops->eqos_probe_resources(eqos);
+		if (ret < 0) {
+			rt_kprintf("%s: platform resource probe failed: %d\n", eqos->node_name, ret);
+			goto err_remove_core_res;
 		}
 
-		if (eqos->config->ops && eqos->config->ops->eqos_start_clks) {
-			ret = eqos->config->ops->eqos_start_clks(eqos);
-			if (ret < 0) {
-				rt_kprintf("%s: start clks failed: %d\n", eqos->node_name, ret);
-				goto err_release_plat;
-			}
+
+		ret = eqos->config->ops->eqos_start_clks(eqos);
+		if (ret < 0) {
+			rt_kprintf("%s: start clks failed: %d\n", eqos->node_name, ret);
+			goto err_remove_plat_res;
 		}
 
 		if (!eqos->mii) {
 			eqos->mii = mdio_alloc();
 			if (!eqos->mii) {
 				rt_kprintf("%s: mdio alloc failed\n", eqos->node_name);
-				ret = -RT_ENOMEM;
 				goto err_stop_clks;
 			}
 
@@ -1520,11 +1520,13 @@ err_free_mdio:
 err_stop_clks:
 		if (eqos->config->ops->eqos_stop_clks)
 			eqos->config->ops->eqos_stop_clks(eqos);
-err_release_plat:
+err_remove_plat_res:
 		if (eqos->config->ops->eqos_remove_resources)
 			eqos->config->ops->eqos_remove_resources(eqos);
-err_release_core:
+err_remove_core_res:
 		eqos_remove_resources_core(eqos);
+err_free_plat_data:
+		rt_free(eqos->plat_data);
 err_free_eqos:
 		rt_free(eqos);
 	}

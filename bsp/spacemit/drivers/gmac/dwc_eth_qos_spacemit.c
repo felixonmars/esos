@@ -67,8 +67,11 @@ static inline void *dev_get_plat_priv(struct eqos_device *eqos)
 /**
  * K3 SoC-specific macros/ops
  */
-#define PHY_INTF_RGMII			BIT(3)
-#define PHY_INTF_MII			BIT(4)
+#define PHY_INTF_MODE_OFFSET		(3)
+#define PHY_INTF_MODE_MASK		RT_GENMASK(4, 3)
+#define PHY_INTF_RMII			(0x0 << PHY_INTF_MODE_OFFSET)
+#define PHY_INTF_RGMII			(0x1 << PHY_INTF_MODE_OFFSET)
+#define PHY_INTF_MII			(0x3 << PHY_INTF_MODE_OFFSET)
 
 /* only valid for rmii, invert tx clk */
 #define RMII_TX_CLK_SEL			BIT(6)
@@ -182,46 +185,60 @@ static rt_err_t clk_phase_rgmii_set(struct spacemit_plat_data *priv, rt_bool_t i
 
 static rt_err_t clk_phase_set(struct spacemit_plat_data *priv, rt_bool_t is_tx)
 {
-	if (priv->clk_tuning_enable) {
-		if (phy_iface_is_rmii(priv))
-			clk_phase_rmii_set(priv, is_tx);
-		else
-			clk_phase_rgmii_set(priv, is_tx);
-	}
-	return RT_EOK;
+	if (!priv->clk_tuning_enable)
+		return RT_EOK;
+
+	if (priv->phy_iface == PHY_INTERFACE_MODE_MII)
+		return RT_EOK;
+
+	if (phy_iface_is_rmii(priv))
+		return clk_phase_rmii_set(priv, is_tx);
+	else
+		return clk_phase_rgmii_set(priv, is_tx);
+}
+
+static void k3_delayline_init(struct spacemit_plat_data *pdata)
+{
+	rt_uint32_t val;
+
+	/*
+	 * On K3, TX/RX delayline must be enabled for reliable DMA init.
+	 * This is required for all phy-modes (rgmii/rmii/mii).
+	 */
+	val = readl(pdata->dline_reg);
+	val |= (EMAC_TX_DLINE_EN | EMAC_RX_DLINE_EN);
+	writel(val, pdata->dline_reg);
 }
 
 static void k3_eqos_iface_config(struct spacemit_plat_data *priv)
 {
-	phy_interface_t iface;
-	rt_uint32_t val, mask;
+	phy_interface_t iface = priv->phy_iface;
+	rt_uint32_t val;
 
-	iface = priv->phy_iface;
 	val = readl(priv->ctrl_reg);
-	mask = PHY_INTF_MII | PHY_INTF_RGMII;
-	val &= ~mask;
+	val &= ~PHY_INTF_MODE_MASK;
 
 	switch (iface) {
-	case PHY_INTERFACE_MODE_MII:
-		val |= PHY_INTF_MII;
-		break;
-
 	case PHY_INTERFACE_MODE_RMII:
+		val |= PHY_INTF_RMII;
 		break;
-
 	case PHY_INTERFACE_MODE_RGMII:
 	case PHY_INTERFACE_MODE_RGMII_ID:
 	case PHY_INTERFACE_MODE_RGMII_RXID:
 	case PHY_INTERFACE_MODE_RGMII_TXID:
 		val |= PHY_INTF_RGMII;
 		break;
-
+	case PHY_INTERFACE_MODE_MII:
+		val |= PHY_INTF_MII;
+		break;
 	default:
 		rt_kprintf("%s: unsupported phy-mode=%s\n",
 			   __func__, phy_interface_strings[iface]);
 		return;
 	}
 	writel(val, priv->ctrl_reg);
+
+	return;
 }
 
 static rt_err_t k3_eqos_phy_reset(struct spacemit_plat_data *priv)
@@ -240,20 +257,25 @@ static rt_err_t k3_eqos_phy_reset(struct spacemit_plat_data *priv)
 
 	gpio_set_value(gpio_num, 0);
 
-	rt_thread_mdelay(10);
+	rt_thread_mdelay(20);
 
 	gpio_set_value(gpio_num, 1);
 
-	rt_thread_mdelay(10);
+	rt_thread_mdelay(200);
 
 	return RT_EOK;
 }
 
-static rt_err_t k3_validate_iface_and_refclk(struct spacemit_plat_data *priv)
+static rt_err_t k3_validate_iface_and_clk(struct spacemit_plat_data *priv)
 {
 	switch (priv->phy_iface) {
 	case PHY_INTERFACE_MODE_MII:
-		return RT_EOK;
+		/* MII: tx_clk cannot be configured */
+		return priv->tx_clk_from_soc ? -RT_EINVAL : RT_EOK;
+
+	case PHY_INTERFACE_MODE_RMII:
+		/* RMII: TXC pin is unused */
+		return priv->tx_clk_from_soc ? -RT_EINVAL : RT_EOK;
 
 	case PHY_INTERFACE_MODE_RGMII:
 	case PHY_INTERFACE_MODE_RGMII_ID:
@@ -261,11 +283,8 @@ static rt_err_t k3_validate_iface_and_refclk(struct spacemit_plat_data *priv)
 	case PHY_INTERFACE_MODE_RGMII_TXID:
 		return RT_EOK;
 
-	case PHY_INTERFACE_MODE_RMII:
-		/* Only accept RMII with TX clock comes from PHY */
-		return priv->tx_clk_from_soc ? -RT_EINVAL : RT_EOK;
-
 	default:
+		/* Only support MII / RMII / RGMII */
 		return -RT_EINVAL;
 	}
 }
@@ -330,7 +349,7 @@ static rt_err_t k3_eqos_plat_probe(struct eqos_device *eqos)
 	/* phy clock source select */
 	priv->phy_clk_from_soc = dtb_node_read_bool(node, "phy-clock-from-soc");
 
-	ret = k3_validate_iface_and_refclk(priv);
+	ret = k3_validate_iface_and_clk(priv);
 	if (ret) {
 		rt_kprintf("%s: unsupported phy-mode=%s with tx clk from %s\n",
 			   __func__, phy_interface_strings[priv->phy_iface],
@@ -360,6 +379,13 @@ static rt_err_t k3_eqos_plat_probe(struct eqos_device *eqos)
 	}
 	priv->ctrl_reg = TO_PTR(ctrl_reg);
 
+	ret = dtb_node_read_u32(node, "dline-reg", &dline_reg);
+	if (ret) {
+		rt_kprintf("%s: dline-reg missing for delayline tuning\n", eqos->node_name);
+		goto err_free_gpio;
+	}
+	priv->dline_reg = TO_PTR(dline_reg);
+
 	/* Clock tuning related options */
 	priv->clk_tuning_enable = dtb_node_read_bool(node, "clk-tuning-enable");
 	if (priv->clk_tuning_enable) {
@@ -369,16 +395,9 @@ static rt_err_t k3_eqos_plat_probe(struct eqos_device *eqos)
 			priv->clk_tuning_way = CLK_TUNING_BY_CLK_REVERT;
 		} else if (dtb_node_read_bool(node, "clk-tuning-by-delayline")) {
 			priv->clk_tuning_way = CLK_TUNING_BY_DLINE;
-			ret = dtb_node_read_u32(node, "dline-reg", &dline_reg);
-			if (ret) {
-				rt_kprintf("%s: dline-reg missing for delayline tuning\n", eqos->node_name);
-				goto err_free_gpio;
-			}
-			priv->dline_reg = TO_PTR(dline_reg);
 		} else {
 			priv->clk_tuning_way = CLK_TUNING_BY_REG;
 		}
-
 		priv->tx_clk_phase = dtb_node_read_u32_default(node, "tx-phase", TXCLK_PHASE_DEFAULT);
 		priv->rx_clk_phase = dtb_node_read_u32_default(node, "rx-phase", RXCLK_PHASE_DEFAULT);
 	}
@@ -402,7 +421,7 @@ static rt_err_t k3_eqos_plat_probe(struct eqos_device *eqos)
 		if (IS_ERR(eqos->clk_tx) || !eqos->clk_tx) {
 			rt_kprintf("%s: clk_get_by_name(tx_clk) failed\n", eqos->node_name);
 			ret = PTR_ERR(eqos->clk_tx);
-			goto err_free_gpio;
+			goto err_free_clk_master_bus;
 		}
 	}
 
@@ -422,6 +441,7 @@ static rt_err_t k3_eqos_plat_probe(struct eqos_device *eqos)
 	}
 
 	k3_eqos_iface_config(priv);
+	k3_delayline_init(priv);
 	k3_eqos_set_clk_phase(priv);
 
 	return RT_EOK;
@@ -429,9 +449,6 @@ static rt_err_t k3_eqos_plat_probe(struct eqos_device *eqos)
 /**
  * The current clk/gpio driver has not yet implemented a resource-release interface.
  */
-err_disable_phy_clk:
-	if (priv->phy_clk_from_soc)
-		clk_disable_unprepare(priv->clk_phy);
 err_free_phy_clk:
 //	if (priv->phy_clk_from_soc)
 //		clk_put(priv->clk_phy);
@@ -594,7 +611,7 @@ static struct eqos_priv_ops k3_eqos_ops = {
 struct eqos_config k3_eqos_config = {
 	.reg_access_always_ok	= RT_FALSE,
 	.mdio_wait		= 10,
-	.swr_wait		= 200,
+	.swr_wait		= 50,
 	.config_mac		= EQOS_MAC_RXQ_CTRL0_RXQ0EN_ENABLED_DCB,
 	.config_mac_mdio	= EQOS_MAC_MDIO_ADDRESS_CR_250_300,
 	.axi_bus_width		= EQOS_AXI_WIDTH_64,
