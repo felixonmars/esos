@@ -196,13 +196,31 @@ function config_sdk()
 	if [ "x${TARGET_CHIP}" = "xn308" ]; then
 		if [ ! -d "${TOP_DIR}/tools/toolchain/gcc" ]; then
 			cd ${TOP_DIR}/tools/toolchain/
-			tar -jxvf ${TOP_DIR}/tools/toolchain/nuclei_riscv_newlibc_prebuilt_linux64_2022.12.tar.bz2
+			if [ ! -f "nuclei_riscv_newlibc_prebuilt_linux64_2022.12.tar.bz2" ]; then
+				mk_info "Downloading nuclei toolchain..."
+				wget http://archive.spacemit.com/toolchain/nuclei_riscv_newlibc_prebuilt_linux64_2022.12.tar.bz2
+				if [ $? -ne 0 ]; then
+					mk_error "Failed to download nuclei toolchain"
+					cd -
+					return 1
+				fi
+			fi
+			tar -jxvf nuclei_riscv_newlibc_prebuilt_linux64_2022.12.tar.bz2
 			cd -
 		fi
 	elif [ "x${TARGET_CHIP}" = "xrt24" ]; then
 		if [ ! -d "${TOP_DIR}/tools/toolchain/spacemit-toolchain-elf-newlib-x86_64-v1.0.9" ]; then
 			cd ${TOP_DIR}/tools/toolchain/
-			tar -xf ${TOP_DIR}/tools/toolchain/spacemit-toolchain-elf-newlib-x86_64-v1.0.9.tar.xz
+			if [ ! -f "spacemit-toolchain-elf-newlib-x86_64-v1.0.9.tar.xz" ]; then
+				mk_info "Downloading spacemit toolchain..."
+				wget http://archive.spacemit.com/toolchain/spacemit-toolchain-elf-newlib-x86_64-v1.0.9.tar.xz
+				if [ $? -ne 0 ]; then
+					mk_error "Failed to download spacemit toolchain"
+					cd -
+					return 1
+				fi
+			fi
+			tar -xf spacemit-toolchain-elf-newlib-x86_64-v1.0.9.tar.xz
 			cd -
 		fi
 	fi
@@ -447,3 +465,4 @@ elif [ "x$1" = "xclean" ]; then
 	clean_kernel
 	exit 0
 fi
+
