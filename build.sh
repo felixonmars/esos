@@ -195,6 +195,7 @@ function config_sdk()
 
 	if [ "x${TARGET_CHIP}" = "xn308" ]; then
 		if [ ! -d "${TOP_DIR}/tools/toolchain/gcc" ]; then
+			mkdir -p ${TOP_DIR}/tools/toolchain/
 			cd ${TOP_DIR}/tools/toolchain/
 			if [ ! -f "nuclei_riscv_newlibc_prebuilt_linux64_2022.12.tar.bz2" ]; then
 				mk_info "Downloading nuclei toolchain..."
@@ -210,6 +211,7 @@ function config_sdk()
 		fi
 	elif [ "x${TARGET_CHIP}" = "xrt24" ]; then
 		if [ ! -d "${TOP_DIR}/tools/toolchain/spacemit-toolchain-elf-newlib-x86_64-v1.0.9" ]; then
+			mkdir -p ${TOP_DIR}/tools/toolchain/
 			cd ${TOP_DIR}/tools/toolchain/
 			if [ ! -f "spacemit-toolchain-elf-newlib-x86_64-v1.0.9.tar.xz" ]; then
 				mk_info "Downloading spacemit toolchain..."
