@@ -187,6 +187,7 @@ struct spacemit_multiple_os {
 	rt_event_t multiple_event;
 	rt_thread_t multiple_tid;
 	rt_sem_t msem;
+	struct rt_device dev;
 	struct mbox_client mtx_client, mrx_client;
 	struct mbox_chan *mtx_chan, *mrx_chan;
 };
@@ -231,5 +232,17 @@ int spacemit_rpmi_rtc_register(rt_list_t *node);
 int spacemit_rpmi_pwrkey_register(rt_list_t *node);
 int spacemit_rpmi_sysreset_register(rt_list_t *node);
 int spacemit_rpmi_msi_register(rt_list_t *node);
+extern void _start_warm_dummy(void);
+extern void spacemit_wait_c2_pwrup(void);
+extern void spacemit_set_c2_bootenty(unsigned long long _entry);
+extern unsigned long long spacemit_get_c2_bootenty(void);
+extern int spacemit_wakeup_c2(void);
+
+extern void spacemit_wait_c3_pwrup(void);
+extern void spacemit_set_c3_bootenty(unsigned long long _entry);
+extern unsigned long long spacemit_get_c3_bootenty(void);
+extern int spacemit_wakeup_c3(void);
+extern void spacemit_wakeup_rcpu1(void);
+
 
 #endif /* __RPMI_PLATFORM_DEFIN_H__ */

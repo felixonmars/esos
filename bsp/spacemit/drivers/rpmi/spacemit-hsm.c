@@ -313,17 +313,6 @@ rt_int32_t spacemit_rpmi_hsm_register(rt_list_t *node)
 	return 0;
 }
 
-extern void _start_warm_dummy(void);
-extern void spacemit_wait_c2_pwrup(void);
-extern void spacemit_set_c2_bootenty(unsigned long long _entry);
-extern unsigned long long spacemit_get_c2_bootenty(void);
-extern int spacemit_wakeup_c2(void);
-
-extern void spacemit_wait_c3_pwrup(void);
-extern void spacemit_set_c3_bootenty(unsigned long long _entry);
-extern unsigned long long spacemit_get_c3_bootenty(void);
-extern int spacemit_wakeup_c3(void);
-
 static void spacemit_multiple_os_poll(void *priv)
 {
 	int ret, i;
@@ -349,6 +338,7 @@ static void spacemit_multiple_os_poll(void *priv)
 
 		/* Let rcpu1 enter low power mode */
 		mbox_send_message(multiple_os_array->mtx_chan, &ret);
+
 		/* wait rcpu1 power down */
 		rt_sem_take(multiple_os_array->msem, RT_WAITING_FOREVER);
 
@@ -356,19 +346,10 @@ static void spacemit_multiple_os_poll(void *priv)
 		rt_pm_release(RT_PM_DEFAULT_SLEEP_MODE);
 
 		/* will enter idle thread */
-		rt_schedule();
+		rt_sem_take((rt_sem_t)multiple_os_array->dev.user_data, RT_WAITING_FOREVER);
 
-		/* exit from low power mode */
-		/* assert rcpu1 */
-		writel(0, (unsigned int *)RT24_CORE1_SW_RESET_REG);
-		/* keep rcpu1 sleep */
-		writel(0, (unsigned int *)RT24_CORE1_SW_WAKEUP_REG);
-		/* set hartid */
-		writel(1, (unsigned int *)RCPU_CORE1_HART_ID_SET);
-		/* de-assert rcpu1 */
-		writel(1, (unsigned int *)RT24_CORE1_SW_RESET_REG);
 		/* wakeup rcpu1 */
-		writel(1, (unsigned int *)RT24_CORE1_SW_WAKEUP_REG);
+		spacemit_wakeup_rcpu1();
 
 		/* wait rcpu1 power up */
 		rt_sem_take(multiple_os_array->msem, RT_WAITING_FOREVER);
@@ -456,11 +437,10 @@ static int k3_multiple_os_power_lunch(void)
 		/* check the status */
 		if (!dtb_node_device_is_available(compatible_node))
 			return -RT_EINVAL;
-
 		for_each_property_string_extend(compatible_node, "mbox-names", string, strend, size) {
 			if (rt_strcmp(string, "tx") == 0) {
 				multiple_os_array->mtx_client.dev = compatible_node;
-				multiple_os_array->mtx_client.tx_block = false;
+				multiple_os_array->mtx_client.tx_block = true;
 				multiple_os_array->mtx_client.rx_callback = RT_NULL;
 				multiple_os_array->mtx_chan = mbox_request_channel_byname(&multiple_os_array->mtx_client, string);
 			} else {
@@ -470,6 +450,14 @@ static int k3_multiple_os_power_lunch(void)
 				multiple_os_array->mrx_chan = mbox_request_channel_byname(&multiple_os_array->mrx_client, string);
 			}
 		}
+	}
+
+	rt_device_register(&multiple_os_array->dev, "lpmdev", RT_DEVICE_FLAG_RDWR);
+
+	multiple_os_array->dev.user_data = (void *)rt_sem_create("lpmcomm", 0, RT_IPC_FLAG_FIFO);
+	if (!multiple_os_array->dev.user_data) {
+		rt_kprintf("create low power common sem error\n");
+		return -RT_EINVAL;
 	}
 
 	multiple_os_array->msem = rt_sem_create("lpmsem", 0, RT_IPC_FLAG_FIFO);

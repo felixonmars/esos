@@ -14,6 +14,7 @@
 
 static rt_sem_t rt_lowpwrsem;
 static rt_thread_t rt_lowpwrtid;
+static rt_device_t lpmdev;
 static struct mbox_client lpm_tx_client, lpm_rx_client;
 static struct mbox_chan *lpm_tx_chan, *lpm_rx_chan;
 
@@ -37,6 +38,7 @@ static int __suspend_asm_finish(rt_ubase_t arg, rt_ubase_t entry, rt_ubase_t con
 	} else {
 		/* tell rcpu0 that i will power down */
 		mbox_send_message(lpm_tx_chan, &val);
+		mbox_chan_txdone(lpm_tx_chan, 0);
 
 		writel(entry & 0xffffffff, (void *)RCPU_CORE1_BOOT_ENTRY_LO);
 		writel((entry >> 32) & 0xffffffff, (void *)RCPU_CORE1_BOOT_ENTRY_HI);
@@ -173,6 +175,7 @@ static void sleep(struct rt_pm *pm, uint8_t mode)
 			/* tell rcpu0 that i has been powered up */
 			rt_sem_release(rt_lowpwrsem);
 		} else {
+			rt_sem_release((rt_sem_t)lpmdev->user_data);
 			/* unmaks Cluster0 M2 exit interrupt */
 			rt_hw_interrupt_umask(AP_C0_M2_EXIT_INT_NUM);
 		}
@@ -244,6 +247,7 @@ static void rt_lowpwr_poll(void *priv)
 
 		/* tell rcpu0 that i has been waked up*/
 		mbox_send_message(lpm_tx_chan, &val);
+		mbox_chan_txdone(lpm_tx_chan, 0);
 	}
 }
 
@@ -259,9 +263,6 @@ void rt_lowpwr_notify(rt_uint8_t event, rt_uint8_t mode, void *data)
 		writel(val, (unsigned int *)PMU_AUDIO_CLK_CTRL);
 		break;
 	case RT_PM_EXIT_SLEEP:
-		val = readl((unsigned int *)PMU_AUDIO_CLK_CTRL);
-		val |= ((1 << AUIO_FORCE_PWR_ON_OFFSET) | (1 << AUDIO_CTRL_BY_AP_OFFSET));
-		writel(val, (unsigned int *)PMU_AUDIO_CLK_CTRL);
  		break;
 	}
 }
@@ -303,8 +304,15 @@ int rt_hw_k3_pm_init(void)
 	/* initialize system pm module */
 	rt_system_pm_init(&_ops, timer_mask, RT_NULL);
 
-	if (read_csr(mhartid) == 0)
+	if (read_csr(mhartid) == 0) {
+		lpmdev = rt_device_find("lpmdev");
+		if (!lpmdev) {
+			rt_kprintf("Can't find low power device\n");
+			return -RT_EINVAL;
+		}
+
 		return 0;
+	}
 
 	compatible_node = dtb_node_find_compatible_node(dtb_head_node, "spacemit,rslpm");
 	if (compatible_node != RT_NULL) {

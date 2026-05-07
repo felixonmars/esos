@@ -554,3 +554,22 @@ void spacemit_wait_c3_pwrup(void)
 	}
 }
 
+void spacemit_wakeup_rcpu1(void)
+{
+	unsigned int val;
+
+	/* exit from low power mode */
+	val = readl((unsigned int *)PMU_AUDIO_CLK_CTRL);
+	val |= ((1 << AUIO_FORCE_PWR_ON_OFFSET) | (1 << AUDIO_CTRL_BY_AP_OFFSET));
+	writel(val, (unsigned int *)PMU_AUDIO_CLK_CTRL);
+	/* assert rcpu1 */
+	writel(0, (unsigned int *)RT24_CORE1_SW_RESET_REG);
+	/* keep rcpu1 sleep */
+	writel(0, (unsigned int *)RT24_CORE1_SW_WAKEUP_REG);
+	/* set hartid */
+	writel(1, (unsigned int *)RCPU_CORE1_HART_ID_SET);
+	/* de-assert rcpu1 */
+	writel(1, (unsigned int *)RT24_CORE1_SW_RESET_REG);
+	/* wakeup rcpu1 */
+	writel(1, (unsigned int *)RT24_CORE1_SW_WAKEUP_REG);
+}
