@@ -11,9 +11,21 @@
 #include <openamp/rpmsg.h>
 #include <openamp/rpmsg_virtio.h>
 #include <metal/irq.h>
+#if defined(SOC_SPACEMIT_K1_X)
 #include <riscv-clic.h>
+#endif
 
 #define RPMSG_SERV_NAME         "adma-service"
+
+#if defined(SOC_SPACEMIT_K1_X)
+#define ADMA_CHAN_ISR    0xc08838a0
+#define ADMA_CHAN_IER    0xc0883880
+#define ADMA_CHAN_IRQ    HDMI_ADMA_CH_IRQn
+#elif defined(SOC_SPACEMIT_K3)
+#define ADMA_CHAN_ISR    0xc08834a4
+#define ADMA_CHAN_IER    0xc0883484
+#define ADMA_CHAN_IRQ    33
+#endif
 
 extern int rpmsg_create_ept(struct rpmsg_endpoint *ept, struct rpmsg_device *rdev,
 		     const char *name, uint32_t src, uint32_t dest,
@@ -29,8 +41,8 @@ static int adma_irq_handler(int irq, void *arg)
 	unsigned int pending;
 
 	/* clear pending */
-	pending = *((volatile unsigned long *)(0xc08838a0));
-	*((volatile unsigned long *)(0xc08838a0)) = 0x0;
+	pending = *((volatile unsigned long *)(ADMA_CHAN_ISR));
+	*((volatile unsigned long *)(ADMA_CHAN_ISR)) = 0x0;
 
 	/* finish transfer */
 	if (pending & (1 << 0)) {
@@ -46,18 +58,18 @@ static int rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len,
 
 	if (strcmp(data, "startup") == 0) {
 
-		/* enable hdmi interrupt */
-		 *((volatile unsigned long *)(0xc0883880)) = 0x1;
+		/* enable interrupt */
+		*((volatile unsigned long *)(ADMA_CHAN_IER)) = 0x1;
 
 		/* reqeust adma irq */
-		ret = metal_irq_register(HDMI_ADMA_CH_IRQn, adma_irq_handler,
+		ret = metal_irq_register(ADMA_CHAN_IRQ, adma_irq_handler,
 				NULL);
 		if (ret) {
 			rt_kprintf("Failed to register adma irq handler\n");
 			return -1;
 		}
 
-		metal_irq_enable(HDMI_ADMA_CH_IRQn);
+		metal_irq_enable(ADMA_CHAN_IRQ);
 
 		if (rpmsg_send(ept, "startup-ok", 10) < 0) {
 			rt_kprintf("rpmsg_send failed\n");

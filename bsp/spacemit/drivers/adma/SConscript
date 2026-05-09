@@ -6,9 +6,17 @@ cwd  = GetCurrentDir()
 src     = Glob('*.c')
 CPPPATH = [cwd]
 
-if GetDepend('SOC_SPACEMIT_K1_X') == False:
+if GetDepend('SOC_SPACEMIT_K1_X') == False and GetDepend('SOC_SPACEMIT_K3') == False:
     SrcRemove(src, ['adma_service.c'])
 
-group = DefineGroup('Drivers_adma', src, depend = ['BSP_USING_ADMA'], CPPPATH = CPPPATH)
+# K1_X: requires BSP_USING_ADMA
+# K3: requires BSP_USING_ADMA and SOC_SPACEMIT_K3_CORE1
+depend_list = []
+if GetDepend('SOC_SPACEMIT_K1_X'):
+    depend_list = ['BSP_USING_ADMA']
+elif GetDepend('SOC_SPACEMIT_K3'):
+    depend_list = ['BSP_USING_ADMA', 'SOC_SPACEMIT_K3_CORE1']
+
+group = DefineGroup('Drivers_adma', src, depend = depend_list, CPPPATH = CPPPATH)
 
 Return('group')
