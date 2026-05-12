@@ -155,19 +155,14 @@ static enum rpmi_error spacemit_set_state(void *priv, rpmi_uint32_t domain_id, e
 
 		if (ptr[domain_id].use_hw == 0) {
 			val = readl((config->base + ptr[domain_id].offset));
-			val &= ~(1 << ptr[domain_id].bit_sleep1);
-			writel(val, (config->base + ptr[domain_id].offset));
-			rt_hw_us_delay(20);
-
-			val = readl((config->base + ptr[domain_id].offset));
-			val &= ~(1 << ptr[domain_id].bit_sleep2);
-			writel(val, (config->base + ptr[domain_id].offset));
-			rt_hw_us_delay(20);
-
-			val = readl((config->base + ptr[domain_id].offset));
 			val &= ~(1 << ptr[domain_id].bit_isolation);
 			writel(val, (config->base + ptr[domain_id].offset));
-			rt_hw_us_delay(10);
+			rt_hw_us_delay(15);
+
+			val = readl((config->base + ptr[domain_id].offset));
+			val &= ~((1 << ptr[domain_id].bit_sleep1) | (1 << ptr[domain_id].bit_sleep2));
+			writel(val, (config->base + ptr[domain_id].offset));
+			rt_hw_us_delay(20);
 
 			for (loop = 10000; loop >= 0; --loop) {
 				val = readl((config->base + DEVICE_POWER_STATE_OFFSET));
