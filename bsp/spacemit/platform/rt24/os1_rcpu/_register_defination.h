@@ -168,10 +168,10 @@ typedef volatile union rt24_core0_idle_cfg_reg {
 #define AP_C0_M2_EXIT_INT_NUM		(84)
 #define AWUCRM_REG			(0xd4050000 + 0x104c)
 
-#define DTB_TABLE_BASE_ADDR		(0x100e05000)
+#define DTB_TABLE_BASE_ADDR		(0x100f01000)
 #define DTB_TABLE_STEP			(1024 * 50)
 
 /* ap & rt24 data interaction space */
-#define AR_DATA_INTERACTION_BASE	(0x100e04000)
+#define AR_DATA_INTERACTION_BASE	(0x100f00000)
 
 #endif

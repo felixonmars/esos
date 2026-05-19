@@ -78,7 +78,7 @@ function select_entry_point()
 	elif [ "x${TOP_TARGET_CHIP}_${TOP_TARGET_BOARD}" = "xrt24_os0_rcpu" ]; then
  		TOP_TARGET_ENTRY_POINT=0x100200000
 	elif [ "x${TOP_TARGET_CHIP}_${TOP_TARGET_BOARD}" = "xrt24_os1_rcpu" ]; then
-		TOP_TARGET_ENTRY_POINT=0x100804000
+		TOP_TARGET_ENTRY_POINT=0x100800000
 	else
 		mk_error "No valid entry point!"
 		return 1

@@ -79,7 +79,7 @@
 
 &rpmi {
 	status = "okay";
-	shmem-base = <0x1 0x800000>;
+	shmem-base = <0x1 0xe00000>;
 	mboxes = <&mailbox3 0>;
 };
 
