@@ -10,7 +10,7 @@
 #include "../../../k3-pinctrl.dtsi"
 
 / {
-	model = "k3_dc_board";
+	model = "k3-deepcomputing-fml13v05";
 };
 
 &cpu_0 {
