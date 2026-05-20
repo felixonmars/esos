@@ -1,151 +1,240 @@
-# RT-Thread #
+# Spacemit #
 
-[中文页](README_zh.md) |
+## 1. 简介
 
-[![GitHub](https://img.shields.io/github/license/RT-Thread/rt-thread.svg)](https://github.com/RT-Thread/rt-thread/blob/master/LICENSE)
-[![GitHub release](https://img.shields.io/github/release/RT-Thread/rt-thread.svg)](https://github.com/RT-Thread/rt-thread/releases)
-[![Build Status](https://travis-ci.org/RT-Thread/rt-thread.svg)](https://travis-ci.org/RT-Thread/rt-thread)
-[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/RT-Thread/rt-thread?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-[![GitHub pull-requests](https://img.shields.io/github/issues-pr/RT-Thread/rt-thread.svg)](https://github.com/RT-Thread/rt-thread/pulls)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat)](https://github.com/RT-Thread/rt-thread/pulls)
+ESOS(Energy Service OS) 是由进迭时空科技有限公司开发的能效及实时管理系统，为系统提供辅助管理功能
 
-# Introduction
+### 1.1 K1 平台
 
-RT-Thread was born in 2006, it is an open source, neutral, and community-based real-time operating system (RTOS). 
+包括如下硬件特性：
 
-RT-Thread is mainly written in C language, easy to understand and easy to port(can be quickly port to a wide range of mainstream MCUs and module chips). It applies object-oriented programming methods to real-time system design, making the code elegant, structured, modular, and very tailorable. 
+| 硬件 | 描述 |
+| -- | -- |
+|芯片型号| k1 |
+|CPU| N308 |
+|主频| 245Mhz |
+|DDR | 共享AP DDR |
+|SRAM | 256KB |
 
-RT-Thread has Standard version and Nano version. For resource-constrained microcontroller (MCU) systems, the NANO kernel version that requires only 3KB Flash and 1.2KB RAM memory resources can be tailored  with easy-to-use tools; And for resource-rich IoT devices, RT-Thread can use the on-line software package management tool, together with system configuration tools, to achieve intuitive and rapid modular cutting, seamlessly import rich software packages, thus achieving complex functions like Android's graphical interface and touch sliding effects, smart voice interaction effects, and so on.
+### 1.2 K3 平台 (RT24)
 
-## RT-Thread Architecture
+K3 芯片集成了两个 RT24 RISC-V 小核（os0_rcpu 和 os1_rcpu），分别运行独立的 ESOS 实例，负责系统能效及实时任务管理。
 
-RT-Thread has not only a real-time kernel, but also rich components. Its architecture is as follows:
+| 硬件 | 描述 |
+| -- | -- |
+|芯片型号| k3 |
+|CPU| RT24 (RISC-V) |
+|主频| 614.4MHz |
+|RAM | 5MB（每个核独立） |
+|实例数| 2（os0_rcpu / os1_rcpu）|
 
+支持的板型：evb、evb2_1、evb2_2、com260、com260_ifx、com260_kit_v02、deb1、gemini_c0、gemini_c1、pico-itx、dc_board、BS01DCMA
 
-![architecture](./documentation/figures/architecture.png)
+## 2. 编译说明
 
+### 2.1 K1 平台编译
 
-It includes:
+| 环境 | 说明 |
+| --- | --- |
+|PC操作系统|Linux|
+|编译器|riscv-nuclei-elf-gcc version 10.2.0|
+|构建工具|scons|
 
-- Kernel layer: RT-Thread kernel, the core part of RT-Thread, includes the implementation of objects in the kernel system, such as multi-threading and its scheduling, semaphore, mailbox, message queue, memory management, timer, etc.; libcpu/BSP (Chip Migration Related Files/Board Support Package) is closely related to hardware and consists of peripheral drivers and CPU porting.
+1) 下载源码
 
-- Components and Service Layer: Components are based on upper-level software on top of the RT-Thread kernel, such as virtual file systems, FinSH command-line interfaces, network frameworks, device frameworks, and more. Its modular design allows for high internal cohesion inside the components and low coupling between components. 
-  
-- RT-Thread software package: A general-purpose software component running on the RT-Thread IoT operating system platform for different application areas, consisting of description information, source code or library files. RT-Thread provides an open package platform with officially available or developer-supplied packages that provide developers with a choice of reusable packages that are an important part of the RT-Thread ecosystem. The package ecosystem is critical to the choice of an operating system because these packages are highly reusable and modular, making it easy for application developers to build the system they want in the shortest amount of time. RT-Thread supports more than 180 software packages. 
+```
+随SDK一起发布
+```
+2) 配置工程并准备env
+```
+    cd esos
+    ./build.sh config
 
-## RT-Thread Features
+    INFO: prepare to config sdk ...
+    All valid soc chips:
+            0: n308
+    Please select a chip:0
+    All valid boards:
+            0: k1-x
+    Please select a board:0
 
-- Designed for resource-constrained devices, the minimum kernel requires only 1.2KB of RAM and 3 KB of Flash.                                                                                                              
+```
+3) 编译
+```
+    ./build.sh
+```
+4) 清除编译临时文件
+```
+    ./build.sh clean
+```
+5) 配置
+```
+    cd bsp/spacemit/
+    scons --meuconfig
+```
+如果编译正确无误，会产生rtthread.bin、rtthread-n308.elf文件。其中rtthread-n308.elf需要copy到主系统的ramfs中供linux加载并启动运行。
 
-- Has rich components and a prosperous and fast growing package ecosystem.                                                              
+### 2.2 K3 平台编译 (RT24)
 
-- Elegant code style, easy to use, read and master.                                                                                                                                                                             
+| 环境 | 说明 |
+| --- | --- |
+|PC操作系统|Linux|
+|编译器|riscv64-unknown-elf-gcc version 14.2.1 (spacemit-toolchain-elf-newlib-x86_64-v1.0.9)|
+|构建工具|buildroot / scons / deb |
 
-- High Scalability. RT-Thread has high-quality scalable software architecture, loose coupling, modularity, is easy to tailor and expand.                                                                                                                                                                           
+#### 2.2.1 Bianbu 环境
 
-- Supports high-performance applications.                                                                                                                    
+在 Bianbu 系统中，esos 以 deb 包形式分发，可直接从源码构建并安装。
 
-- Supports cross-platform and a wide range of chips.                                                                                                          
-
-## Code Catalogue
-
-   RT-Thread source code catalog is shown as follow:
-
-| Name          | Description                                             |
-| ------------- | ------------------------------------------------------- |
-| BSP          | Board Support Package based on the porting of various development boards |
-| components    | Components, such as finsh shell, file system, protocol stack etc. |
-| documentation | Related documents, like coding style, doxygen etc.        |
-| examples      | Related sample code                                     |
-| include       | Head files of RT-Thread kernel                           |
-| libcpu        | CPU porting code such as ARM/MIPS/RISC-V etc. |
-| src           | The source files for the RT-Thread kernel. |
-| tools         | The script files for the RT-Thread command build tool. |
-
-RT-Thread has now been ported for nearly 90 development boards, most BSPs support MDK, IAR development environment and GCC compiler, and have provided default MDK and IAR project, which allows users to add their own application code directly based on the project. Each BSP has a similar directory structure, and most BSPs provide a README.md file, which is a markdown-format file that contains the basic introduction of BSP, and introduces how to simply start using BSP.
-
-Env is a development tool developed by RT-Thread which provides a build environment, text graphical system configuration, and package management capabilities for project based on the RT-Thread operating system. Its built-in `menuconfig` provides an easy-to-use configuration tool. It can tailor the kernels, components and software packages freely, so that the system can be constructed by building blocks.
-
-- [Download Env Tool](https://www.rt-thread.io/download.html?download=Env)
-- [User manual of Env](https://github.com/RT-Thread/rtthread-manual-doc/blob/master/env/env.md)
-
-# Resources
-
-## Supported Architectures
-
-RT-Thread supports many architectures, and has covered the major architectures in current applications. Architecture and chip manufacturer involved:
-
-- **ARM Cortex-M0/M0+**：manufacturers like ST
-- **ARM Cortex-M3**：manufacturers like ST、Winner Micro、MindMotion, ect.
-- **ARM Cortex-M4**：manufacturers like ST、Nuvton、NXP、GigaDevice、Realtek、Ambiq Micro, ect.
-- **ARM Cortex-M7**：manufacturers like ST、NXP
-- **ARM Cortex-M23**：manufacturers like GigaDevice
-- **ARM Cortex-R4**
-- **ARM Cortex-A8/A9**：manufacturers like NXP
-- **ARM7**：manufacturers like Samsung
-- **ARM9**：manufacturers like Allwinner、Xilinx 、GOKE
-- **ARM11**：manufacturers like Fullhan
-- **MIPS32**：manufacturers like loongson、Ingenic
-- **RISC-V**：manufacturers like Hifive、Kendryte、[Nuclei](https://nucleisys.com/)
-- **ARC**：manufacturers like SYNOPSYS
-- **DSP**：manufacturers like TI
-- **C-Sky**
-- **x86**
-
-## Supported IDE and Compiler
-
-The main IDE/compilers supported by RT-Thread are:
-
-- MDK KEIL
-- IAR
-- GCC
-- RT-Thread Studio
-
-Use Python-based [scons](http://www.scons.org/) for command-line builds.
-
-RT-Thread Studio Demonstration:
-
-![studio](./documentation/figures/studio.gif)                                                 
-
-## Getting Started
-
-RT-Thread BSP can be compiled directly and downloaded to the corresponding development board for use. In addition, RT-Thread also provides qemu-vexpress-a9 BSP, which can be used without hardware platform. See the getting started guide below for details.
-
-- [Getting Started of QEMU (Windows)](https://github.com/RT-Thread/rtthread-manual-doc/blob/master/documentation/quick_start_qemu/quick_start_qemu.md)
-
-- [Getting Started of QEMU (Ubuntu)](https://github.com/RT-Thread/rtthread-manual-doc/blob/master/documentation/quick_start_qemu/quick_start_qemu_linux.md)
-
-## Documentation
-
-[RT-Thread Programming Guide](https://github.com/RT-Thread/rtthread-manual-doc) | [RT-Thread Supported Chips & Boards](https://www.rt-thread.io/board.html) |
-[RT-Thread Software Package](https://github.com/RT-Thread/packages) | [RT-Thread Studio](https://www.rt-thread.io/studio.html) 
-
-## Sample
-
-[Kernel Sample](https://github.com/RT-Thread-packages/kernel-sample) | [Device Sample Code](https://github.com/RT-Thread-packages/peripheral-sample) | [File System Sample Code](https://github.com/RT-Thread-packages/filesystem-sample ) | [Network Sample Code](https://github.com/RT-Thread-packages/network-sample ) | 
-
-[Based on the STM32L475 IoT Board SDK](https://github.com/RT-Thread/IoT_Board) | [Based on the W601 IoT Board SDK](https://github.com/RT-Thread/W601_IoT_Board)
-
-# License
-
-RT-Thread is an open source software and has been licensed under Apache License Version 2.0 since v3.1.1. License information and copyright information can generally be seen at the beginning of the code:
-
-```c
-/* Copyright (c) 2006-2018, RT-Thread Development Team
- *
- * SPDX-License-Identifier: Apache-2.0
- * ...
- */
+1) 下载源码
+```
+git clone https://github.com/spacemit-com/esos.git
+cd esos/components
+git clone https://github.com/spacemit-com/esos-lite.git
+git checkout -b k3-release remotes/origin/k3-release
+cd esos
+git checkout -b k3-release remotes/origin/k3-release
 ```
 
-To avoid possible future license conflicts, developers need to sign a Contributor License Agreement (CLA) when submitting PR to RT-Thread.
+2) 安装编译依赖
+```
+apt-get build-dep .
+```
 
-# Community
+3) 构建 deb 包
+```
+dpkg-buildpackage -uc -us -b
+```
 
-RT-Thread is very grateful for the support from all community developers, and if you have any ideas, suggestions or questions in the process of using RT-Thread, RT-Thread can be reached by the following means, and we are also updating RT-Thread in real time on these channels. At the same time, Any questions can be asked in the [issue section of rtthread-manual-doc](https://github.com/RT-Thread/rtthread-manual-doc/issues). By creating a new issue to describe your questions, community members will answer them.
+4) 安装
+```
+dpkg -i ../bianbu-esos_*.deb
+```
 
-[Website](https://www.rt-thread.io) | [Twitter](https://twitter.com/rt_thread) | [Youtube]( https://www.youtube.com/channel/UCdDHtIfSYPq4002r27ffqPw?view_as=subscriber) | [Gitter](  https://gitter.im/RT-Thread) | [Facebook](https://www.facebook.com/RT-Thread-IoT-OS-110395723808463/?modal=admin_todo_tour) | [Medium](https://medium.com/@rt_thread)
+#### 2.2.2 Buildroot 环境
 
-# Contribution
+ESOS 作为 buildroot 的一个 package 进行编译
 
-If you are interested in RT-Thread and want to join in the development of RT-Thread and become a code contributor,please refer to the [Code Contribution Guide](https://github.com/RT-Thread/rtthread-manual-doc/blob/master/documentation/contribution_guide/contribution_guide.md).
+1) 编译（默认编译 rt24 all core）
+```
+# 在 buildroot-k3 根目录下执行
+make esos
+```
+
+2) 清理
+```
+make esos-dirclean
+```
+
+3) 重新编译
+```
+# 注意：不是 make esos-rebuild
+make esos-reconfigure
+```
+
+##### 2.2.2.1 修改/配置 esos
+
+esos 的修改或 menuconfig 配置需要进入 esos 源码目录，并选择要修改的 core：
+
+```
+$ cd buildroot-k3/package-src/esos
+$ ./build.sh config   # 选择要配置 core0 或 core1
+INFO: prepare to config esos sdk ...
+All valid soc chips:
+        0: n308
+        1: rt24
+Please select a chip:1
+All valid boards:
+        0: os0_rcpu
+        1: os1_rcpu
+Please select a board:0
+
+INFO: target configuration is as follows:
+INFO: -------------------------------------------------------------------------
+export TARGET_CHIP=rt24
+export TARGET_BOARD=os0_rcpu
+export TARGET_DEFCONFIG=rt24_os0_rcpu_defconfig
+export TARGET_ENTRY_POINT=0x100200000
+INFO: -------------------------------------------------------------------------
+INFO: prepare to toolchain ...
+```
+
+选完 core 后可以用 menuconfig 进行图形化配置，配置结果保存在
+`bsp/spacemit/platform/rt24/osX_rcpu/rt24_osX_rcpu_defconfig`：
+
+```
+./build.sh menuconfig
+```
+
+修改完成后，运行以下指令可生成该 core 的 .elf 文件：
+
+```
+./build.sh
+```
+
+> **注意**：如果要生成最终的 `esos.itb` 镜像，不要直接运行 `./build.sh itb`，
+> 需要回到 buildroot 根目录重新编译 esos 才能生效（修改 esos 代码同理）。
+> 生成的 `esos.itb` 镜像位于 `./output/k3/images/` 目录下：
+>
+> ```
+> $ cd buildroot-k3
+> $ make esos-reconfigure
+> ```
+
+### 3 运行结果
+
+如果编译 & 烧写无误，会在RUART0上看到RT-Thread的启动logo信息：
+
+```
+\ | /
+- RT -     Thread Operating System
+ / | \     4.0.4 build Oct 22 2025 14:57:47
+ 2006 - 2021 Copyright by rt-thread team
+
+```
+
+## 4. 驱动支持情况及计划
+
+### 4.1 K1 平台驱动支持
+
+| 驱动 | 支持情况  |  备注  |
+| ------ | :----:  | :------:  |
+| uart | 支持 | uart0-1 |
+| gpio | 支持 | / |
+| pinctrl | 支持 | / |
+| clk | 支持 | / |
+| i2c | 支持 | i2c0 |
+| spi | 支持 | spi0 |
+| mailbox | 支持 | / |
+| remoteproc | 支持 | / |
+| pwm | 支持 | pwm0~9 |
+| dma | 支持 | / |
+| mmu | 不支持 | / |
+| adma | 半支持 | 仅支持中断投送功能 |
+| can | 半支持 | 仅支持中断投送功能 |
+| ir | 半支持 | 仅支持中断投送功能 |
+
+### 4.2 K3 平台驱动支持 (RT24)
+
+| 驱动 | os0_rcpu | os1_rcpu | 备注 |
+| ------ | :----: | :----: | :------: |
+| uart | 支持 | 支持 | / |
+| gpio | 支持 | 支持 | / |
+| pinctrl | 支持 | 支持 | / |
+| i2c | 支持 | 支持 | / |
+| spi | 支持 | 支持 | / |
+| mailbox | 支持 | 支持 | / |
+| dma | 支持 | 支持 | / |
+| adma | 不支持 | 支持 | / |
+| pm | 支持 | 支持 | / |
+| regulator | 支持 | 支持 | / |
+| clk | 支持 | 支持 | / |
+| pwm | 支持 | 支持 | / |
+| can | 支持 | 支持 | / |
+| remoteproc | 支持 | 支持 | / |
+
+
+## 5. 联系人信息
+
+维护人:
+[zhuxianbin][4] < [xianbin.zhu@spacemit.com][5] >
